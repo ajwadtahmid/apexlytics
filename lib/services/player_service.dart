@@ -34,11 +34,20 @@ class PlayerService {
   }
 
   /// Parses a fresh player body. An unknown player arrives as a 200 with
-  /// `{"Error": ...}`, and a body with no uid is not a player; both throw.
+  /// `{"Error": ...}`, and a body with no uid is not a player; both throw. A
+  /// body that was not an object at all (a sign-in or maintenance page from
+  /// something between the app and the proxy) is a problem with the connection,
+  /// not with the name.
   static PlayerStats _parseFresh(
     Map<String, dynamic> data, {
     required bool byUid,
   }) {
+    if (data.containsKey('_raw')) {
+      throw const MalformedResponseException(
+        "Couldn't read the server's reply. If you're on public Wi-Fi, sign in "
+        'to it and try again.',
+      );
+    }
     final notFound = AppException(
       'Player not found. Check the ${byUid ? 'UID' : 'name'} and platform.',
       status: 404,
@@ -55,6 +64,32 @@ class PlayerService {
     return stats;
   }
 
+  /// [result] parsed as a player. If the reply was unreadable, the last copy of
+  /// this player is served instead when there is one, marked stale, as for any
+  /// other failed refresh.
+  ApiResult<PlayerStats> _parseOrStale(
+    ApiResult<Map<String, dynamic>> result,
+    String query,
+    String platform, {
+    required bool byUid,
+  }) {
+    try {
+      return ApiResult(
+        _parseFresh(result.data, byUid: byUid),
+        staleAt: result.staleAt,
+      );
+    } on MalformedResponseException {
+      final kept = getCachedStats(
+        query,
+        platform,
+        searchByUid: byUid,
+        allowStale: true,
+      );
+      if (kept == null) rethrow;
+      return kept;
+    }
+  }
+
   /// Fetches stats by display name. Avoid when a UID is known; name lookups break
   /// if the player renames.
   Future<ApiResult<PlayerStats>> getPlayerStats(
@@ -68,10 +103,7 @@ class PlayerService {
       isCacheable: _isPlayerBody,
     );
     log.d('Player stats fetched by name, stale=${result.staleAt != null}');
-    return ApiResult(
-      _parseFresh(result.data, byUid: false),
-      staleAt: result.staleAt,
-    );
+    return _parseOrStale(result, playerName, platform, byUid: false);
   }
 
   /// Returns cached stats without a network request, or null if no cache.
@@ -138,9 +170,6 @@ class PlayerService {
       isCacheable: _isPlayerBody,
     );
     log.d('Player stats fetched by UID, stale=${result.staleAt != null}');
-    return ApiResult(
-      _parseFresh(result.data, byUid: true),
-      staleAt: result.staleAt,
-    );
+    return _parseOrStale(result, uid, platform, byUid: true);
   }
 }

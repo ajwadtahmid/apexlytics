@@ -120,13 +120,33 @@ class MyPlayerStatsNotifier extends AsyncNotifier<ApiResult<PlayerStats?>> {
     final cached = service.getCachedStats(uid, platform, searchByUid: true);
 
     if (cached != null) {
+      // The refresh starts here but can't finish before this method returns:
+      // a request needs at least one event-loop turn, and the cached copy below
+      // is applied first. A refresh that completed within microtasks would be
+      // overwritten by it.
       _refreshSilent(service, uid, platform, generation);
-      return ApiResult<PlayerStats?>(cached.data, staleAt: cached.staleAt);
+      // A copy still inside its lifetime is shown as it is while the refresh
+      // runs; it is marked stale only if that refresh fails (see
+      // [_refreshSilent]), which is what the banner is for.
+      return ApiResult<PlayerStats?>(cached.data);
     }
 
     return service
         .getPlayerStatsByUid(uid, platform)
         .then((r) => ApiResult<PlayerStats?>(r.data, staleAt: r.staleAt));
+  }
+
+  /// Shows what the cache holds now, with no request. For after a run that has
+  /// just fetched and saved this profile (Refresh all), where asking again
+  /// would only repeat that request.
+  void adoptCached() {
+    final settings = ref.read(playerSettingsProvider);
+    if (!settings.isPlayerSet) return;
+    final cached = ref
+        .read(playerServiceProvider)
+        .getCachedStats(settings.uid, settings.platform, searchByUid: true);
+    if (cached == null) return;
+    state = AsyncData(ApiResult<PlayerStats?>(cached.data));
   }
 
   /// Silent background refresh — updates state without going through AsyncLoading.
@@ -168,6 +188,21 @@ class MyPlayerStatsNotifier extends AsyncNotifier<ApiResult<PlayerStats?>> {
       // If it has, the user switched profiles and this error is stale.
       if (_buildGeneration == generation) {
         log.w('Silent refresh failed', error: e);
+        // The copy on screen could not be refreshed: say how old it is.
+        final shown = state.value;
+        if (ref.mounted && shown != null && shown.staleAt == null) {
+          final kept = service.getCachedStats(
+            uid,
+            platform,
+            searchByUid: true,
+            allowStale: true,
+          );
+          if (kept != null) {
+            state = AsyncData(
+              ApiResult<PlayerStats?>(shown.data, staleAt: kept.staleAt),
+            );
+          }
+        }
       }
     } finally {
       if (_refreshingGeneration == generation) _refreshingGeneration = null;

@@ -182,7 +182,8 @@ class _StatsViewState extends ConsumerState<_StatsView> {
     invalidateMatchDerivedProviders(ref);
     // Re-reading each sync outcome is free (new backoff window) and clears stale "queued" notes.
     ref.invalidate(rankedSyncProvider);
-    ref.invalidate(myPlayerStatsProvider);
+    // The run just fetched and saved this profile: read it back, don't ask again.
+    ref.read(myPlayerStatsProvider.notifier).adoptCached();
     if (report.seasonsChanged) ref.invalidate(rankedSeasonsProvider);
 
     // Cleared mid-run: nothing to report.

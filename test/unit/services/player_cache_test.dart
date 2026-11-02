@@ -31,7 +31,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     body = goodBody;
     service = PlayerService(
-      isolatedApiService(FakeHttpAdapter({'/player/uid': (_) => body})),
+      isolatedApiService(
+        FakeHttpAdapter({'/player/uid': (_) => body, '/player': (_) => body}),
+      ),
     );
   });
 
@@ -74,5 +76,43 @@ void main() {
     );
     expect(cached?.data.name, 'Player1');
     expect(cached?.data.rankScore, 8000);
+  });
+
+  group('a reply that is not an object', () {
+    const signInPage = '<html>Sign in to the network</html>';
+
+    test('is a connection problem, not an unknown player', () async {
+      body = signInPage;
+
+      await expectLater(
+        service.getPlayerStatsByUid(uid, 'PC'),
+        throwsA(
+          isA<MalformedResponseException>().having(
+            (e) => e.status,
+            'status',
+            isNull,
+          ),
+        ),
+      );
+    });
+
+    test('is the same for a lookup by name', () async {
+      body = signInPage;
+
+      await expectLater(
+        service.getPlayerStats('Player1', 'PC'),
+        throwsA(isA<MalformedResponseException>()),
+      );
+    });
+
+    test('serves the last copy of the player, marked stale', () async {
+      await service.getPlayerStatsByUid(uid, 'PC');
+      body = signInPage;
+
+      final result = await service.getPlayerStatsByUid(uid, 'PC');
+
+      expect(result.data.name, 'Player1');
+      expect(result.staleAt, isNotNull);
+    });
   });
 }
