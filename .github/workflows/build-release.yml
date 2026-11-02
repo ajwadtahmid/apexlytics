@@ -131,11 +131,15 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          # Gradle reads this file as Java properties, where a backslash is an
+          # escape and leading spaces are dropped, so a password with either
+          # would reach it changed. Escape both.
+          esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/^ /\\ /'; }
           {
             echo "storeFile=release.keystore"
-            echo "storePassword=$STORE_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
+            echo "storePassword=$(esc "$STORE_PASSWORD")"
+            echo "keyAlias=$(esc "$KEY_ALIAS")"
+            echo "keyPassword=$(esc "$KEY_PASSWORD")"
           } > android/key.properties
 
       - name: Build Android AAB
