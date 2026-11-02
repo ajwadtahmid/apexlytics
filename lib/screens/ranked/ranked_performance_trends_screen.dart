@@ -17,7 +17,7 @@ import '../../utils/theme.dart';
 import '../../widgets/segmented_capsule.dart';
 import '../../widgets/info_sheet.dart';
 import '../../widgets/surface_card.dart';
-import '../../utils/ranked/slot_compare.dart';
+import '../../utils/ranked/slots.dart';
 import 'widgets/ranked_slot_chart.dart';
 import '../../widgets/nav_entry_card.dart';
 

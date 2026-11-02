@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/formatting/format.dart' show formatSigned, plural;
 import '../../../utils/ranked/ranked_aggregates.dart' show kMinGamesForInsight;
-import '../../../utils/ranked/slot_compare.dart';
+import '../../../utils/ranked/slots.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/segmented_capsule.dart';
 import '../../../widgets/surface_card.dart';

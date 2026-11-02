@@ -14,7 +14,7 @@ import '../../utils/formatting/format.dart'
         kNoReading;
 import '../../utils/error_messages.dart';
 import '../../utils/ranked/ranked_period.dart';
-import '../../utils/ranked/slot_compare.dart';
+import '../../utils/ranked/slots.dart';
 import '../../utils/theme.dart';
 import '../../widgets/error_card.dart';
 import '../../widgets/nav_entry_card.dart';

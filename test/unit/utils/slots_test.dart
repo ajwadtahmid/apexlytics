@@ -1,4 +1,4 @@
-import 'package:apexlytics/utils/ranked/slot_compare.dart';
+import 'package:apexlytics/utils/ranked/slots.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Slot _s(int slot, int games, int netRp) =>

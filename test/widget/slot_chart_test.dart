@@ -1,6 +1,6 @@
 import 'package:apexlytics/screens/ranked/widgets/ranked_slot_chart.dart';
 import 'package:apexlytics/screens/ranked/widgets/compare_row.dart';
-import 'package:apexlytics/utils/ranked/slot_compare.dart';
+import 'package:apexlytics/utils/ranked/slots.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
