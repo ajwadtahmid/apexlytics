@@ -1,6 +1,7 @@
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../constants/api_constants.dart';
+import 'log_scrub.dart' show errorSummary;
 
 /// Nothing else the app reports is a 10-20 digit number.
 final _uidPattern = ApiConstants.uidPattern;
@@ -13,18 +14,12 @@ const _maxLength = 300;
 /// the crash reporter — `app_logger`'s "never log names or UIDs" rule can't
 /// stop an error's own text from carrying them.
 ///
-/// - Only the first line is kept — a [FormatException] prints an excerpt of
-///   the text it failed to parse on the lines after it.
-/// - A sqflite `DatabaseException` is cut before its ` sql '…' args […]`
-///   tail, which quotes the bound arguments (a UID, a player name).
+/// - The text is cut down by [errorSummary]: its first line only, and nothing
+///   from a sqflite ` sql '…' args […]` tail onward.
 /// - Anything UID-shaped left over is masked, and the result capped at
 ///   [_maxLength].
 String scrubForCrashReport(String text) {
-  var s = text;
-  final newline = s.indexOf('\n');
-  if (newline >= 0) s = s.substring(0, newline);
-  final sql = s.indexOf(" sql '");
-  if (sql >= 0) s = s.substring(0, sql);
+  var s = errorSummary(text);
   s = s.replaceAll(_uidPattern, '<uid>');
   if (s.length > _maxLength) s = '${s.substring(0, _maxLength)}…';
   return s;

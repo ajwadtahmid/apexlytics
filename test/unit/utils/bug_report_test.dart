@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:apexlytics/utils/bug_report.dart';
 import 'package:apexlytics/utils/log_buffer.dart';
 import 'package:apexlytics/utils/log_scrub.dart';
@@ -95,6 +96,40 @@ void main() {
       expect(text, isNot(contains('1006838015507')));
       expect(text, contains('<uid>'));
       expect(text, contains('uid=<redacted>'));
+    });
+
+    test('keeps only the first line of an error, not the text it quotes', () {
+      final buffer = LogBuffer();
+      late FormatException error;
+      try {
+        jsonDecode('{"uid":"1","player_name":"SecretPlayerName","legend":"Wr');
+      } on FormatException catch (e) {
+        error = e;
+      }
+      // Guard the premise: the excerpt really is on a later line.
+      expect(error.toString(), contains('SecretPlayerName'));
+
+      buffer.add('W', 'Backup preview failed', error: error);
+
+      final text = buffer.entries.single.text;
+      expect(text, startsWith('Backup preview failed (FormatException'));
+      expect(text, isNot(contains('SecretPlayerName')));
+      expect(text, isNot(contains('⏎')));
+    });
+
+    test('cuts a database error before the arguments it quotes', () {
+      final buffer = LogBuffer();
+
+      buffer.add(
+        'E',
+        'write failed',
+        error: "DatabaseException(constraint) sql 'INSERT INTO t' args "
+            '[SecretPlayerName]',
+      );
+
+      final text = buffer.entries.single.text;
+      expect(text, 'write failed (DatabaseException(constraint))');
+      expect(text, isNot(contains('SecretPlayerName')));
     });
 
     test('puts a multi-line message on one line and cuts a long one', () {

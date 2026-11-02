@@ -36,7 +36,7 @@ class LogBuffer {
   List<LogEntry> get entries => List.unmodifiable(_entries);
 
   void add(String level, String message, {Object? error, DateTime? time}) {
-    var text = error == null ? message : '$message ($error)';
+    var text = error == null ? message : '$message (${errorSummary(error)})';
     text = scrubForReport(text.replaceAll(RegExp(r'\s*\n\s*'), ' ⏎ ').trim());
     if (text.length > maxLineLength) {
       text = '${text.substring(0, maxLineLength - 1)}…';
