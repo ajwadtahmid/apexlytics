@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -142,17 +144,71 @@ Future<RankedSyncOutcome> syncRankedHistory({
   required Map<String, SeasonMeta> seasons,
   bool force = false,
   bool forceTracking = false,
+}) {
+  // A sync already running for this player answers a second ordinary ask (a
+  // pull to refresh, a retry, the timer) with its own outcome: until it
+  // finishes nothing is remembered, so the backoff would still say "due" and
+  // send the same request again. A forced sync is an explicit ask and always
+  // runs.
+  final running = _syncsInFlight[uid];
+  if (!force && running != null) return running;
+  final sync = _syncRankedHistory(
+    uid: uid,
+    store: store,
+    prefs: prefs,
+    games: games,
+    seasons: seasons,
+    force: force,
+    forceTracking: forceTracking,
+  );
+  if (!force) {
+    _syncsInFlight[uid] = sync;
+    unawaited(
+      sync.then<void>((_) {}, onError: (_) {}).whenComplete(() {
+        if (identical(_syncsInFlight[uid], sync)) {
+          _syncsInFlight.remove(uid);
+        }
+      }),
+    );
+  }
+  return sync;
+}
+
+/// The ordinary (not forced) syncs running now, by UID.
+final _syncsInFlight = <String, Future<RankedSyncOutcome>>{};
+
+/// Numbers the syncs as they start, so the one that started last is the one
+/// whose outcome is kept (see [_lastRemembered]).
+int _syncTicket = 0;
+
+/// The ticket of the sync whose outcome was written last, by UID.
+final _lastRemembered = <String, int>{};
+
+Future<RankedSyncOutcome> _syncRankedHistory({
+  required String uid,
+  required RankedHistoryStore store,
+  required SharedPreferences prefs,
+  required GamesService Function() games,
+  required Map<String, SeasonMeta> seasons,
+  required bool force,
+  required bool forceTracking,
 }) async {
   // Read before the network call, so a "Clear all data" that lands while
   // it's in flight isn't undone by this sync's writes (see dataEpoch).
   final epoch = store.dataEpoch;
   bool cleared() => store.dataEpoch != epoch;
+  final ticket = ++_syncTicket;
 
   Future<RankedSyncOutcome> remember(
     RankedSyncOutcome outcome,
     Duration wait,
   ) async {
     if (cleared()) return outcome;
+    // Two syncs can overlap (a forced one beside an ordinary one) and finish in
+    // either order: the one that started last has the newer answer, so an
+    // older one finishing late must not replace it.
+    if ((_lastRemembered[uid] ?? 0) > ticket) return outcome;
+    _lastRemembered[uid] = ticket;
     await prefs.setInt(
       PrefsKeys.gamesNextSync(uid),
       DateTime.now().add(wait).millisecondsSinceEpoch,

@@ -186,6 +186,116 @@ void main() {
       });
     });
 
+    group('syncs that overlap', () {
+      Future<RankedSyncOutcome> sync({
+        bool force = false,
+        bool forceTracking = false,
+      }) => syncRankedHistory(
+        uid: uid,
+        store: store,
+        prefs: container.read(sharedPreferencesProvider),
+        games: () => gamesService,
+        seasons: const {},
+        force: force,
+        forceTracking: forceTracking,
+      );
+
+      String? lastOutcome() => container
+          .read(sharedPreferencesProvider)
+          .getString(PrefsKeys.gamesLastOutcome(uid));
+
+      test('two ordinary asks send one request and share its answer', () async {
+        await setUpWith();
+        final gate = Completer<GamesResult>();
+        when(() => gamesService.getMatches(uid)).thenAnswer((_) => gate.future);
+
+        final first = sync();
+        final second = sync();
+        gate.complete(GamesMatches([_match(uid, 0)]));
+
+        expect(await first, RankedSyncOutcome.synced);
+        expect(await second, RankedSyncOutcome.synced);
+        verify(() => gamesService.getMatches(uid)).called(1);
+      });
+
+      test(
+        'a later ask is not held back once the first has finished',
+        () async {
+          await setUpWith();
+          when(
+            () => gamesService.getMatches(uid),
+          ).thenAnswer((_) async => GamesMatches([_match(uid, 0)]));
+
+          await sync();
+          // Past the backoff, so the next one is due again.
+          await container
+              .read(sharedPreferencesProvider)
+              .setInt(PrefsKeys.gamesNextSync(uid), 0);
+          await sync();
+
+          verify(() => gamesService.getMatches(uid)).called(2);
+        },
+      );
+
+      test('a forced ask always runs, beside an ordinary one', () async {
+        await setUpWith();
+        final gate = Completer<GamesResult>();
+        when(() => gamesService.getMatches(uid)).thenAnswer((_) => gate.future);
+        when(
+          () => gamesService.getMatches(uid, forceTracking: true),
+        ).thenAnswer(
+          (_) async => const GamesPending(
+            status: 'queued',
+            retryAfter: Duration(minutes: 5),
+          ),
+        );
+
+        final ordinary = sync();
+        final forced = sync(force: true, forceTracking: true);
+        await forced;
+        gate.complete(GamesMatches([_match(uid, 0)]));
+        await ordinary;
+
+        verify(() => gamesService.getMatches(uid)).called(1);
+      });
+
+      test(
+        'an older ask finishing late does not replace a newer outcome',
+        () async {
+          await setUpWith();
+          final slow = Completer<GamesResult>();
+          when(
+            () => gamesService.getMatches(uid),
+          ).thenAnswer((_) => slow.future);
+          const newer = GamesPending(
+            status: 'queued',
+            retryAfter: Duration(minutes: 5),
+          );
+          when(
+            () => gamesService.getMatches(uid, forceTracking: true),
+          ).thenAnswer((_) async => newer);
+
+          final older = sync();
+          // Started later, finishes first.
+          await syncRankedHistory(
+            uid: uid,
+            store: store,
+            prefs: container.read(sharedPreferencesProvider),
+            games: () => gamesService,
+            seasons: const {},
+            force: true,
+            forceTracking: true,
+          );
+          expect(lastOutcome(), RankedSyncOutcome.queued.name);
+
+          slow.complete(GamesMatches([_match(uid, 0)]));
+          await older;
+
+          expect(lastOutcome(), RankedSyncOutcome.queued.name);
+        },
+      );
+    });
+
     test('GamesMatches persists the matches and returns synced', () async {
       await setUpWith();
       when(
