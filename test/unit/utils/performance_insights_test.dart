@@ -295,46 +295,52 @@ void main() {
     });
   });
 
-  group('trendWindowChoices', () {
+  group('sessionsShownChoices', () {
     test('offers a count only with twice as many sessions behind it', () {
-      expect(trendWindowChoices(0), isEmpty);
-      expect(trendWindowChoices(9), isEmpty);
-      expect(trendWindowChoices(10), [5]);
-      expect(trendWindowChoices(11), [5]);
-      expect(trendWindowChoices(19), [5]);
-      expect(trendWindowChoices(20), [5, 10]);
-      expect(trendWindowChoices(49), [5, 10]);
-      expect(trendWindowChoices(50), [5, 10, 25]);
-      expect(trendWindowChoices(99), [5, 10, 25]);
-      expect(trendWindowChoices(100), [5, 10, 25, 50]);
-      expect(trendWindowChoices(400), [5, 10, 25, 50]);
+      expect(sessionsShownChoices(0), isEmpty);
+      expect(sessionsShownChoices(9), isEmpty);
+      expect(sessionsShownChoices(10), [5]);
+      expect(sessionsShownChoices(11), [5]);
+      expect(sessionsShownChoices(19), [5]);
+      expect(sessionsShownChoices(20), [5, 10]);
+      expect(sessionsShownChoices(49), [5, 10]);
+      expect(sessionsShownChoices(50), [5, 10, 25]);
+      expect(sessionsShownChoices(99), [5, 10, 25]);
+      expect(sessionsShownChoices(100), [5, 10, 25, 50]);
+      expect(sessionsShownChoices(400), [5, 10, 25, 50]);
     });
   });
 
-  group('resolveTrendWindow', () {
+  group('resolveSessionsShown', () {
     test('uses a saved count that there are sessions for', () {
-      expect(resolveTrendWindow(10, 25), (size: 10, compare: 10));
-      expect(resolveTrendWindow(5, 12), (size: 5, compare: 5));
+      expect(resolveSessionsShown(10, 25), (size: 10, compare: 10));
+      expect(resolveSessionsShown(5, 12), (size: 5, compare: 5));
     });
 
     test('narrows a count that is too big to the biggest that fits', () {
-      expect(resolveTrendWindow(50, 30), (size: 10, compare: 10));
-      expect(resolveTrendWindow(10, 12), (size: 5, compare: 5));
-      expect(resolveTrendWindow(25, 20), (size: 10, compare: 10));
+      expect(resolveSessionsShown(50, 30), (size: 10, compare: 10));
+      expect(resolveSessionsShown(10, 12), (size: 5, compare: 5));
+      expect(resolveSessionsShown(25, 20), (size: 10, compare: 10));
     });
 
     test('All plots every session and compares nothing', () {
-      expect(resolveTrendWindow(kTrendWindowAll, 30), (size: null, compare: 0));
+      expect(resolveSessionsShown(kSessionsShownAll, 30), (
+        size: null,
+        compare: 0,
+      ));
     });
 
     test('with too few sessions for any count, plots all and keeps the '
         'default to say how many are needed', () {
-      expect(resolveTrendWindow(10, 6), (size: null, compare: 5));
-      expect(resolveTrendWindow(kTrendWindowAll, 6), (size: null, compare: 5));
+      expect(resolveSessionsShown(10, 6), (size: null, compare: 5));
+      expect(resolveSessionsShown(kSessionsShownAll, 6), (
+        size: null,
+        compare: 5,
+      ));
     });
 
     test('a count that is not a preset still lands on one', () {
-      expect(resolveTrendWindow(7, 30), (size: 5, compare: 5));
+      expect(resolveSessionsShown(7, 30), (size: 5, compare: 5));
     });
   });
 
@@ -359,7 +365,7 @@ void main() {
       final h = performanceHeadline(
         sessions: played(List.filled(10, 10)),
         insights: const [],
-        window: kTrendWindowAll,
+        window: kSessionsShownAll,
       )!;
 
       expect(h.trend, 'Averaging +5.0 RP per game over all 10 sessions');
@@ -371,7 +377,7 @@ void main() {
       final h = performanceHeadline(
         sessions: played([-1, ...List.filled(39, 0)]),
         insights: const [],
-        window: kTrendWindowAll,
+        window: kSessionsShownAll,
       )!;
 
       expect(h.trend, 'Averaging +0.0 RP per game over all 40 sessions');
@@ -381,7 +387,7 @@ void main() {
       final h = performanceHeadline(
         sessions: played(List.filled(10, -6)),
         insights: const [],
-        window: kTrendWindowAll,
+        window: kSessionsShownAll,
       )!;
 
       expect(h.trend, 'Averaging -3.0 RP per game over all 10 sessions');
@@ -394,7 +400,7 @@ void main() {
         insights: const [
           PlayInsight(heading: 'Best day', name: 'Friday', avgRp: 8, games: 20),
         ],
-        window: kTrendWindowAll,
+        window: kSessionsShownAll,
       )!;
 
       expect(h.timing, 'You do best on Fridays');
@@ -405,7 +411,7 @@ void main() {
         performanceHeadline(
           sessions: const [],
           insights: const [],
-          window: kTrendWindowAll,
+          window: kSessionsShownAll,
         ),
         isNull,
       );

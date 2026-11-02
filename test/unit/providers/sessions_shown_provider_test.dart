@@ -1,5 +1,5 @@
 import 'package:apexlytics/constants/prefs_keys.dart';
-import 'package:apexlytics/providers/trend_window_provider.dart';
+import 'package:apexlytics/providers/sessions_shown_provider.dart';
 import 'package:apexlytics/utils/ranked/performance_insights.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,17 +9,17 @@ void main() {
   test('is five until one is picked', () async {
     final (container, _) = await prefsContainer();
 
-    expect(container.read(trendWindowProvider), kDefaultTrendWindow);
-    expect(kDefaultTrendWindow, 5);
+    expect(container.read(sessionsShownProvider), kDefaultSessionsShown);
+    expect(kDefaultSessionsShown, 5);
   });
 
   test('comes back as it was saved', () async {
-    for (final saved in [...kTrendWindowPresets, kTrendWindowAll]) {
+    for (final saved in [...kSessionsShownPresets, kSessionsShownAll]) {
       final (container, _) = await prefsContainer(
         values: {PrefsKeys.trendSessionsShown: saved},
       );
 
-      expect(container.read(trendWindowProvider), saved);
+      expect(container.read(sessionsShownProvider), saved);
     }
   });
 
@@ -29,16 +29,16 @@ void main() {
         values: {PrefsKeys.trendSessionsShown: saved},
       );
 
-      expect(container.read(trendWindowProvider), kDefaultTrendWindow);
+      expect(container.read(sessionsShownProvider), kDefaultSessionsShown);
     }
   });
 
   test('picking one changes it and keeps it', () async {
     final (container, prefs) = await prefsContainer();
 
-    await container.read(trendWindowProvider.notifier).set(25);
+    await container.read(sessionsShownProvider.notifier).set(25);
 
-    expect(container.read(trendWindowProvider), 25);
+    expect(container.read(sessionsShownProvider), 25);
     expect(prefs.getInt(PrefsKeys.trendSessionsShown), 25);
   });
 
@@ -47,9 +47,9 @@ void main() {
       values: {PrefsKeys.trendSessionsShown: 10},
     );
 
-    await container.read(trendWindowProvider.notifier).set(kTrendWindowAll);
+    await container.read(sessionsShownProvider.notifier).set(kSessionsShownAll);
 
-    expect(container.read(trendWindowProvider), kTrendWindowAll);
+    expect(container.read(sessionsShownProvider), kSessionsShownAll);
     expect(prefs.getInt(PrefsKeys.trendSessionsShown), 0);
   });
 }

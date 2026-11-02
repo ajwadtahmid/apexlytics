@@ -15,7 +15,7 @@ import '../../../providers/recap_tiles_provider.dart';
 import '../../../providers/predator_provider.dart';
 import '../../../providers/server_provider.dart';
 import '../../../providers/storage_usage_provider.dart';
-import '../../../providers/trend_window_provider.dart';
+import '../../../providers/sessions_shown_provider.dart';
 import '../../../providers/owner_provider.dart';
 import '../../../providers/ranked_provider.dart';
 import '../../../providers/search_provider.dart';
@@ -299,7 +299,7 @@ class CacheSettingsSection extends ConsumerWidget {
     ref.invalidate(bestMetricProvider);
     ref.invalidate(entityTrendWindowProvider);
     ref.invalidate(entityTrendOverridesProvider);
-    ref.invalidate(trendWindowProvider);
+    ref.invalidate(sessionsShownProvider);
     ref.invalidate(recapTilesProvider);
     ref.invalidate(legendListOptionsProvider);
     ref.invalidate(pickRateOptionsProvider);

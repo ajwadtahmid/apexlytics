@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/trend_window_provider.dart';
+import '../../providers/sessions_shown_provider.dart';
 import '../../widgets/trend_arrow.dart';
 import '../../utils/formatting/format.dart'
     show
@@ -83,9 +83,9 @@ class RankedPerformanceTrendsScreen extends ConsumerWidget {
       weekdayBuckets: weekdayBuckets,
     );
     // The counts of sessions on offer, and what the saved choice means for them.
-    final choices = trendWindowChoices(sessions.length);
-    final window = resolveTrendWindow(
-      ref.watch(trendWindowProvider),
+    final choices = sessionsShownChoices(sessions.length);
+    final window = resolveSessionsShown(
+      ref.watch(sessionsShownProvider),
       sessions.length,
     );
     final headline = performanceHeadline(
@@ -113,7 +113,8 @@ class RankedPerformanceTrendsScreen extends ConsumerWidget {
               _SessionsShown(
                 choices: choices,
                 selected: window.size,
-                onChanged: (n) => ref.read(trendWindowProvider.notifier).set(n),
+                onChanged: (n) =>
+                    ref.read(sessionsShownProvider.notifier).set(n),
               ),
               const SizedBox(height: AppTheme.md),
             ],
@@ -193,7 +194,7 @@ class _SessionsShown extends StatelessWidget {
               ? choices.length
               : choices.indexOf(selected!),
           onChanged: (i) =>
-              onChanged(i < choices.length ? choices[i] : kTrendWindowAll),
+              onChanged(i < choices.length ? choices[i] : kSessionsShownAll),
         ),
       ],
     );

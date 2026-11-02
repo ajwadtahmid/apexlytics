@@ -40,16 +40,16 @@ TrendVerdict trendVerdict(double delta, {required double steadyBand}) =>
 
 /// How many of the latest sessions the trends can look at, and the one chosen
 /// when nothing has been picked.
-const kTrendWindowPresets = [5, 10, 25, 50];
-const kDefaultTrendWindow = 5;
+const kSessionsShownPresets = [5, 10, 25, 50];
+const kDefaultSessionsShown = 5;
 
 /// Saved in place of a count to mean every session.
-const kTrendWindowAll = 0;
+const kSessionsShownAll = 0;
 
 /// The counts on offer for [sessionCount] sessions: those with twice as many
 /// sessions behind them, so the latest N can be set against the N before.
-List<int> trendWindowChoices(int sessionCount) => [
-  for (final n in kTrendWindowPresets)
+List<int> sessionsShownChoices(int sessionCount) => [
+  for (final n in kSessionsShownPresets)
     if (n * 2 <= sessionCount) n,
 ];
 
@@ -60,10 +60,10 @@ List<int> trendWindowChoices(int sessionCount) => [
 /// A saved count that is too big for these sessions becomes the largest that
 /// fits. With too few sessions for any, everything is plotted and the default is
 /// kept as the comparison, so the page can say how many it needs.
-({int? size, int compare}) resolveTrendWindow(int saved, int sessionCount) {
-  final choices = trendWindowChoices(sessionCount);
-  if (choices.isEmpty) return (size: null, compare: kDefaultTrendWindow);
-  if (saved == kTrendWindowAll) return (size: null, compare: 0);
+({int? size, int compare}) resolveSessionsShown(int saved, int sessionCount) {
+  final choices = sessionsShownChoices(sessionCount);
+  if (choices.isEmpty) return (size: null, compare: kDefaultSessionsShown);
+  if (saved == kSessionsShownAll) return (size: null, compare: 0);
   final fits = choices.where((n) => n <= saved);
   final n = fits.isEmpty ? choices.first : fits.last;
   return (size: n, compare: n);
@@ -239,13 +239,13 @@ class PerformanceHeadline {
 PerformanceHeadline? performanceHeadline({
   required List<RankedSession> sessions,
   required List<PlayInsight> insights,
-  int window = kDefaultTrendWindow,
+  int window = kDefaultSessionsShown,
 }) {
   final everyGame = sessions.fold(0, (n, s) => n + s.games);
-  final average = window == kTrendWindowAll && everyGame > 0
+  final average = window == kSessionsShownAll && everyGame > 0
       ? sessions.fold(0, (n, s) => n + s.netRp) / everyGame
       : null;
-  final trend = window == kTrendWindowAll
+  final trend = window == kSessionsShownAll
       ? null
       : sessionTrend(
           sessions,
