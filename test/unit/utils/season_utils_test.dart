@@ -194,6 +194,35 @@ void main() {
       expect(weekDelta(snaps, week2, scopeStart: splitStart), 630);
     });
 
+    test('a later split\'s reset does not change a finished week', () {
+      final week1 = WeekRange(
+        start: splitStart,
+        end: splitStart.add(const Duration(days: 7)),
+      );
+      final inWeek = [
+        StatSnapshot(timestamp: splitStart, rp: 10000, seasonId: _prevSplit),
+        StatSnapshot(
+          timestamp: splitStart.add(const Duration(days: 1)),
+          rp: 5000,
+          seasonId: _newSplit,
+        ),
+        StatSnapshot(
+          timestamp: splitStart.add(const Duration(days: 2)),
+          rp: 5100,
+          seasonId: _newSplit,
+        ),
+      ];
+      final nextSplit = StatSnapshot(
+        timestamp: splitStart.add(const Duration(days: 32)),
+        rp: 2500,
+        seasonId: 'br_ranked_s99_s1',
+      );
+
+      // The week read +100 while it was the latest, and still does.
+      expect(weekDelta(inWeek, week1, scopeStart: splitStart), 100);
+      expect(weekDelta([...inWeek, nextSplit], week1, scopeStart: splitStart), 100);
+    });
+
     test('returns null when no snapshot is in scope at all', () {
       final snaps = [snap(const Duration(days: -1), _prevSplitFinalRp)];
       expect(

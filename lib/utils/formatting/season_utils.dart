@@ -96,15 +96,20 @@ List<StatSnapshot> snapshotsForWeek(List<StatSnapshot> all, WeekRange week) =>
 /// Timestamp just after a reset that landed inside [week], else null. A reset in
 /// an earlier week needs no handling — the pre-week baseline is already
 /// post-reset.
+///
+/// Only the readings up to the end of the week are looked at: a later reset (the
+/// next split) must not hide the one that happened inside this week, or a week
+/// long finished would change when the next split begins.
 DateTime? _resetInsideWeek(
   List<StatSnapshot> all,
   WeekRange week,
   DateTime? splitStart,
 ) {
-  final idx = lastResetIndex(all, splitStart: splitStart);
+  final upToWeekEnd = all.where((s) => s.timestamp.isBefore(week.end)).toList();
+  final idx = lastResetIndex(upToWeekEnd, splitStart: splitStart);
   if (idx == null) return null;
-  final at = all[idx].timestamp;
-  return (!at.isBefore(week.start) && at.isBefore(week.end)) ? at : null;
+  final at = upToWeekEnd[idx].timestamp;
+  return !at.isBefore(week.start) ? at : null;
 }
 
 /// RP gained during [week].
