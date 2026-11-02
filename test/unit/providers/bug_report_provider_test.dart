@@ -41,6 +41,11 @@ void main() {
     ),
   ];
 
+  BugReportRequest request(
+    BugReportChannel channel, [
+    bool includePlayer = false,
+  ]) => (channel: channel, includePlayer: includePlayer);
+
   String textOf(BugReport built) {
     final url = built.uri.toString();
     return Uri.decodeComponent(url.substring(url.indexOf('body=') + 5));
@@ -60,7 +65,7 @@ void main() {
           .read(playerSettingsProvider.notifier)
           .setPlayer('Aceu', '1006838015507', 'PS4');
     }
-    return textOf(await container.read(bugReportProvider(channel).future));
+    return textOf(await container.read(bugReportProvider(request(channel)).future));
   }
 
   test('carries the version, the diagnostics and the recent log', () async {
@@ -103,7 +108,7 @@ void main() {
     await settings.setNotifyPubsMapRotation(true);
 
     final text = textOf(
-      await container.read(bugReportProvider(BugReportChannel.github).future),
+      await container.read(bugReportProvider(request(BugReportChannel.github)).future),
     );
 
     expect(text, contains('Alerts on: Ranked 15 min\n'));
@@ -129,7 +134,7 @@ void main() {
         );
 
     final text = textOf(
-      await container.read(bugReportProvider(BugReportChannel.github).future),
+      await container.read(bugReportProvider(request(BugReportChannel.github)).future),
     );
 
     expect(text, isNot(contains('Aceu')));
@@ -183,11 +188,66 @@ void main() {
     );
 
     final built = await container.read(
-      bugReportProvider(BugReportChannel.email).future,
+      bugReportProvider(request(BugReportChannel.email)).future,
     );
     final text = textOf(built);
 
     expect(text, contains('App version: 1.4.0 (27)'));
     expect(text, contains('Match history: 7 games, 4 KB'));
+  });
+
+  group('the player the user chose to share', () {
+    Future<String> shared(BugReportChannel channel, bool includePlayer) async {
+      LogBuffer.instance.add('W', 'lookup for Aceu failed');
+      LogBuffer.instance.add('E', 'GET /bridge?uid=1006838015507 -> 500');
+      final (container, _) = await prefsContainer(overrides: overrides());
+      await container
+          .read(playerSettingsProvider.notifier)
+          .setPlayer('Aceu', '1006838015507', 'PS4');
+      return textOf(
+        await container.read(
+          bugReportProvider(request(channel, includePlayer)).future,
+        ),
+      );
+    }
+
+    test('nothing is shared unless asked', () async {
+      final text = await shared(BugReportChannel.github, false);
+
+      expect(text, isNot(contains('Player ID')));
+      expect(text, isNot(contains('1006838015507')));
+      expect(text, isNot(contains('Aceu')));
+    });
+
+    test('the ID, platform and name go in under the app version', () async {
+      final github = await shared(BugReportChannel.github, true);
+      expect(github, contains('**Player ID:** 1006838015507'));
+      expect(github, contains('**Player platform:** PS4'));
+      expect(github, contains('**Player name:** Aceu'));
+
+      final email = await shared(BugReportChannel.email, true);
+      expect(email, contains('Player ID: 1006838015507'));
+      expect(email, contains('Player platform: PS4'));
+      expect(email, contains('Player name: Aceu'));
+    });
+
+    test('the log still hides the player, even when it is shared', () async {
+      final text = await shared(BugReportChannel.email, true);
+      final log = text.substring(text.indexOf('Recent log'));
+
+      expect(log, isNot(contains('Aceu')));
+      expect(log, isNot(contains('1006838015507')));
+    });
+
+    test('with no player set there is nothing to share', () async {
+      final (container, _) = await prefsContainer(overrides: overrides());
+      final text = textOf(
+        await container.read(
+          bugReportProvider(request(BugReportChannel.github, true)).future,
+        ),
+      );
+
+      expect(text, isNot(contains('Player ID')));
+    });
   });
 }

@@ -18,10 +18,11 @@ import 'settings_provider.dart';
 import 'storage_usage_provider.dart';
 
 /// The bug report for a channel, built from what the app knows right now: its
-/// version, a few diagnostics, and the recent log. See [composeBugReport] for
-/// what is kept out and how the size is held down.
+/// version, a few diagnostics, and the recent log. It carries the user's own
+/// player only when the request says so. See [composeBugReport] for what is
+/// kept out and how the size is held down.
 final bugReportProvider = FutureProvider.autoDispose
-    .family<BugReport, BugReportChannel>((ref, channel) async {
+    .family<BugReport, BugReportRequest>((ref, request) async {
       // Read with no listener, so left alone it would be disposed while it
       // still waits on the system below. Held until the report is built, then
       // let go.
@@ -29,13 +30,14 @@ final bugReportProvider = FutureProvider.autoDispose
       // The same for the count it reads, which is also dropped when unwatched.
       ref.listen(storageUsageProvider, (_, _) {});
       try {
-        return await _buildReport(ref, channel);
+        return await _buildReport(ref, request);
       } finally {
         link.close();
       }
     });
 
-Future<BugReport> _buildReport(Ref ref, BugReportChannel channel) async {
+Future<BugReport> _buildReport(Ref ref, BugReportRequest request) async {
+  final channel = request.channel;
   final settings = ref.read(playerSettingsProvider);
   final prefs = ref.read(sharedPreferencesProvider);
 
@@ -97,6 +99,17 @@ Future<BugReport> _buildReport(Ref ref, BugReportChannel channel) async {
     lastBackup: ref.read(lastBackupProvider),
   );
 
+  // The user's own player, only when they chose to share it.
+  final active = settings.activeProfile;
+  final BugReportPlayer? player =
+      !request.includePlayer || active == null || !active.isSet
+      ? null
+      : (
+          uid: active.uid,
+          platform: active.platform,
+          name: active.name.isEmpty ? null : active.name,
+        );
+
   final search = ref.read(searchStateProvider);
   return composeBugReport(
     channel,
@@ -111,6 +124,7 @@ Future<BugReport> _buildReport(Ref ref, BugReportChannel channel) async {
       for (final p in settings.profiles) p.name,
       for (final r in [...search.favorites, ...search.recents]) r.query,
     ],
+    player: player,
     maxUrlLength: channel == BugReportChannel.email && Platform.isWindows
         ? kWindowsEmailUrlBudget
         : null,

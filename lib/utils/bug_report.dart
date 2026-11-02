@@ -9,6 +9,15 @@ import 'log_scrub.dart';
 /// Where a bug report is going.
 enum BugReportChannel { github, email }
 
+/// What a bug report is built for: where it goes, and whether the user chose
+/// to add their own player. The default is no: a report names no one unless
+/// they say so.
+typedef BugReportRequest = ({BugReportChannel channel, bool includePlayer});
+
+/// The user's own player, as they chose to share it. The name is null when the
+/// profile has none.
+typedef BugReportPlayer = ({String uid, String platform, String? name});
+
 /// How long the whole link may be (encoded), per channel. GitHub refuses links
 /// much past 8 000 characters, and Windows hands `mailto:` links to the mail
 /// app through a call that stops at about 2 000. Mobile and Linux mail apps
@@ -137,7 +146,9 @@ class BugReport {
 /// diagnostics come ahead of the log, and the log keeps its newest lines.
 ///
 /// Everything is passed through [scrubForReport] again here, with [names] (the
-/// saved profiles and favorites), which the log buffer cannot know.
+/// saved profiles and favorites), which the log buffer cannot know. [player] is
+/// the one exception: the user's own player, added by their choice as plain
+/// lines under the app version, never inside the log.
 BugReport composeBugReport(
   BugReportChannel channel, {
   required String version,
@@ -147,12 +158,21 @@ BugReport composeBugReport(
   required List<String> diagnostics,
   required List<LogEntry> logs,
   Iterable<String> names = const [],
+  BugReportPlayer? player,
   int? maxUrlLength,
 }) {
   final github = channel == BugReportChannel.github;
   final budget = maxUrlLength ?? (github ? kGithubUrlBudget : kEmailUrlBudget);
   final base = github ? _githubBase : _emailBase;
   int size(String s) => Uri.encodeComponent(s).length;
+
+  String field(String label, String value) =>
+      github ? '**$label:** $value' : '$label: $value';
+  final playerBlock = player == null
+      ? ''
+      : '\n${field('Player ID', player.uid)}'
+            '\n${field('Player platform', player.platform)}'
+            '${player.name == null ? '' : '\n${field('Player name', player.name!)}'}';
 
   final head = github
       ? '**Describe the bug**\n'
@@ -165,7 +185,7 @@ BugReport composeBugReport(
             '---\n\n'
             '**App version:** $version ($build)\n'
             '**Platform:** $platform\n'
-            '**OS version:** $osVersion'
+            '**OS version:** $osVersion$playerBlock'
       : 'Describe the bug:\n'
             '(What happened? What did you expect?)\n\n'
             'Steps to reproduce:\n'
@@ -176,7 +196,7 @@ BugReport composeBugReport(
             '---\n\n'
             'App version: $version ($build)\n'
             'Platform: $platform\n'
-            'OS version: $osVersion';
+            'OS version: $osVersion$playerBlock';
   var remaining = budget - base.length - size(head);
 
   String section(String title, List<String> lines) => github

@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/bug_report_provider.dart';
+import '../../providers/settings_provider.dart' show playerSettingsProvider;
 import '../../utils/bug_report.dart' show BugReportChannel;
 import '../../utils/onboarding.dart';
 import '../../utils/theme.dart';
@@ -90,7 +91,8 @@ class SettingsScreen extends ConsumerWidget {
 }
 
 /// Opens a bug report prefilled with the version, a few diagnostics and the
-/// recent log (see [bugReportProvider]).
+/// recent log (see [bugReportProvider]), after asking whether to add the
+/// user's own player.
 class _SupportRow extends ConsumerWidget {
   final IconData icon;
   final String label;
@@ -107,7 +109,26 @@ class _SupportRow extends ConsumerWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       onTap: () async {
-        final report = await ref.read(bugReportProvider(channel).future);
+        // Asked on every report, and only when there is a player to offer.
+        var includePlayer = false;
+        final active = ref.read(playerSettingsProvider).activeProfile;
+        if (active != null && active.isSet) {
+          final choice = await showBugReportPlayerDialog(
+            context,
+            channel: channel,
+            uid: active.uid,
+            platform: active.platform,
+            name: active.name,
+          );
+          if (choice == null || !context.mounted) return;
+          includePlayer = choice;
+        }
+        final report = await ref.read(
+          bugReportProvider((
+            channel: channel,
+            includePlayer: includePlayer,
+          )).future,
+        );
         if (!context.mounted) return;
         await openExternalLink(context, report.uri);
       },

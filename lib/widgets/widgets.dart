@@ -1,5 +1,6 @@
 library;
 
+export 'bug_report_player_dialog.dart';
 export 'confirm_dialog.dart';
 export 'control_pill.dart';
 export 'error_card.dart';
