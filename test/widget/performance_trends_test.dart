@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/screens/ranked/ranked_time_breakdown_screen.dart';
+import 'package:apexlytics/screens/ranked/ranked_performance_trends_screen.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 
 int _allTracked(int i) => 2;
@@ -63,7 +63,7 @@ void main() {
       tester,
       prefs: prefs,
       MaterialApp(
-        home: RankedTimeBreakdownScreen(
+        home: RankedPerformanceTrendsScreen(
           hourBuckets: [
             for (final h in [9, 19, 20])
               HourBucket(hourLocal: h, games: 12, netRp: h == 9 ? -36 : 60),
@@ -195,7 +195,7 @@ void main() {
             size: Size(320, 3000),
             textScaler: TextScaler.linear(1.3),
           ),
-          child: RankedTimeBreakdownScreen(
+          child: RankedPerformanceTrendsScreen(
             hourBuckets: const [],
             weekdayBuckets: const [],
             sessions: sessions([for (var i = 0; i < 10; i++) 10]),
@@ -262,7 +262,10 @@ void main() {
       await pumpScoped(
         tester,
         const MaterialApp(
-          home: RankedTimeBreakdownScreen(hourBuckets: [], weekdayBuckets: []),
+          home: RankedPerformanceTrendsScreen(
+            hourBuckets: [],
+            weekdayBuckets: [],
+          ),
         ),
       );
 
@@ -279,7 +282,7 @@ void main() {
       await pumpScoped(
         tester,
         MaterialApp(
-          home: RankedTimeBreakdownScreen(
+          home: RankedPerformanceTrendsScreen(
             hourBuckets: [
               const HourBucket(hourLocal: 19, games: 6, netRp: 60),
               const HourBucket(hourLocal: 9, games: 5, netRp: -25),

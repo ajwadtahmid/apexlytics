@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/trend_window_provider.dart';
 import '../../widgets/trend_arrow.dart';
-import '../../utils/formatting/format.dart' show formatNumber, formatPercent, formatShortDate, formatSigned, formatSignedInt, plural;
+import '../../utils/formatting/format.dart'
+    show
+        formatNumber,
+        formatPercent,
+        formatShortDate,
+        formatSigned,
+        formatSignedInt,
+        plural;
 import '../../utils/ranked/performance_insights.dart';
 import '../../utils/ranked/ranked_aggregates.dart';
 import '../../utils/theme.dart';
@@ -25,11 +32,11 @@ const _kDotsUpTo = 12;
 /// RP-focused cards there. [sessions] drives the sparklines and is expected
 /// empty at Lifetime scope (sessions are a split-relative concept — Lifetime
 /// never hydrates matches); the hour/day charts work at either scope.
-class RankedTimeBreakdownEntry extends StatelessWidget {
+class RankedPerformanceTrendsEntry extends StatelessWidget {
   final List<HourBucket> hourBuckets;
   final List<WeekdayBucket> weekdayBuckets;
   final List<RankedSession> sessions;
-  const RankedTimeBreakdownEntry({
+  const RankedPerformanceTrendsEntry({
     super.key,
     required this.hourBuckets,
     required this.weekdayBuckets,
@@ -42,14 +49,14 @@ class RankedTimeBreakdownEntry extends StatelessWidget {
       icon: Icons.schedule,
       title: 'Performance Trends',
       onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RankedTimeBreakdownScreen(
-              hourBuckets: hourBuckets,
-              weekdayBuckets: weekdayBuckets,
-              sessions: sessions,
-            ),
+        MaterialPageRoute(
+          builder: (_) => RankedPerformanceTrendsScreen(
+            hourBuckets: hourBuckets,
+            weekdayBuckets: weekdayBuckets,
+            sessions: sessions,
           ),
         ),
+      ),
     );
   }
 }
@@ -58,11 +65,11 @@ class RankedTimeBreakdownEntry extends StatelessWidget {
 /// day-of-week charts. The latter two take precomputed buckets, so they work
 /// unchanged at split or Lifetime scope; the sparklines need [sessions] and
 /// simply don't render without them.
-class RankedTimeBreakdownScreen extends ConsumerWidget {
+class RankedPerformanceTrendsScreen extends ConsumerWidget {
   final List<HourBucket> hourBuckets;
   final List<WeekdayBucket> weekdayBuckets;
   final List<RankedSession> sessions;
-  const RankedTimeBreakdownScreen({
+  const RankedPerformanceTrendsScreen({
     super.key,
     required this.hourBuckets,
     required this.weekdayBuckets,
@@ -264,10 +271,7 @@ class _SessionSparklines extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'RECENT TREND',
-                style: AppTheme.cardTitle,
-              ),
+              const Text('RECENT TREND', style: AppTheme.cardTitle),
               const SizedBox(width: AppTheme.sm),
               // Flexible, so a narrow screen or larger text shortens the range
               // instead of overflowing the row.
@@ -774,10 +778,7 @@ class _PlayTimeInsights extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'WHEN YOU PLAY BEST',
-              style: AppTheme.cardTitle,
-            ),
+            const Text('WHEN YOU PLAY BEST', style: AppTheme.cardTitle),
             const SizedBox(height: 2),
             Text(
               lowSample
@@ -812,10 +813,7 @@ class _InsightRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  insight.heading,
-                  style: AppTheme.captionSmall,
-                ),
+                Text(insight.heading, style: AppTheme.captionSmall),
                 Text(
                   insight.detail == null
                       ? insight.name

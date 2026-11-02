@@ -28,7 +28,7 @@ import 'ranked_share_screens.dart';
 import 'ranked_personal_records_screen.dart';
 import 'ranked_pick_rate_screen.dart';
 import 'ranked_sessions_list_screen.dart';
-import 'ranked_time_breakdown_screen.dart';
+import 'ranked_performance_trends_screen.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
 import 'widgets/ranked_highlight_cards.dart';
 import 'widgets/ranked_info_sheet.dart';
@@ -584,7 +584,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
                     Expanded(child: RankedPersonalBestEntry(uid: widget.uid)),
                     const SizedBox(width: AppTheme.sm),
                     Expanded(
-                      child: RankedTimeBreakdownEntry(
+                      child: RankedPerformanceTrendsEntry(
                         hourBuckets: agg.timeOfDay,
                         weekdayBuckets: agg.dayOfWeek,
                       ),
@@ -746,7 +746,7 @@ class _OverviewTab extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppTheme.sm),
                 Expanded(
-                  child: RankedTimeBreakdownEntry(
+                  child: RankedPerformanceTrendsEntry(
                     hourBuckets: data.timeOfDay,
                     weekdayBuckets: data.dayOfWeek,
                     sessions: data.sessions,

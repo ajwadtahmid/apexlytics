@@ -33,7 +33,7 @@ import 'widgets/ranked_share_cards.dart';
 /// Entry point for the Personal Records screen: standout single-game and
 /// win-streak stats, and the cards that can be shared. Hides itself when there
 /// are no ranked matches to draw records from. Session-over-session trends live
-/// on Performance Trends instead (see RankedTimeBreakdownScreen); this page is
+/// on Performance Trends instead (see RankedPerformanceTrendsScreen); this page is
 /// about peaks, not ongoing patterns.
 class RankedPersonalRecordsEntry extends StatelessWidget {
   final PlayerStats stats;

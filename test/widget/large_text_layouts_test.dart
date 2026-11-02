@@ -15,7 +15,7 @@ import 'package:apexlytics/screens/ranked/ranked_recap_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_recap_share_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_pick_rate_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
-import 'package:apexlytics/screens/ranked/ranked_time_breakdown_screen.dart';
+import 'package:apexlytics/screens/ranked/ranked_performance_trends_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/sessions_overview.dart';
 import 'package:apexlytics/screens/ranked/ranked_share_screens.dart';
@@ -536,7 +536,7 @@ void main() {
             ).copyWith(textScaler: const TextScaler.linear(2.0)),
             child: app!,
           ),
-          home: RankedTimeBreakdownScreen(
+          home: RankedPerformanceTrendsScreen(
             hourBuckets: const [
               HourBucket(hourLocal: 19, games: 14, netRp: 120),
               HourBucket(hourLocal: 9, games: 12, netRp: -48),
