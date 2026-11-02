@@ -112,6 +112,59 @@ void main() {
     expect(top('Octane'), lessThan(top('Bangalore')));
   });
 
+  testWidgets('a tie on the chosen measure is never both strongest and weakest', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    // Win rate with no wins anywhere: every legend and map sits at 0%.
+    RankedAgg lossesOn(String legend, String map) => RankedAgg()
+      ..addAll([
+        for (var i = 0; i < 4; i++)
+          buildMatch(
+            legend: legend,
+            map: map,
+            rp: -10,
+            start: 1782090000 + i * 5000,
+          ),
+      ]);
+    final legends = [
+      for (final name in ['Axle', 'Wraith', 'Bangalore', 'Octane'])
+        lossesOn(name, 'olympus_rotation').toLegend(name),
+    ];
+    final maps = [
+      lossesOn('Axle', 'olympus_rotation').toMap('olympus_rotation', 'Olympus'),
+      lossesOn(
+        'Axle',
+        'storm_point_rotation',
+      ).toMap('storm_point_rotation', 'Storm Point'),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RankedOverviewHighlights(
+              legends: legends,
+              maps: maps,
+              legendMatchesFor: (_) async => const [],
+              mapMatchesFor: (_) async => const [],
+              onRefresh: () async {},
+              metric: BestMetric.winRate,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('STRONGEST LEGENDS'), findsOneWidget);
+    expect(find.text('WEAKEST LEGENDS'), findsNothing);
+    expect(find.text('STRONGEST MAP'), findsOneWidget);
+    expect(find.text('WEAKEST MAP'), findsNothing);
+  });
+
   group('the ranking figure', () {
     // One legend and one map, each with games, kills and damage.
     RankedAgg games(String legend, String map, int rp) => RankedAgg()

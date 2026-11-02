@@ -68,7 +68,16 @@ class RankedOverviewHighlights extends StatelessWidget {
     final worstCount = n >= 2 ? (n >= 4 ? 2 : 1) : 0;
     final bestCount = (n - worstCount).clamp(0, 2);
     final best = legendsRanked.take(bestCount).toList();
-    final worst = legendsRanked.sublist(n - worstCount).reversed.toList();
+    // A legend is only the weakest if it is really below the strongest ones: on
+    // a tie (every legend at 0% wins, say) it would appear in both lists.
+    final floor = best.isEmpty
+        ? null
+        : best.map((l) => metric.valueOf(l)!).reduce(math.min);
+    final worst = [
+      for (final l in legendsRanked.sublist(n - worstCount).reversed)
+        if (floor == null || metric.valueOf(l)! < floor) l,
+    ];
+    final mapPick = bestAndWorst(mapsRanked, metric);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,17 +96,17 @@ class RankedOverviewHighlights extends StatelessWidget {
           const _SectionLabel('Maps'),
           _MapHighlight(
             label: 'Strongest Map',
-            map: mapsRanked.first,
+            map: mapPick.best!,
             metric: metric,
             matchesFor: mapMatchesFor,
             onRefresh: onRefresh,
             sessionPool: sessionPool,
           ),
-          if (mapsRanked.length > 1) ...[
+          if (mapPick.worst != null) ...[
             const SizedBox(height: AppTheme.sm),
             _MapHighlight(
               label: 'Weakest Map',
-              map: mapsRanked.last,
+              map: mapPick.worst!,
               metric: metric,
               matchesFor: mapMatchesFor,
               onRefresh: onRefresh,
