@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:apexlytics/screens/ranked/ranked_recap_screen.dart';
-import 'package:apexlytics/screens/ranked/ranked_share_screens.dart';
+import 'package:apexlytics/screens/ranked/ranked_recap_entry.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_share_cards.dart';
 import 'package:apexlytics/utils/ranked/best_metric.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';

@@ -18,7 +18,7 @@ import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_performance_trends_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/sessions_overview.dart';
-import 'package:apexlytics/screens/ranked/ranked_share_screens.dart';
+import 'package:apexlytics/screens/ranked/ranked_recap_entry.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_share_cards.dart';
 import 'package:apexlytics/utils/ranked/split_recap.dart';
 import 'package:apexlytics/widgets/share_card.dart';
