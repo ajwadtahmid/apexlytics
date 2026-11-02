@@ -121,6 +121,15 @@ flutter:
     - assets/logos/logo_transparent.png
     - LICENSE
 
+# The SQLite FFI binding is used on desktop and in tests only; Android uses
+# sqflite's own native database. Without this the build still bundles a
+# libsqlite3.so (about 1.7 MB) per Android architecture that is never opened.
+hooks:
+  user_defines:
+    sqlite3:
+      source:
+        android: system
+
 # No dependency_overrides. permission_handler_android was pinned to 13.0.1
 # because 14.0.0 needs compileSdk 37; that is now set explicitly in
 # android/app/build.gradle.kts and AGP 9.3.0 resolves it, so the pin is gone.
