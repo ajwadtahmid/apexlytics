@@ -39,6 +39,7 @@ void main() {
           '/player/uid',
           params: any(named: 'params'),
           noCache: any(named: 'noCache'),
+          isCacheable: any(named: 'isCacheable'),
         ),
       ).thenAnswer((_) async => ApiResult(fakeStatsJson));
 
@@ -53,6 +54,7 @@ void main() {
           '/player/uid',
           params: any(named: 'params'),
           noCache: any(named: 'noCache'),
+          isCacheable: any(named: 'isCacheable'),
         ),
       ).thenThrow(Exception('Invalid response'));
 
@@ -65,6 +67,7 @@ void main() {
           '/player/uid',
           params: any(named: 'params'),
           noCache: any(named: 'noCache'),
+          isCacheable: any(named: 'isCacheable'),
         ),
       ).thenAnswer((_) async => ApiResult(body));
     }
@@ -124,7 +127,11 @@ void main() {
 
     test('returns PlayerStats when API succeeds', () async {
       when(
-        () => mockApi.get('/player', params: any(named: 'params')),
+        () => mockApi.get(
+          '/player',
+          params: any(named: 'params'),
+          isCacheable: any(named: 'isCacheable'),
+        ),
       ).thenAnswer((_) async => ApiResult(fakeStatsJson));
 
       final result = await service.getPlayerStats('Player2', 'PS4');
@@ -133,7 +140,11 @@ void main() {
 
     test('an Error body names the name, not the UID', () async {
       when(
-        () => mockApi.get('/player', params: any(named: 'params')),
+        () => mockApi.get(
+          '/player',
+          params: any(named: 'params'),
+          isCacheable: any(named: 'isCacheable'),
+        ),
       ).thenAnswer((_) async => const ApiResult({'Error': 'Player not found'}));
 
       await expectLater(

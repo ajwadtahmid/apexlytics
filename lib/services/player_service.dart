@@ -22,6 +22,17 @@ class PlayerService {
   static String _cacheName(String playerName) =>
       playerName.trim().toLowerCase();
 
+  /// Whether [data] is a player worth keeping as the offline copy: one that
+  /// [_parseFresh] accepts. A body that is not (an empty object, say) is
+  /// rejected as not found, and must not replace the last good copy first.
+  static bool _isPlayerBody(Map<String, dynamic> data) {
+    try {
+      return PlayerStats.fromJson(data).uid.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Parses a fresh player body. An unknown player arrives as a 200 with
   /// `{"Error": ...}`, and a body with no uid is not a player; both throw.
   static PlayerStats _parseFresh(
@@ -54,6 +65,7 @@ class PlayerService {
     final result = await _api.get(
       ApiConstants.playerPath,
       params: {'player': _cacheName(playerName), 'platform': platform},
+      isCacheable: _isPlayerBody,
     );
     log.d('Player stats fetched by name, stale=${result.staleAt != null}');
     return ApiResult(
@@ -123,6 +135,7 @@ class PlayerService {
     final result = await _api.get(
       ApiConstants.playerUidPath,
       params: {'uid': uid, 'platform': platform},
+      isCacheable: _isPlayerBody,
     );
     log.d('Player stats fetched by UID, stale=${result.staleAt != null}');
     return ApiResult(

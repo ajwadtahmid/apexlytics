@@ -99,10 +99,15 @@ class ApiService {
   /// data if available; a definite answer (404, 401…) is thrown. Otherwise re-throws a
   /// friendly message.
   /// Pass [noCache] = true to skip both read and write (e.g. search-by-name).
+  ///
+  /// [isCacheable], when given, must also approve a body before it is saved: a
+  /// body that is not what the endpoint should return would otherwise replace
+  /// the last good copy, which the offline fallback then serves.
   Future<ApiResult<Map<String, dynamic>>> get(
     String endpoint, {
     Map<String, dynamic>? params,
     bool noCache = false,
+    bool Function(Map<String, dynamic> body)? isCacheable,
   }) => _request(
     endpoint,
     params: params,
@@ -120,7 +125,10 @@ class ApiService {
     // or that is the upstream API's own `{"Error": ...}` is not a response
     // worth keeping: saved, it would replace the last good copy, and the
     // offline fallback would then serve it as the player's stats.
-    cacheable: (d) => d is Map<String, dynamic> && !d.containsKey('Error'),
+    cacheable: (d) =>
+        d is Map<String, dynamic> &&
+        !d.containsKey('Error') &&
+        (isCacheable?.call(d) ?? true),
   );
 
   /// Fetches [endpoint] expecting a list response and caches the result.
