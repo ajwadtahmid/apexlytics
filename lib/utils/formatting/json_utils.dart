@@ -1,5 +1,13 @@
 import 'dart:convert';
 
+/// The largest epoch-millisecond value a `DateTime` can hold.
+const int kMaxEpochMs = 8640000000000000;
+
+/// [v] as epoch milliseconds, or null when it is not a number a `DateTime` can
+/// hold (a non-finite or out-of-range one makes the constructor throw).
+int? asEpochMs(Object? v) =>
+    v is num && v.isFinite && v.abs() <= kMaxEpochMs ? v.toInt() : null;
+
 /// [v] as a JSON object, or null for anything else. A PHP-backed API sends an
 /// empty object as `[]`, which must read as absent, not throw.
 Map<String, dynamic>? asObject(Object? v) =>

@@ -2,6 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:apexlytics/models/season_meta.dart';
 
 void main() {
+  group('SeasonMeta.fromJson with a time DateTime cannot hold', () {
+    Map<String, dynamic> entry(Object? start, Object? end) => {
+      'id': 'br_ranked_s30_s2',
+      'start': start,
+      'end': end,
+    };
+
+    test('is skipped, not thrown', () {
+      expect(SeasonMeta.fromJson(entry(1e20, 1782000000000)), isNull);
+      expect(SeasonMeta.fromJson(entry(1782000000000, -1e20)), isNull);
+      expect(SeasonMeta.fromJson(entry(double.infinity, 1782000000000)), isNull);
+      expect(SeasonMeta.fromJson(entry(double.nan, 1782000000000)), isNull);
+    });
+
+    test('a normal entry still reads', () {
+      expect(SeasonMeta.fromJson(entry(1780000000000, 1790000000000)), isNotNull);
+    });
+  });
+
   group('SeasonMeta.fromApi displayName', () {
     test('formats a well-formed split id', () {
       final season = SeasonMeta.fromApi(

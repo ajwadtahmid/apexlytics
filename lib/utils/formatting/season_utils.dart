@@ -18,9 +18,18 @@ class WeekRange {
 /// so the stored column and the picker's "Unknown" bucket always line up.
 const String kUnknownSeasonId = '__unknown__';
 
+/// Whether [s] spans a believable split: it ends after it starts, and within
+/// the [kMaxWeeksPerSplit] cap [computeWeeks] already applies. A window outside
+/// that is corrupt or hostile, and — since a match's split is a one-way upgrade
+/// — would misfile every unclassified match it happened to cover for good.
+bool isPlausibleSeasonWindow(SeasonMeta s) =>
+    s.end.isAfter(s.start) &&
+    s.end.difference(s.start) <= const Duration(days: 7 * kMaxWeeksPerSplit);
+
 /// The season/split id whose window contains [endTime], or [kUnknownSeasonId] when
 /// no known season covers it. A match belongs to the season its *end* time falls
-/// in — the same rule the ranked views use to bucket matches.
+/// in — the same rule the ranked views use to bucket matches. A window that is
+/// not [isPlausibleSeasonWindow] is never matched.
 ///
 /// Picks the latest-starting match if two windows somehow overlap — same
 /// tie-break as `ranked_period.dart`'s `_currentSeasonByDate`. Matters more
@@ -29,6 +38,7 @@ const String kUnknownSeasonId = '__unknown__';
 String seasonIdForEndTime(DateTime endTime, Iterable<SeasonMeta> seasons) {
   SeasonMeta? best;
   for (final s in seasons) {
+    if (!isPlausibleSeasonWindow(s)) continue;
     if (!endTime.isBefore(s.start) && endTime.isBefore(s.end)) {
       if (best == null || s.start.isAfter(best.start)) best = s;
     }

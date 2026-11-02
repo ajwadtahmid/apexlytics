@@ -403,6 +403,34 @@ void main() {
       expect(seasonIdForEndTime(DateTime.utc(2024, 2, 15), [s1, s2]), s2.id);
     });
 
+    test('never matches a window that is not believable', () {
+      final tooLong = SeasonMeta(
+        id: 'br_ranked_s2_s1',
+        displayName: 'since the epoch',
+        start: DateTime.utc(1970),
+        end: DateTime.utc(2030),
+      );
+      final reversed = SeasonMeta(
+        id: 'br_ranked_s2_s2',
+        displayName: 'backwards',
+        start: DateTime.utc(2024, 3, 1),
+        end: DateTime.utc(2024, 1, 1),
+      );
+      final empty = SeasonMeta(
+        id: 'br_ranked_s2_s3',
+        displayName: 'nothing',
+        start: DateTime.utc(2024, 1, 1),
+        end: DateTime.utc(2024, 1, 1),
+      );
+      final endTime = DateTime.utc(2024, 1, 15);
+
+      expect(
+        seasonIdForEndTime(endTime, [tooLong, reversed, empty]),
+        kUnknownSeasonId,
+      );
+      expect(seasonIdForEndTime(endTime, [tooLong, s1]), s1.id);
+    });
+
     test('returns kUnknownSeasonId when no window covers endTime', () {
       expect(
         seasonIdForEndTime(DateTime.utc(2023, 12, 1), [s1, s2]),

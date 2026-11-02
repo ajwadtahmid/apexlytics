@@ -605,6 +605,20 @@ void main() {
     expect(counts[kUnknownSeasonId], isNull);
   });
 
+  test('a window that is not believable files no match under it', () async {
+    final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+    addTearDown(store.close);
+    // About six years: covers every test match, but is no real split.
+    final tooLong = season('br_ranked_s1_s1', 0, 200000000);
+
+    await store.upsertAll('1', [match('1', 100)], seasons: {'s1': tooLong});
+    expect((await store.seasonCounts('1'))['br_ranked_s1_s1'], isNull);
+
+    await store.upsertAll('1', [match('1', 900)]);
+    await store.backfillSeasonIds({'s1': tooLong});
+    expect((await store.seasonCounts('1'))['br_ranked_s1_s1'], isNull);
+  });
+
   test('backfillSeasonIds leaves a row outside every known window alone, and '
       'still classifies it once a window covering it is learned', () async {
     final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);

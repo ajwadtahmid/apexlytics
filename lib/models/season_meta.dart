@@ -1,3 +1,5 @@
+import '../utils/formatting/json_utils.dart' show asEpochMs;
+
 class SeasonMeta {
   final String id;
   final String displayName;
@@ -75,12 +77,16 @@ class SeasonMeta {
     final start = json['start'];
     final end = json['end'];
     if (id is! String || id.isEmpty) return null;
-    if (start is! num || end is! num) return null;
+    // A number DateTime cannot hold would throw from the constructor and, in
+    // the callers, take down every season: this entry is skipped instead.
+    final startMs = asEpochMs(start);
+    final endMs = asEpochMs(end);
+    if (startMs == null || endMs == null) return null;
     return SeasonMeta(
       id: id,
       displayName: parseDisplayName(id),
-      start: DateTime.fromMillisecondsSinceEpoch(start.toInt()),
-      end: DateTime.fromMillisecondsSinceEpoch(end.toInt()),
+      start: DateTime.fromMillisecondsSinceEpoch(startMs),
+      end: DateTime.fromMillisecondsSinceEpoch(endMs),
     );
   }
 
