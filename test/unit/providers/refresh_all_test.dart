@@ -6,11 +6,9 @@ import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/refresh_all_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/services/games_service.dart';
 import 'package:apexlytics/services/player_service.dart';
 import 'package:apexlytics/utils/error_messages.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/utils/storage/legend_stats_storage.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:apexlytics/utils/storage/rp_snapshot_storage.dart';
@@ -54,7 +52,6 @@ const c = PlayerProfile(name: 'Charlie', uid: '1000000003', platform: 'PC');
 void main() {
   setUpAll(useFfiDatabase);
 
-  var dbCounter = 0;
   late RankedHistoryStore store;
   late SharedPreferences prefs;
   late MockGamesService games;
@@ -91,15 +88,7 @@ void main() {
             const FakeReply(404, {'error': 'Player not found'});
       },
     });
-    players = PlayerService(
-      ApiService(
-        ApiCacheStore(
-          overridePath:
-              'file:refresh_all_${dbCounter++}?mode=memory&cache=shared',
-        ),
-        httpClientAdapter: adapter,
-      ),
-    );
+    players = PlayerService(isolatedApiService(adapter));
     for (final p in [a, b, c]) {
       when(() => games.getMatches(p.uid, forceTracking: true)).thenAnswer(
         (_) async => GamesMatches([match(p.uid, 1000), match(p.uid, 2000)]),

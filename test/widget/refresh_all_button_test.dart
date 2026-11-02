@@ -5,8 +5,6 @@ import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/stats/stats_screen.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -61,8 +59,6 @@ class _HoldsSecondProfile extends FakeHttpAdapter {
 void main() {
   setUpAll(useFfiDatabase);
 
-  var dbCounter = 0;
-
   Future<void> settle(WidgetTester t) async {
     for (var i = 0; i < 6; i++) {
       await t.runAsync(
@@ -110,13 +106,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
         rankedHistoryStoreProvider.overrideWithValue(store),
         apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:refresh_btn_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: adapter ?? _adapter(),
-          ),
+          isolatedApiService(adapter ?? _adapter()),
         ),
       ],
     );

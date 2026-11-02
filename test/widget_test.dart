@@ -7,8 +7,6 @@ import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/search_screen.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/widgets/player_lookup_form.dart';
 
 import 'helpers.dart';
@@ -21,21 +19,6 @@ Future<SharedPreferences> _prefsUidWarningSeen() async {
   });
   return SharedPreferences.getInstance();
 }
-
-// Bare `inMemoryDatabasePath` (':memory:') opens in shared-cache mode under
-// sqflite_common_ffi, so every store using that literal path in this process
-// would alias to the *same* database — a uniquely-named in-memory URI per
-// call keeps each test's ApiService genuinely isolated (see api_cache_test.dart).
-var _apiCacheDbCounter = 0;
-
-/// A fresh, isolated ApiService for one test — its cache store is an
-/// in-memory sqlite db (see setUpAll), not the real api_cache.db, and its transport is [adapter].
-ApiService _buildApiService([FakeHttpAdapter? adapter]) => ApiService(
-  ApiCacheStore(
-    overridePath: 'file:widget_test_api_cache_${_apiCacheDbCounter++}?mode=memory&cache=shared',
-  ),
-  httpClientAdapter: adapter ?? FakeHttpAdapter(),
-);
 
 /// Wraps [widget] in the minimal scaffolding needed for Riverpod + Material.
 Widget _wrap(Widget widget, SharedPreferences prefs) {
@@ -64,7 +47,7 @@ void main() {
   group('App smoke test', () {
     testWidgets('renders MaterialApp without exception', (tester) async {
       final adapter = FakeHttpAdapter();
-      final apiService = _buildApiService(adapter);
+      final apiService = isolatedApiService(adapter);
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -195,7 +178,7 @@ void main() {
 
   group('SearchScreen', () {
     testWidgets('renders search form on load', (tester) async {
-      final apiService = _buildApiService();
+      final apiService = isolatedApiService();
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -220,7 +203,7 @@ void main() {
     });
 
     testWidgets('ignores empty search submission', (tester) async {
-      final apiService = _buildApiService();
+      final apiService = isolatedApiService();
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -255,7 +238,7 @@ void main() {
       tester,
     ) async {
       final uidPrefs = await _prefsUidWarningSeen();
-      final apiService = _buildApiService();
+      final apiService = isolatedApiService();
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(uidPrefs),
@@ -288,7 +271,7 @@ void main() {
     testWidgets('switching to UID mode clears the bar, and switching back '
         'restores the typed name', (tester) async {
       final uidPrefs = await _prefsUidWarningSeen();
-      final apiService = _buildApiService();
+      final apiService = isolatedApiService();
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(uidPrefs),

@@ -5,17 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/utils/error_messages.dart';
-
-/// Builds a [ProviderContainer] backed by an in-memory [SharedPreferences].
-Future<ProviderContainer> makeContainer([
-  Map<String, Object> initialPrefs = const {},
-]) async {
-  SharedPreferences.setMockInitialValues(initialPrefs);
-  final prefs = await SharedPreferences.getInstance();
-  return ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-  );
-}
+import '../../helpers.dart';
 
 void main() {
   group('PlayerSettingsNotifier', () {
@@ -23,14 +13,15 @@ void main() {
       'a wrongly-typed stored value reads as absent instead of throwing',
       () async {
         // What an older build's unchecked backup restore could leave behind.
-        final container = await makeContainer({
-          PrefsKeys.activeProfileIndex: '0',
-          PrefsKeys.keepScreenOn: 1,
-          PrefsKeys.statsRefreshMinutes: 'ten',
-          PrefsKeys.defaultTab: true,
-          PrefsKeys.profiles: 5,
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            PrefsKeys.activeProfileIndex: '0',
+            PrefsKeys.keepScreenOn: 1,
+            PrefsKeys.statsRefreshMinutes: 'ten',
+            PrefsKeys.defaultTab: true,
+            PrefsKeys.profiles: 5,
+          },
+        );
 
         final settings = container.read(playerSettingsProvider);
         expect(settings.activeProfileIndex, 0);
@@ -42,14 +33,12 @@ void main() {
     );
 
     test('initial state has no player set', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
       expect(container.read(playerSettingsProvider).isPlayerSet, isFalse);
     });
 
     test('setPlayer persists name, uid, and platform', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
 
       await container
           .read(playerSettingsProvider.notifier)
@@ -63,8 +52,7 @@ void main() {
     });
 
     test('setPlayer updates existing profile', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
 
       await container
           .read(playerSettingsProvider.notifier)
@@ -79,8 +67,7 @@ void main() {
     });
 
     test('setDefaultTab updates and persists tab index', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
 
       await container.read(playerSettingsProvider.notifier).setDefaultTab(2);
 
@@ -88,8 +75,7 @@ void main() {
     });
 
     test('setStatsRefreshMinutes updates value', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
 
       await container
           .read(playerSettingsProvider.notifier)
@@ -100,8 +86,7 @@ void main() {
 
     group('stats refresh interval', () {
       test('a fresh install inherits the 10-minute default', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
 
         expect(
           container.read(playerSettingsProvider).statsRefreshMinutes,
@@ -110,15 +95,17 @@ void main() {
       });
 
       test('an explicit Manual choice survives the new default', () async {
-        final container = await makeContainer({'stats_refresh_minutes': 0});
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'stats_refresh_minutes': 0},
+        );
 
         expect(container.read(playerSettingsProvider).statsRefreshMinutes, 0);
       });
 
       test('a retired interval is clamped and rewritten', () async {
-        final container = await makeContainer({'stats_refresh_minutes': 20});
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'stats_refresh_minutes': 20},
+        );
 
         expect(container.read(playerSettingsProvider).statsRefreshMinutes, 15);
 
@@ -129,8 +116,9 @@ void main() {
       });
 
       test('a still-valid interval is left alone', () async {
-        final container = await makeContainer({'stats_refresh_minutes': 5});
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'stats_refresh_minutes': 5},
+        );
 
         expect(container.read(playerSettingsProvider).statsRefreshMinutes, 5);
       });
@@ -151,8 +139,7 @@ void main() {
     });
 
     test('setKeepScreenOn toggles value', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
 
       await container
           .read(playerSettingsProvider.notifier)
@@ -162,8 +149,7 @@ void main() {
     });
 
     test('the Low Power Mode banner is on until it is turned off', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
       expect(container.read(playerSettingsProvider).lowPowerWarning, isTrue);
 
       await container
@@ -175,16 +161,14 @@ void main() {
 
     test('state is loaded from pre-existing prefs', () async {
       // Simulate pre-existing SharedPreferences (e.g. after app restart).
-      final container = await makeContainer({'default_tab': 3});
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer(values: {'default_tab': 3});
 
       expect(container.read(playerSettingsProvider).defaultTab, 3);
     });
 
     group('duplicate UID guard', () {
       test('addProfile refuses a UID already saved', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -198,8 +182,7 @@ void main() {
       });
 
       test('the refusal names the profile already holding the UID', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -217,8 +200,7 @@ void main() {
       });
 
       test('addProfile still accepts a distinct UID', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -228,8 +210,7 @@ void main() {
       });
 
       test('updateProfile may keep its own UID', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -243,8 +224,7 @@ void main() {
       });
 
       test("updateProfile refuses another slot's UID", () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -262,8 +242,7 @@ void main() {
       });
 
       test('setPlayer refuses a UID held by an inactive slot', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('Aceu', 'uid1', 'PC');
@@ -280,8 +259,7 @@ void main() {
       test(
         'setPlayer may overwrite the active slot with its own UID',
         () async {
-          final container = await makeContainer();
-          addTearDown(container.dispose);
+          final (container, _) = await prefsContainer();
           final notifier = container.read(playerSettingsProvider.notifier);
 
           await notifier.setPlayer('Aceu', 'uid1', 'PC');
@@ -293,12 +271,13 @@ void main() {
       );
 
       test('an empty UID is never treated as a duplicate', () async {
-        final container = await makeContainer({
-          'player_profiles': jsonEncode([
-            {'name': 'Unresolved', 'uid': '', 'platform': 'PC'},
-          ]),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            'player_profiles': jsonEncode([
+              {'name': 'Unresolved', 'uid': '', 'platform': 'PC'},
+            ]),
+          },
+        );
         final notifier = container.read(playerSettingsProvider.notifier);
 
         await notifier.addProfile('AlsoUnresolved', '', 'PC');
@@ -314,8 +293,7 @@ void main() {
       ]);
 
       test('addProfile fills up to the cap and then refuses', () async {
-        final container = await makeContainer();
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
 
         for (var i = 0; i < PlayerSettingsNotifier.maxProfileCount; i++) {
@@ -351,19 +329,17 @@ void main() {
       });
 
       test('profiles saved under the old cap of 5 are all kept', () async {
-        final container = await makeContainer({
-          'player_profiles': profileJson(5),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'player_profiles': profileJson(5)},
+        );
 
         expect(container.read(playerSettingsProvider).profiles.length, 5);
       });
 
       test('a grandfathered install past the cap cannot add more', () async {
-        final container = await makeContainer({
-          'player_profiles': profileJson(5),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'player_profiles': profileJson(5)},
+        );
 
         await expectLater(
           container
@@ -376,10 +352,9 @@ void main() {
       });
 
       test('an install under the cap can still add up to it', () async {
-        final container = await makeContainer({
-          'player_profiles': profileJson(2),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'player_profiles': profileJson(2)},
+        );
 
         await container
             .read(playerSettingsProvider.notifier)
@@ -389,8 +364,9 @@ void main() {
       });
 
       test('the owner flag raises the add limit to the owner cap', () async {
-        final container = await makeContainer({PrefsKeys.ownerUnlocked: true});
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {PrefsKeys.ownerUnlocked: true},
+        );
         final notifier = container.read(playerSettingsProvider.notifier);
 
         for (var i = 0; i < PlayerSettingsNotifier.ownerMaxProfileCount; i++) {
@@ -408,12 +384,13 @@ void main() {
       });
 
       test('stored profiles beyond the owner cap are truncated', () async {
-        final container = await makeContainer({
-          'player_profiles': profileJson(
-            PlayerSettingsNotifier.ownerMaxProfileCount + 3,
-          ),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            'player_profiles': profileJson(
+              PlayerSettingsNotifier.ownerMaxProfileCount + 3,
+            ),
+          },
+        );
 
         expect(
           container.read(playerSettingsProvider).profiles.length,
@@ -422,10 +399,9 @@ void main() {
       });
 
       test('a profile set saved under the old cap of 3 still loads', () async {
-        final container = await makeContainer({
-          'player_profiles': profileJson(3),
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {'player_profiles': profileJson(3)},
+        );
 
         final profiles = container.read(playerSettingsProvider).profiles;
         expect(profiles.length, 3);
@@ -434,27 +410,26 @@ void main() {
     });
 
     test('profiles list starts empty', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
       expect(container.read(playerSettingsProvider).profiles, isEmpty);
     });
 
     test('activeProfile is null when no profiles exist', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
       expect(container.read(playerSettingsProvider).activeProfile, isNull);
     });
 
     test(
       'a negative stored active_profile_index is clamped to 0, not left to throw',
       () async {
-        final container = await makeContainer({
-          'player_profiles': jsonEncode([
-            {'name': 'P0', 'uid': '1000000000000', 'platform': 'PC'},
-          ]),
-          PrefsKeys.activeProfileIndex: -1,
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            'player_profiles': jsonEncode([
+              {'name': 'P0', 'uid': '1000000000000', 'platform': 'PC'},
+            ]),
+            PrefsKeys.activeProfileIndex: -1,
+          },
+        );
 
         final settings = container.read(playerSettingsProvider);
         expect(settings.activeProfileIndex, 0);
@@ -464,8 +439,7 @@ void main() {
 
     test('clearAll() resets UI prefs (defaultTab, statsRefreshMinutes, '
         'keepScreenOn)', () async {
-      final container = await makeContainer();
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer();
       final notifier = container.read(playerSettingsProvider.notifier);
 
       await notifier.setDefaultTab(2);
@@ -494,32 +468,33 @@ void main() {
         // One key of every shape the app persists, including the nine the old
         // enumerated clear() silently left behind.
         const uid = '1006838015507';
-        final container = await makeContainer({
-          PrefsKeys.profiles: '[{"name":"T","uid":"$uid","platform":"PC"}]',
-          PrefsKeys.activeProfileIndex: 0,
-          PrefsKeys.playerUid: uid,
-          PrefsKeys.searchFavorites: '[]',
-          PrefsKeys.recentSearches: '[]',
-          PrefsKeys.statsRefreshMinutes: 5,
-          PrefsKeys.keepScreenOn: true,
-          PrefsKeys.notifyRankedMapRotation: true,
-          PrefsKeys.rankedNotifyMinutes: 10,
-          PrefsKeys.favoriteRankedMapNames: '["World\'s Edge"]',
-          PrefsKeys.seasonHistory: '{}',
-          PrefsKeys.legendVisitStack: '[]',
-          PrefsKeys.snapshotKeyFor(uid): '[{"t":1,"rp":100}]',
-          PrefsKeys.legendStatsKeyFor(uid): '[]',
-          PrefsKeys.rankGoalKeyFor(uid): 3,
-          PrefsKeys.gamesNextSync(uid): 1770000000000,
-          PrefsKeys.gamesLastOutcome(uid): 'synced',
-          'api_cache:/player': '{}',
-          'api_cache_ts:/player': 1770000000000,
-          // The documented survivors.
-          PrefsKeys.onboardingVersion: 1,
-          PrefsKeys.uidSearchWarningShown: true,
-          PrefsKeys.rankedInfoCoachMarkShown: true,
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            PrefsKeys.profiles: '[{"name":"T","uid":"$uid","platform":"PC"}]',
+            PrefsKeys.activeProfileIndex: 0,
+            PrefsKeys.playerUid: uid,
+            PrefsKeys.searchFavorites: '[]',
+            PrefsKeys.recentSearches: '[]',
+            PrefsKeys.statsRefreshMinutes: 5,
+            PrefsKeys.keepScreenOn: true,
+            PrefsKeys.notifyRankedMapRotation: true,
+            PrefsKeys.rankedNotifyMinutes: 10,
+            PrefsKeys.favoriteRankedMapNames: '["World\'s Edge"]',
+            PrefsKeys.seasonHistory: '{}',
+            PrefsKeys.legendVisitStack: '[]',
+            PrefsKeys.snapshotKeyFor(uid): '[{"t":1,"rp":100}]',
+            PrefsKeys.legendStatsKeyFor(uid): '[]',
+            PrefsKeys.rankGoalKeyFor(uid): 3,
+            PrefsKeys.gamesNextSync(uid): 1770000000000,
+            PrefsKeys.gamesLastOutcome(uid): 'synced',
+            'api_cache:/player': '{}',
+            'api_cache_ts:/player': 1770000000000,
+            // The documented survivors.
+            PrefsKeys.onboardingVersion: 1,
+            PrefsKeys.uidSearchWarningShown: true,
+            PrefsKeys.rankedInfoCoachMarkShown: true,
+          },
+        );
         await container.read(playerSettingsProvider.notifier).clearAll();
 
         final prefs = await SharedPreferences.getInstance();
@@ -532,8 +507,9 @@ void main() {
     );
 
     test('clearAll() drops the owner flag unless asked to keep it', () async {
-      final container = await makeContainer({PrefsKeys.ownerUnlocked: true});
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer(
+        values: {PrefsKeys.ownerUnlocked: true},
+      );
       await container.read(playerSettingsProvider.notifier).clearAll();
 
       final prefs = await SharedPreferences.getInstance();
@@ -543,12 +519,13 @@ void main() {
     test(
       'clearAll(keepOwnerUnlock: true) also spares the owner flag',
       () async {
-        final container = await makeContainer({
-          PrefsKeys.ownerUnlocked: true,
-          PrefsKeys.keepScreenOn: true,
-          PrefsKeys.onboardingVersion: 1,
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            PrefsKeys.ownerUnlocked: true,
+            PrefsKeys.keepScreenOn: true,
+            PrefsKeys.onboardingVersion: 1,
+          },
+        );
         await container
             .read(playerSettingsProvider.notifier)
             .clearAll(keepOwnerUnlock: true);
@@ -562,16 +539,17 @@ void main() {
 
     test('clearProfilesAndFavorites() keeps settings and history', () async {
       const uid = '1006838015507';
-      final container = await makeContainer({
-        PrefsKeys.profiles: '[{"name":"T","uid":"$uid","platform":"PC"}]',
-        PrefsKeys.activeProfileIndex: 0,
-        PrefsKeys.playerUid: uid,
-        PrefsKeys.searchFavorites: '[{"query":"x","platform":"PC"}]',
-        PrefsKeys.statsRefreshMinutes: 5,
-        PrefsKeys.snapshotKeyFor(uid): '[{"t":1,"rp":100}]',
-        PrefsKeys.rankGoalKeyFor(uid): 3,
-      });
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer(
+        values: {
+          PrefsKeys.profiles: '[{"name":"T","uid":"$uid","platform":"PC"}]',
+          PrefsKeys.activeProfileIndex: 0,
+          PrefsKeys.playerUid: uid,
+          PrefsKeys.searchFavorites: '[{"query":"x","platform":"PC"}]',
+          PrefsKeys.statsRefreshMinutes: 5,
+          PrefsKeys.snapshotKeyFor(uid): '[{"t":1,"rp":100}]',
+          PrefsKeys.rankGoalKeyFor(uid): 3,
+        },
+      );
       await container
           .read(playerSettingsProvider.notifier)
           .clearProfilesAndFavorites();
@@ -595,7 +573,7 @@ void main() {
         List<(String, String, String)> profiles, {
         int active = 0,
       }) async {
-        final container = await makeContainer();
+        final (container, _) = await prefsContainer();
         final notifier = container.read(playerSettingsProvider.notifier);
         for (final (name, uid, platform) in profiles) {
           await notifier.addProfile(name, uid, platform);
@@ -614,7 +592,6 @@ void main() {
             ('B', 'uidB', 'PC'),
             ('C', 'uidC', 'PC'),
           ], active: 1);
-          addTearDown(container.dispose);
           final notifier = container.read(playerSettingsProvider.notifier);
 
           await notifier.removeProfile(0);
@@ -633,7 +610,6 @@ void main() {
             ('B', 'uidB', 'PC'),
             ('C', 'uidC', 'PC'),
           ], active: 1);
-          addTearDown(container.dispose);
           final notifier = container.read(playerSettingsProvider.notifier);
 
           await notifier.removeProfile(1);
@@ -652,7 +628,6 @@ void main() {
             ('B', 'uidB', 'PC'),
             ('C', 'uidC', 'PC'),
           ], active: 1);
-          addTearDown(container.dispose);
           final notifier = container.read(playerSettingsProvider.notifier);
 
           await notifier.removeProfile(2);
@@ -669,7 +644,6 @@ void main() {
           final container = await containerWithProfiles([
             ('A', 'uidA', 'PC'),
           ], active: 0);
-          addTearDown(container.dispose);
           final notifier = container.read(playerSettingsProvider.notifier);
 
           await notifier.removeProfile(0);

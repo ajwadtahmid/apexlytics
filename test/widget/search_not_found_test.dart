@@ -1,8 +1,6 @@
 import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/player_result_page.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,8 +10,6 @@ import '../helpers.dart';
 
 void main() {
   setUpAll(useFfiDatabase);
-
-  var dbCounter = 0;
 
   Future<FakeHttpAdapter> open(
     WidgetTester t, {
@@ -26,15 +22,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:not_found_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: adapter,
-          ),
-        ),
+        apiServiceProvider.overrideWithValue(isolatedApiService(adapter)),
       ],
     );
     addTearDown(container.dispose);
@@ -149,13 +137,7 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           apiServiceProvider.overrideWithValue(
-            ApiService(
-              ApiCacheStore(
-                overridePath:
-                    'file:not_found_${dbCounter++}?mode=memory&cache=shared',
-              ),
-              httpClientAdapter: FakeHttpAdapter(),
-            ),
+            isolatedApiService(FakeHttpAdapter()),
           ),
         ],
       );
@@ -212,12 +194,8 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           apiServiceProvider.overrideWithValue(
-            ApiService(
-              ApiCacheStore(
-                overridePath:
-                    'file:not_found_${dbCounter++}?mode=memory&cache=shared',
-              ),
-              httpClientAdapter: FakeHttpAdapter({
+            isolatedApiService(
+              FakeHttpAdapter({
                 '/player': const FakeReply(500, {'error': 'boom'}),
               }),
             ),

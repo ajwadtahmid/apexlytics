@@ -1,24 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/navigation_provider.dart';
-import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../helpers.dart';
 
 Future<ProviderContainer> containerWithProfile({
   required bool hasProfile,
 }) async {
-  SharedPreferences.setMockInitialValues(
-    hasProfile
+  final (container, _) = await prefsContainer(
+    values: hasProfile
         ? {
-            'player_profiles':
+            PrefsKeys.profiles:
                 '[{"name":"Aceu","uid":"1006838015507","platform":"PC"}]',
           }
-        : <String, Object>{},
+        : const {},
   );
-  final prefs = await SharedPreferences.getInstance();
-  return ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-  );
+  return container;
 }
 
 void main() {
@@ -33,12 +30,10 @@ void main() {
     test('stored values are exactly the ones already saved in settings and '
         'backups', () {
       // Never renumber these: a user's chosen default tab is stored as one.
-      expect({for (final t in AppTab.values) t.name: t.storedValue}, {
-        'home': 0,
-        'stats': 1,
-        'search': 2,
-        'settings': 3,
-      });
+      expect(
+        {for (final t in AppTab.values) t.name: t.storedValue},
+        {'home': 0, 'stats': 1, 'search': 2, 'settings': 3},
+      );
     });
 
     test('every tab round-trips through its stored value', () {
@@ -62,9 +57,7 @@ void main() {
   group('visibleTabsProvider', () {
     test('is a fixed 4-tab set regardless of profile state', () async {
       final withProfile = await containerWithProfile(hasProfile: true);
-      addTearDown(withProfile.dispose);
       final withoutProfile = await containerWithProfile(hasProfile: false);
-      addTearDown(withoutProfile.dispose);
 
       const expected = [
         AppTab.home,

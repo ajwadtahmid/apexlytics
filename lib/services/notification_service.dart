@@ -248,12 +248,21 @@ class NotificationService {
   static const _ltmIdBase = 140; // 140–151
   static const _wildcardIdBase = 160; // 160–171
 
+  /// One entry per mode block above; a new mode's base goes here too, so
+  /// [totalScheduledUpperBound] counts it.
+  static const _modeIdBases = [
+    _rankedIdBase,
+    _pubsIdBase,
+    _ltmIdBase,
+    _wildcardIdBase,
+  ];
+
   /// The real ceiling this service must never exceed — iOS's 64-pending
   /// limit — expressed as `modeCount × _maxPerMode`. Not read at runtime;
   /// exposed only so notification_planner_test.dart can assert it stays
   /// under 64, catching a fifth mode being added without raising the cap.
   @visibleForTesting
-  static const totalScheduledUpperBound = 4 * _maxPerMode;
+  static int get totalScheduledUpperBound => _modeIdBases.length * _maxPerMode;
 
   // iOS keeps only the 64 soonest-firing pending notifications and silently
   // drops the rest. What actually keeps the real total under that is

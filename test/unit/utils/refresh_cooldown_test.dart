@@ -16,11 +16,14 @@ void main() {
 
     test('a blocked fire does not reset the cooldown window', () async {
       final cooldown = RefreshCooldown(
-        duration: const Duration(milliseconds: 30),
+        duration: const Duration(milliseconds: 100),
       );
       expect(cooldown.tryFire('a'), isTrue);
+      await Future.delayed(const Duration(milliseconds: 60));
+      // Blocked mid-window: had this re-stamped the time, the window would now
+      // run to 160 ms and the last check would still be blocked.
       expect(cooldown.tryFire('a'), isFalse);
-      await Future.delayed(const Duration(milliseconds: 40));
+      await Future.delayed(const Duration(milliseconds: 60));
       expect(cooldown.tryFire('a'), isTrue);
     });
 

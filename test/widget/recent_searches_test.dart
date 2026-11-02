@@ -3,8 +3,6 @@ import 'package:apexlytics/providers/search_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/favorites_pane.dart';
 import 'package:apexlytics/screens/search/player_result_page.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,8 +14,6 @@ import 'refresh_all_button_test.dart' show playerJson;
 void main() {
   setUpAll(useFfiDatabase);
 
-  var dbCounter = 0;
-
   Future<ProviderContainer> containerWith(
     FakeHttpAdapter adapter, {
     Map<String, Object> prefs = const {},
@@ -28,15 +24,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(
           await SharedPreferences.getInstance(),
         ),
-        apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:recent_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: adapter,
-          ),
-        ),
+        apiServiceProvider.overrideWithValue(isolatedApiService(adapter)),
       ],
     );
     addTearDown(container.dispose);

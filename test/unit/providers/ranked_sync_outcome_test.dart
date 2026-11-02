@@ -36,17 +36,6 @@ class _ThrowingUpsertStore extends RankedHistoryStore {
   }
 }
 
-/// Builds a [ProviderContainer] backed by an in-memory [SharedPreferences].
-Future<ProviderContainer> makeContainer(
-  Map<String, Object> initialPrefs,
-) async {
-  SharedPreferences.setMockInitialValues(initialPrefs);
-  final prefs = await SharedPreferences.getInstance();
-  return ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-  );
-}
-
 /// Prefs putting [uid] inside its backoff window with [outcome] recorded.
 Map<String, Object> coolingDown(String uid, RankedSyncOutcome outcome) => {
   PrefsKeys.gamesNextSync(uid): DateTime.now()
@@ -68,8 +57,9 @@ void main() {
     // in the future, so the provider replays what it stored and returns.
     for (final outcome in RankedSyncOutcome.values) {
       test('replays a stored ${outcome.name} outcome', () async {
-        final container = await makeContainer(coolingDown(uid, outcome));
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: coolingDown(uid, outcome),
+        );
 
         final result = await container.read(rankedSyncProvider(uid).future);
 
@@ -78,12 +68,13 @@ void main() {
     }
 
     test('falls back to cooldown when no outcome was stored', () async {
-      final container = await makeContainer({
-        PrefsKeys.gamesNextSync(uid): DateTime.now()
-            .add(const Duration(hours: 1))
-            .millisecondsSinceEpoch,
-      });
-      addTearDown(container.dispose);
+      final (container, _) = await prefsContainer(
+        values: {
+          PrefsKeys.gamesNextSync(uid): DateTime.now()
+              .add(const Duration(hours: 1))
+              .millisecondsSinceEpoch,
+        },
+      );
 
       final result = await container.read(rankedSyncProvider(uid).future);
 
@@ -93,13 +84,14 @@ void main() {
     test(
       'falls back to cooldown when the stored name is unrecognised',
       () async {
-        final container = await makeContainer({
-          PrefsKeys.gamesNextSync(uid): DateTime.now()
-              .add(const Duration(hours: 1))
-              .millisecondsSinceEpoch,
-          PrefsKeys.gamesLastOutcome(uid): 'someRemovedOutcome',
-        });
-        addTearDown(container.dispose);
+        final (container, _) = await prefsContainer(
+          values: {
+            PrefsKeys.gamesNextSync(uid): DateTime.now()
+                .add(const Duration(hours: 1))
+                .millisecondsSinceEpoch,
+            PrefsKeys.gamesLastOutcome(uid): 'someRemovedOutcome',
+          },
+        );
 
         final result = await container.read(rankedSyncProvider(uid).future);
 
@@ -131,7 +123,6 @@ void main() {
           rankedHistoryStoreProvider.overrideWithValue(store),
         ],
       );
-      addTearDown(container.dispose);
       addTearDown(store.close);
     }
 
@@ -516,6 +507,8 @@ void main() {
         try {
           await container.read(rankedSyncProvider(uid).future);
           fail('expected the write failure to propagate as an error');
+        } on TestFailure {
+          rethrow;
         } catch (_) {
           // Expected - any rejection here is the fix working. What must
           // not have happened is the pre-fix behaviour: swallowing this

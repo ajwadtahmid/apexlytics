@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:apexlytics/constants/api_constants.dart';
 import 'package:apexlytics/models/news_article.dart';
 import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/news_provider.dart';
@@ -37,7 +38,7 @@ void main() {
         const NewsArticle(
           title: 'Official Apex Legends News',
           description: 'Duplicate of pinned',
-          link: 'https://www.ea.com/games/apex',
+          link: ApiConstants.eaNewsUrl,
           imageUrl: '',
         ),
         const NewsArticle(
@@ -54,7 +55,7 @@ void main() {
 
       final result = await container.read(newsProvider.future);
       expect(
-        result.data.where((a) => a.link == 'https://www.ea.com/games/apex'),
+        result.data.where((a) => a.link == ApiConstants.eaNewsUrl),
         hasLength(1),
       );
     });
