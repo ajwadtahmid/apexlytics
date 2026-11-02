@@ -15,6 +15,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// A transitive dependency of shared_preferences, used here to stand in for the
+// platform's store.
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart'
+    show InMemorySharedPreferencesStore, SharedPreferencesStorePlatform;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Points sqflite at its FFI backend, the only one available under
@@ -22,6 +27,39 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void useFfiDatabase() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
+}
+
+/// A SharedPreferences store that reports a failed write or remove, as a full
+/// disk does, for the keys in [failKeys].
+class FailingPrefsStore extends InMemorySharedPreferencesStore {
+  FailingPrefsStore(Map<String, Object> values)
+    : super.withData({
+        for (final e in values.entries) 'flutter.${e.key}': e.value,
+      });
+
+  /// Plain keys (without the platform prefix) whose writes and removes fail.
+  final Set<String> failKeys = {};
+
+  bool _fails(String key) => failKeys.contains(key.replaceFirst('flutter.', ''));
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async =>
+      _fails(key) ? false : super.setValue(valueType, key, value);
+
+  @override
+  Future<bool> remove(String key) async =>
+      _fails(key) ? false : super.remove(key);
+}
+
+/// Real [SharedPreferences] over a [FailingPrefsStore] holding [values]. Set
+/// the store's `failKeys` to make writes to those keys report failure.
+Future<(SharedPreferences, FailingPrefsStore)> failingPrefs([
+  Map<String, Object> values = const {},
+]) async {
+  final store = FailingPrefsStore(values);
+  SharedPreferencesStorePlatform.instance = store;
+  SharedPreferences.resetStatic();
+  return (await SharedPreferences.getInstance(), store);
 }
 
 var _isolatedCacheCounter = 0;

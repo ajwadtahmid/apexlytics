@@ -31,6 +31,7 @@ import '../../../utils/formatting/format.dart'
     show formatBytes, formatNumber, plural;
 import '../../../utils/notifications.dart';
 import '../../../utils/share_image.dart' show clearSharedCardCopies;
+import '../../../utils/storage/checked_prefs.dart' show removeAllChecked;
 import '../../../utils/storage/former_profile_uids.dart';
 import '../../../utils/storage/backup_service.dart';
 import '../../../utils/storage/ranked_history_store.dart';
@@ -317,9 +318,7 @@ class CacheSettingsSection extends ConsumerWidget {
     final keep = _keptUids(ref);
     final prefs = ref.read(sharedPreferencesProvider);
     await ref.read(rankedHistoryStoreProvider).deleteHistoryExcept(keep);
-    for (final key in scopedKeysExcept(prefs, keep)) {
-      await prefs.remove(key);
-    }
+    await removeAllChecked(prefs, scopedKeysExcept(prefs, keep));
     await retainProfileUids(prefs, keep);
     // These read through caches that the deletes above do not reset.
     resetSnapshotCache();

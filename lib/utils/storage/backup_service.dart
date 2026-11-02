@@ -18,6 +18,7 @@ import '../../constants/prefs_keys.dart';
 import '../app_logger.dart';
 import 'ranked_history_store.dart';
 import 'rp_snapshot_storage.dart';
+import 'checked_prefs.dart';
 import 'former_profile_uids.dart' show mergeRestoredFormerProfileUids;
 import 'season_storage.dart' show mergeRestoredSeasonHistory;
 
@@ -184,17 +185,22 @@ Object? coerceRestoredPref(String key, Object? v) => switch (_kindOf(key)) {
   _PrefKind.text => v is String ? v : null,
 };
 
+/// Writes [v] under [key], and throws a [PrefsWriteException] if the write did
+/// not take, so a restore or its rollback does not report success for data
+/// that never reached the disk.
 Future<void> _setTyped(SharedPreferences prefs, String key, Object? v) async {
   if (v is String) {
-    await prefs.setString(key, v);
+    await requireWritten(prefs.setString(key, v));
   } else if (v is int) {
-    await prefs.setInt(key, v);
+    await requireWritten(prefs.setInt(key, v));
   } else if (v is bool) {
-    await prefs.setBool(key, v);
+    await requireWritten(prefs.setBool(key, v));
   } else if (v is double) {
-    await prefs.setDouble(key, v);
+    await requireWritten(prefs.setDouble(key, v));
   } else if (v is List) {
-    await prefs.setStringList(key, v.map((e) => e.toString()).toList());
+    await requireWritten(
+      prefs.setStringList(key, v.map((e) => e.toString()).toList()),
+    );
   }
 }
 
@@ -223,7 +229,7 @@ class _PrefsSnapshot {
     for (final entry in _values.entries) {
       try {
         if (entry.value == null) {
-          await _prefs.remove(entry.key);
+          await requireWritten(_prefs.remove(entry.key));
         } else {
           await _setTyped(_prefs, entry.key, entry.value);
         }
@@ -296,7 +302,7 @@ Future<void> restorePrefsData(
       await _setTyped(prefs, entry.key, v);
     }
     for (final key in toClear) {
-      await prefs.remove(key);
+      await requireWritten(prefs.remove(key));
     }
   } catch (e) {
     await snapshot.rollback();

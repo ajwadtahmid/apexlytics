@@ -5,6 +5,7 @@ import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/storage/backup_service.dart';
+import 'package:apexlytics/utils/storage/checked_prefs.dart';
 import 'package:apexlytics/utils/storage/former_profile_uids.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -139,6 +140,71 @@ void main() {
       expect(backupIncludesKey(PrefsKeys.uidSearchWarningShown), isFalse);
       expect(backupIncludesKey(PrefsKeys.onboardingVersion), isFalse);
       expect(backupIncludesKey('api_cache:whatever'), isFalse);
+    });
+  });
+
+  group('a prefs write that reports failure', () {
+    test('fails the restore and puts back what it had written', () async {
+      final (prefs, store) = await failingPrefs({
+        PrefsKeys.defaultTab: 1,
+        PrefsKeys.statsRefreshMinutes: 5,
+      });
+      store.failKeys.add(PrefsKeys.statsRefreshMinutes);
+
+      await expectLater(
+        restorePrefsData(prefs, {
+          PrefsKeys.defaultTab: 2,
+          PrefsKeys.statsRefreshMinutes: 15,
+        }),
+        throwsA(isA<PrefsWriteException>()),
+      );
+
+      expect(prefs.getInt(PrefsKeys.defaultTab), 1);
+      expect(prefs.getInt(PrefsKeys.statsRefreshMinutes), 5);
+    });
+
+    test('fails a setting the backup leaves out and so removes', () async {
+      final (prefs, store) = await failingPrefs({
+        PrefsKeys.defaultTab: 1,
+        PrefsKeys.keepScreenOn: true,
+      });
+      store.failKeys.add(PrefsKeys.keepScreenOn);
+
+      await expectLater(
+        restorePrefsData(prefs, {PrefsKeys.defaultTab: 2}),
+        throwsA(isA<PrefsWriteException>()),
+      );
+      expect(prefs.getInt(PrefsKeys.defaultTab), 1);
+    });
+
+    test('is an import error, and the history it was restoring is not kept',
+        () async {
+      const uid = '1006838015507';
+      final (prefs, store) = await failingPrefs({PrefsKeys.defaultTab: 1});
+      store.failKeys.add(PrefsKeys.defaultTab);
+      final history = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(history.close);
+      await history.deleteAll();
+      final envelope = {
+        'version': 3,
+        'exported_at': DateTime.now().toIso8601String(),
+        'prefs': {PrefsKeys.defaultTab: 2},
+        'ranked_history': [buildMatch(uid: uid, start: 1000).toStoredMap()],
+        'stat_snapshots': <Map<String, dynamic>>[],
+      };
+
+      final result = await commitBackupImport(
+        BackupPreview.forTesting(
+          version: 3,
+          envelope: jsonDecode(jsonEncode(envelope)) as Map<String, dynamic>,
+        ),
+        prefs,
+        rankedStore: history,
+      );
+
+      expect(result, isA<ImportError>());
+      expect(await history.count(uid), 0);
+      expect(prefs.getInt(PrefsKeys.defaultTab), 1);
     });
   });
 

@@ -12,7 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../constants/prefs_keys.dart';
 import '../models/player_stats.dart';
+import '../utils/app_logger.dart';
 import '../utils/error_messages.dart' show AppException;
+import '../utils/formatting/json_utils.dart' show asEpochMs;
+import '../utils/storage/checked_prefs.dart' show requireWritten;
 import 'settings_provider.dart';
 
 /// What a favorite's card shows of a player (name, rank and RP) as of the last
@@ -61,11 +64,15 @@ class PlayerSnapshot {
     if (name is! String || rank is! String || rp is! num || at is! num) {
       return null;
     }
+    // A time DateTime cannot hold, or an RP that cannot be a whole number,
+    // would throw; the entry just has no snapshot.
+    final atMs = asEpochMs(at);
+    if (atMs == null || !rp.isFinite) return null;
     return PlayerSnapshot(
       name: name,
       rank: rank,
       rankScore: rp.toInt(),
-      savedAt: DateTime.fromMillisecondsSinceEpoch(at.toInt()),
+      savedAt: DateTime.fromMillisecondsSinceEpoch(atMs),
     );
   }
 
@@ -220,10 +227,19 @@ class SearchNotifier extends Notifier<SearchState> {
       final raw = prefs.getString(key) ?? '[]';
       final decoded = jsonDecode(raw);
       if (decoded is! List) return [];
-      return decoded
-          .whereType<Map<String, dynamic>>()
-          .map(PlayerRef.fromJson)
-          .toList();
+      var skipped = 0;
+      final refs = <PlayerRef>[];
+      for (final entry in decoded) {
+        // One bad entry is dropped on its own, not allowed to empty the list
+        // (which the next save would make final).
+        try {
+          refs.add(PlayerRef.fromJson(entry as Map<String, dynamic>));
+        } catch (_) {
+          skipped++;
+        }
+      }
+      if (skipped > 0) log.w('Skipped $skipped unreadable saved players');
+      return refs;
     } catch (e) {
       // Well-formed-but-wrong-shape JSON throws TypeError, not
       // FormatException — see rp_snapshot_storage._parseSnapshots.
@@ -252,12 +268,12 @@ class SearchNotifier extends Notifier<SearchState> {
   }
 
   Future<void> clearRecents() async {
-    await _prefs.remove(PrefsKeys.recentSearches);
+    await requireWritten(_prefs.remove(PrefsKeys.recentSearches));
     state = state.copyWith(recents: []);
   }
 
   Future<void> clearFavorites() async {
-    await _prefs.remove(PrefsKeys.searchFavorites);
+    await requireWritten(_prefs.remove(PrefsKeys.searchFavorites));
     state = state.copyWith(favorites: []);
   }
 

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/utils/error_messages.dart';
+import 'package:apexlytics/providers/search_provider.dart';
+import 'package:apexlytics/utils/storage/checked_prefs.dart';
 import 'package:apexlytics/utils/storage/former_profile_uids.dart';
 import '../../helpers.dart';
 
@@ -654,6 +656,102 @@ void main() {
           expect(settings.isPlayerSet, isFalse);
         },
       );
+    });
+  });
+
+  group('a damaged saved profile', () {
+    test('is dropped on its own, and the rest survive a new save', () async {
+      final (container, prefs) = await prefsContainer(
+        values: {
+          PrefsKeys.profiles: jsonEncode([
+            {'name': 'A', 'uid': '1006838015507', 'platform': 'PC'},
+            {'name': 'Bad', 'uid': 1006838015507, 'platform': 'PC'},
+            {'name': 'C', 'uid': '1006838015509', 'platform': 'PS4'},
+          ]),
+        },
+      );
+
+      expect(
+        container.read(playerSettingsProvider).profiles.map((p) => p.name),
+        ['A', 'C'],
+      );
+
+      await container
+          .read(playerSettingsProvider.notifier)
+          .addProfile('D', '1006838015510', 'PC');
+      final saved = jsonDecode(prefs.getString(PrefsKeys.profiles)!) as List;
+      expect(saved.map((e) => (e as Map)['name']), ['A', 'C', 'D']);
+    });
+  });
+
+  group('a clear whose removes report failure', () {
+    Future<ProviderContainer> containerOver(
+      SharedPreferences prefs,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('Clear profiles & favorites says so, and keeps the profile shown',
+        () async {
+      final (prefs, store) = await failingPrefs({
+        PrefsKeys.profiles: jsonEncode([
+          {'name': 'A', 'uid': '1006838015507', 'platform': 'PC'},
+        ]),
+        PrefsKeys.searchFavorites: '[]',
+      });
+      store.failKeys.add(PrefsKeys.profiles);
+      final container = await containerOver(prefs);
+      final notifier = container.read(playerSettingsProvider.notifier);
+
+      await expectLater(
+        notifier.clearProfilesAndFavorites(),
+        throwsA(isA<PrefsWriteException>()),
+      );
+
+      expect(container.read(playerSettingsProvider).profiles, isNotEmpty);
+      // The key that could be removed was.
+      expect(prefs.containsKey(PrefsKeys.searchFavorites), isFalse);
+    });
+
+    test('Clear all data says so, and removes what it can', () async {
+      final (prefs, store) = await failingPrefs({
+        PrefsKeys.defaultTab: 2,
+        PrefsKeys.statsRefreshMinutes: 15,
+      });
+      store.failKeys.add(PrefsKeys.statsRefreshMinutes);
+      final container = await containerOver(prefs);
+
+      await expectLater(
+        container.read(playerSettingsProvider.notifier).clearAll(),
+        throwsA(isA<PrefsWriteException>()),
+      );
+
+      // Judged on what the store holds: the in-memory copy drops a key whether
+      // or not the store managed to.
+      final onDisk = await store.getAll();
+      expect(onDisk.containsKey('flutter.${PrefsKeys.defaultTab}'), isFalse);
+      expect(onDisk['flutter.${PrefsKeys.statsRefreshMinutes}'], 15);
+    });
+
+    test('clearing recent searches and favorites says so too', () async {
+      final (prefs, store) = await failingPrefs({
+        PrefsKeys.recentSearches:
+            '[{"query":"A","platform":"PC","uid":"1006838015507"}]',
+      });
+      store.failKeys.add(PrefsKeys.recentSearches);
+      final container = await containerOver(prefs);
+      final search = container.read(searchStateProvider.notifier);
+
+      await expectLater(
+        search.clearRecents(),
+        throwsA(isA<PrefsWriteException>()),
+      );
+
+      expect(container.read(searchStateProvider).recents, isNotEmpty);
     });
   });
 

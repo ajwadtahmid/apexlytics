@@ -524,4 +524,82 @@ void main() {
       expect(favorite.snapshot, isNotNull);
     });
   });
+
+  group('a damaged entry in a saved list', () {
+    ProviderContainer open() {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    Map<String, Object?> entry(String name, {Object? uid = '1006838015507'}) => {
+      'query': name,
+      'platform': 'PC',
+      'uid': uid,
+    };
+
+    test('only that favorite is dropped, and the rest survive a new save', () async {
+      await prefs.setString(
+        PrefsKeys.searchFavorites,
+        jsonEncode([
+          entry('One'),
+          entry('Bad', uid: 1006838015507), // a number, not a string
+          entry('Two', uid: '1006838015508'),
+        ]),
+      );
+      final container = open();
+
+      expect(container.read(searchStateProvider).favorites.map((f) => f.query), [
+        'One',
+        'Two',
+      ]);
+
+      await container
+          .read(searchStateProvider.notifier)
+          .toggleFavorite(
+            const PlayerRef(query: 'Three', platform: 'PC', uid: '1006838015509'),
+          );
+      final saved = jsonDecode(prefs.getString(PrefsKeys.searchFavorites)!) as List;
+      expect(saved.map((e) => (e as Map)['query']), ['Three', 'One', 'Two']);
+    });
+
+    test('only that recent search is dropped', () async {
+      await prefs.setString(
+        PrefsKeys.recentSearches,
+        jsonEncode([
+          entry('One'),
+          {'query': 'Bad', 'platform': 'PC', 'byUid': 'true'},
+          entry('Two', uid: '1006838015508'),
+        ]),
+      );
+
+      expect(open().read(searchStateProvider).recents.map((r) => r.query), [
+        'One',
+        'Two',
+      ]);
+    });
+
+    test('a snapshot time that cannot exist drops the snapshot, not the favorite', () async {
+      await prefs.setString(
+        PrefsKeys.searchFavorites,
+        jsonEncode([
+          {
+            ...entry('One'),
+            'snapshot': {'name': 'One', 'rank': 'Gold', 'rp': 5000, 'at': 1e20},
+          },
+          {
+            ...entry('Two', uid: '1006838015508'),
+            'snapshot': {'name': 'Two', 'rank': 'Gold', 'rp': 5000, 'at': 1700000000000},
+          },
+        ]),
+      );
+
+      final favorites = open().read(searchStateProvider).favorites;
+      expect(favorites.map((f) => f.query), ['One', 'Two']);
+      expect(favorites[0].snapshot, isNull);
+      expect(favorites[1].snapshot, isNotNull);
+    });
+  });
 }

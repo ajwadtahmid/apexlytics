@@ -9,6 +9,7 @@ import '../constants/prefs_keys.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_messages.dart';
 import '../utils/formatting/json_utils.dart';
+import '../utils/storage/checked_prefs.dart';
 import '../utils/storage/former_profile_uids.dart';
 
 part 'settings_provider.freezed.dart';
@@ -187,14 +188,22 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
         log.w('Stored profiles blob is not a list — treating as empty');
         return [];
       }
-      return decoded
-          .whereType<Map<String, dynamic>>()
-          .map(PlayerProfile.fromJson)
-          // A sanity ceiling, not the add limit: truncating at the regular
-          // limit would silently delete profiles from installs (and backups)
-          // made under the old cap of 5.
-          .take(ownerMaxProfileCount)
-          .toList();
+      var skipped = 0;
+      final profiles = <PlayerProfile>[];
+      for (final entry in decoded) {
+        // One entry with a wrongly typed field is dropped on its own, not
+        // allowed to empty the list (which the next save would make final).
+        try {
+          profiles.add(PlayerProfile.fromJson(entry as Map<String, dynamic>));
+        } catch (_) {
+          skipped++;
+        }
+      }
+      if (skipped > 0) log.w('Skipped $skipped unreadable saved profiles');
+      // A sanity ceiling, not the add limit: truncating at the regular
+      // limit would silently delete profiles from installs (and backups)
+      // made under the old cap of 5.
+      return profiles.take(ownerMaxProfileCount).toList();
     } catch (e) {
       // Well-formed-but-wrong-shape JSON (e.g. `{"a":1}`) throws TypeError on
       // the `as List` cast, not FormatException — narrower error handling
@@ -574,7 +583,7 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
   /// Callers must also reset `searchStateProvider`, which holds the favourites
   /// list in memory.
   Future<void> clearProfilesAndFavorites() async {
-    await Future.wait(_profileKeys.map(_prefs.remove));
+    await removeAllChecked(_prefs, _profileKeys);
     state = state.copyWith(profiles: [], activeProfileIndex: 0);
   }
 
@@ -599,7 +608,7 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
               !(keepOwnerUnlock && k == PrefsKeys.ownerUnlocked),
         )
         .toList();
-    await Future.wait(doomed.map(_prefs.remove));
+    await removeAllChecked(_prefs, doomed);
     state = const PlayerSettings();
   }
 }
