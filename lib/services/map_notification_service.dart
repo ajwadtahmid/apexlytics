@@ -5,12 +5,31 @@ import '../models/map_rotation.dart';
 import '../providers/map_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_logger.dart';
+import 'api_service.dart' show ApiResult;
 import 'notification_service.dart';
 
 class MapNotificationService {
   MapNotificationService._();
 
-  static void schedule(WidgetRef ref, MapRotation data) {
+  /// Set when a plan was dropped because the plugin had not started yet, so
+  /// [replayDeferred] knows there is something to redo.
+  static bool _deferred = false;
+
+  /// Plans the alerts again if the last plan was dropped for want of the
+  /// plugin. Call once the plugin has started.
+  static void replayDeferred(WidgetRef ref) {
+    if (!_deferred || !NotificationService.isInitialized) return;
+    _deferred = false;
+    if (ref.read(mapRotationProvider) case AsyncData<ApiResult<MapRotation>>(
+      :final value,
+    )) {
+      schedule(ref, value.data);
+    }
+  }
+
+  static void schedule(WidgetRef ref, MapRotation rotation) {
+    // The countdowns are as of the fetch; the plan is made now.
+    final data = rotation.agedTo(DateTime.now());
     final s = ref.read(playerSettingsProvider);
     if (s.anyMapAlertActive) {
       // The cyclic rotation order (from /maps) lets every projected Ranked/Pubs
@@ -38,6 +57,7 @@ class MapNotificationService {
               // background_service.dart checks this too, so this can't fail
               // silently here.
               if (!NotificationService.isInitialized) {
+                _deferred = true;
                 log.w(
                   'Notification scheduling skipped: plugin not initialized',
                 );

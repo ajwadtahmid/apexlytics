@@ -111,7 +111,16 @@ class NotificationService {
   static const _fallbackAndroidIcon = 'ic_notification_fallback';
   static const _lastResortAndroidIcon = 'ic_launcher_foreground';
 
-  static Future<void> init() async {
+  static Future<void>? _initRun;
+
+  /// Starts the plugin. A second call while one is running joins it, so the
+  /// startup run and the resume retry can't both initialise it.
+  static Future<void> init() {
+    if (_initialized) return Future.value();
+    return _initRun ??= _init().whenComplete(() => _initRun = null);
+  }
+
+  static Future<void> _init() async {
     if (_initialized) return;
     if (!_supported) return;
     const darwinSettings = DarwinInitializationSettings(

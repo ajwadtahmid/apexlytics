@@ -20,6 +20,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/stats/stats_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'services/map_notification_service.dart';
 import 'services/notification_service.dart';
 import 'utils/app_logger.dart';
 import 'utils/onboarding.dart';
@@ -100,6 +101,20 @@ class _AppShellState extends ConsumerState<_AppShell>
       (_, keepScreenOn) => _applyWakelock(keepScreenOn),
     );
     unawaited(_runStartupSequence());
+    unawaited(_replayAlertsOnceStarted());
+  }
+
+  /// A rotation can arrive before the notification plugin has started. Plans
+  /// the alerts again once it has, so none wait for the next rotation.
+  Future<void> _replayAlertsOnceStarted() async {
+    try {
+      await NotificationService.init();
+    } catch (e) {
+      // main logs the same failure; the resume retry covers it.
+      log.w('Notification start for replay failed', error: e);
+      return;
+    }
+    if (mounted) MapNotificationService.replayDeferred(ref);
   }
 
   /// Holds the screen awake while the app is in the foreground. No lifecycle
@@ -145,6 +160,7 @@ class _AppShellState extends ConsumerState<_AppShell>
     await NotificationService.init();
     if (NotificationService.isInitialized && mounted) {
       ref.invalidate(notificationsEnabledProvider);
+      MapNotificationService.replayDeferred(ref);
     }
   }
 

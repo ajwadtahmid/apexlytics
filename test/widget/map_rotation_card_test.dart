@@ -175,4 +175,75 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+
+  group('when the countdown reaches zero', () {
+    MapMode mode(String map, {int remaining = 0}) => MapMode(
+      map: map,
+      remainingSecs: remaining,
+      durationMins: 60,
+      asset: '',
+    );
+
+    MapRotation rotation() => MapRotation(
+      battleRoyaleCurrent: mode('Olympus'),
+      battleRoyaleNext: mode("World's Edge"),
+      rankedCurrent: mode('Olympus'),
+      rankedNext: mode("World's Edge"),
+    );
+
+    Widget host(MapRotation r, VoidCallback onExpired) => MaterialApp(
+      home: Scaffold(
+        body: MapRotationCard(rotation: r, onExpired: onExpired),
+      ),
+    );
+
+    testWidgets('asks again when the refetch brings back the same map', (
+      tester,
+    ) async {
+      var asked = 0;
+      await tester.pumpWidget(host(rotation(), () => asked++));
+      await tester.pump(const Duration(seconds: 1));
+      expect(asked, 1);
+
+      // The proxy replayed its cached copy: a new object with the same data.
+      await tester.pumpWidget(host(rotation(), () => asked++));
+      await tester.pump(const Duration(seconds: 29));
+      expect(asked, 1);
+      await tester.pump(const Duration(seconds: 2));
+      expect(asked, 2);
+
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('does not ask again for a rebuild with the same rotation', (
+      tester,
+    ) async {
+      var asked = 0;
+      final r = rotation();
+      await tester.pumpWidget(host(r, () => asked++));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpWidget(host(r, () => asked++));
+      await tester.pump(const Duration(seconds: 60));
+
+      expect(asked, 1);
+    });
+
+    testWidgets('stops asking once the map has changed', (tester) async {
+      var asked = 0;
+      await tester.pumpWidget(host(rotation(), () => asked++));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpWidget(host(rotation(), () => asked++));
+      final fresh = MapRotation(
+        battleRoyaleCurrent: mode('World\'s Edge', remaining: 1800),
+        battleRoyaleNext: mode('Olympus'),
+        rankedCurrent: mode('World\'s Edge', remaining: 1800),
+        rankedNext: mode('Olympus'),
+      );
+      await tester.pumpWidget(host(fresh, () => asked++));
+      await tester.pump(const Duration(seconds: 60));
+
+      expect(asked, 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
 }

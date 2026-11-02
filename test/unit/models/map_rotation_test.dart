@@ -50,4 +50,56 @@ void main() {
       expect(r.rankedNext.map, 'Unknown');
     });
   });
+
+  group('countdowns', () {
+    MapRotation rotationAt(DateTime fetchedAt, {int ranked = 3600}) {
+      MapMode mode(int secs) => MapMode(
+        map: 'Olympus',
+        remainingSecs: secs,
+        durationMins: 60,
+        asset: '',
+      );
+      return MapRotation(
+        battleRoyaleCurrent: mode(3600),
+        battleRoyaleNext: mode(0),
+        rankedCurrent: mode(ranked),
+        rankedNext: mode(0),
+        ltmCurrent: mode(600),
+        fetchedAt: fetchedAt,
+      );
+    }
+
+    test('a negative remaining time reads as already over', () {
+      final m = MapMode.fromJson({'map': 'Olympus', 'remainingSecs': -3});
+      expect(m.remainingSecs, 0);
+      expect(MapMode.fromJson({'remainingMins': -2}).remainingSecs, 0);
+    });
+
+    test('agedTo takes the time since the fetch off every countdown', () {
+      final at = DateTime(2026, 11, 1, 14);
+      final aged = rotationAt(at).agedTo(at.add(const Duration(minutes: 40)));
+
+      expect(aged.battleRoyaleCurrent.remainingSecs, 3600 - 40 * 60);
+      expect(aged.rankedCurrent.remainingSecs, 3600 - 40 * 60);
+      expect(aged.ltmCurrent?.remainingSecs, 0);
+      expect(aged.wildcardCurrent, isNull);
+    });
+
+    test(
+      'aging is measured from the fetch, so aging twice does not double it',
+      () {
+        final at = DateTime(2026, 11, 1, 14);
+        final once = rotationAt(at).agedTo(at.add(const Duration(minutes: 10)));
+        final twice = once.agedTo(at.add(const Duration(minutes: 20)));
+
+        expect(twice.rankedCurrent.remainingSecs, 3600 - 20 * 60);
+      },
+    );
+
+    test('a rotation is not aged by a clock that is behind its fetch', () {
+      final at = DateTime(2026, 11, 1, 14);
+      final r = rotationAt(at);
+      expect(r.agedTo(at.subtract(const Duration(minutes: 5))), same(r));
+    });
+  });
 }

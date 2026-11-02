@@ -8,6 +8,10 @@ class MapRotation {
   final MapMode? wildcardCurrent;
   final MapMode? wildcardNext;
 
+  /// When this rotation was received. Each mode's `remainingSecs` is a
+  /// countdown from that moment, so it only means something next to it.
+  final DateTime fetchedAt;
+
   MapRotation({
     required this.battleRoyaleCurrent,
     required this.battleRoyaleNext,
@@ -17,7 +21,26 @@ class MapRotation {
     this.ltmNext,
     this.wildcardCurrent,
     this.wildcardNext,
-  });
+    DateTime? fetchedAt,
+  }) : fetchedAt = fetchedAt ?? DateTime.now();
+
+  /// This rotation with every countdown reduced by the time since it was
+  /// fetched, so a plan made later still lands on the real rotation instants.
+  MapRotation agedTo(DateTime now) {
+    final elapsed = now.difference(fetchedAt);
+    if (elapsed <= Duration.zero) return this;
+    return MapRotation(
+      battleRoyaleCurrent: battleRoyaleCurrent.aged(elapsed),
+      battleRoyaleNext: battleRoyaleNext.aged(elapsed),
+      rankedCurrent: rankedCurrent.aged(elapsed),
+      rankedNext: rankedNext.aged(elapsed),
+      ltmCurrent: ltmCurrent?.aged(elapsed),
+      ltmNext: ltmNext?.aged(elapsed),
+      wildcardCurrent: wildcardCurrent?.aged(elapsed),
+      wildcardNext: wildcardNext?.aged(elapsed),
+      fetchedAt: now,
+    );
+  }
 
   /// Any block that is not a JSON object (a PHP-style empty block arrives as
   /// `[]`) counts as absent, rather than failing the whole rotation: a cast
@@ -70,11 +93,24 @@ class MapMode {
     final secs = (json['remainingSecs'] as num?)?.toInt() ?? mins * 60;
     return MapMode(
       map: json['map'] as String? ?? 'Unknown',
-      remainingSecs: secs,
+      // A glitch can send a negative countdown; it means "already over".
+      remainingSecs: secs < 0 ? 0 : secs,
       // JSON key uses PascalCase — API inconsistency, not a typo.
       durationMins: (json['DurationInMinutes'] as num?)?.toInt() ?? 0,
       asset: json['asset'] as String? ?? '',
       eventName: json['eventName'] as String?,
+    );
+  }
+
+  /// This mode with its countdown reduced by [elapsed], never below zero.
+  MapMode aged(Duration elapsed) {
+    final left = remainingSecs - elapsed.inSeconds;
+    return MapMode(
+      map: map,
+      remainingSecs: left < 0 ? 0 : left,
+      durationMins: durationMins,
+      asset: asset,
+      eventName: eventName,
     );
   }
 }

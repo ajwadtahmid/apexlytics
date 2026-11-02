@@ -171,6 +171,10 @@ class _ModePicker extends StatelessWidget {
 
 const _kCountdownTickInterval = Duration(seconds: 1);
 
+/// How long a finished card waits before asking again when the refetch came
+/// back unchanged.
+const _kExpiredRetryDelay = Duration(seconds: 30);
+
 class _MapCard extends StatefulWidget {
   final _ModeData mode;
   final VoidCallback? onExpired;
@@ -191,6 +195,7 @@ class _MapCardState extends State<_MapCard> {
   late int _remaining;
   late DateTime _startedAt;
   Timer? _timer;
+  Timer? _retryTimer;
   bool _expired = false;
 
   @override
@@ -206,11 +211,19 @@ class _MapCardState extends State<_MapCard> {
         old.mode.current.map != widget.mode.current.map ||
         old.mode.current.remainingSecs != widget.mode.current.remainingSecs) {
       _reset(widget.mode.current.remainingSecs);
+    } else if (_expired && !identical(old.mode.current, widget.mode.current)) {
+      // The refetch at expiry came back unchanged (a cached copy), so the old
+      // map is still showing: ask again shortly rather than never.
+      _retryTimer?.cancel();
+      _retryTimer = Timer(_kExpiredRetryDelay, () {
+        if (mounted) widget.onExpired?.call();
+      });
     }
   }
 
   void _reset(int secs) {
     _expired = false;
+    _retryTimer?.cancel();
     _timer?.cancel();
     _remaining = secs;
     _startedAt = DateTime.now();
@@ -232,6 +245,7 @@ class _MapCardState extends State<_MapCard> {
   @override
   void dispose() {
     _timer?.cancel();
+    _retryTimer?.cancel();
     super.dispose();
   }
 
