@@ -1,4 +1,5 @@
-import '../../constants/map_constants.dart' show isUnknownMapKey;
+import '../../constants/map_constants.dart'
+    show canonicalMapKey, isUnknownMapKey;
 import 'ranked_aggregates.dart';
 
 /// How much of a period's games a legend made up, in each of two periods.
@@ -40,7 +41,9 @@ List<PickRateShift> pickRateShifts(
 
 /// The maps whose RP per game moved most from [before] to [after], biggest move
 /// first. Only maps played at least [kMinGamesForInsight] times in both count,
-/// since a few games say little about a map.
+/// since a few games say little about a map. Maps are paired by their canonical
+/// key: a breakdown's own key is only one raw spelling of the group, and the
+/// same map can be spelled differently in the two periods.
 List<MapRpShift> mapRpShifts(
   List<MapBreakdown> before,
   List<MapBreakdown> after, {
@@ -49,11 +52,12 @@ List<MapRpShift> mapRpShifts(
   final earlier = {
     for (final m in before)
       if (!isUnknownMapKey(m.mapKey) && m.games >= kMinGamesForInsight)
-        m.mapKey: m,
+        canonicalMapKey(m.mapKey): m,
   };
   final shifts = <MapRpShift>[
     for (final m in after)
-      if (earlier[m.mapKey] case final was? when m.games >= kMinGamesForInsight)
+      if (earlier[canonicalMapKey(m.mapKey)] case final was?
+          when m.games >= kMinGamesForInsight)
         (map: m.displayName, before: was.avgRpPerGame, after: m.avgRpPerGame),
   ].where((s) => (s.after - s.before).abs() >= 0.05).toList();
   shifts.sort((a, b) {

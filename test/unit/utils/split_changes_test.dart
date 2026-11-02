@@ -81,6 +81,24 @@ void main() {
       expect(shifts.single.after, -5);
     });
 
+    test('pairs a map across periods that spell its key differently', () {
+      final earlier = _maps(_games('Axle', 'edistrict', 4, 10));
+      final later = _maps(_games('Axle', 'edistrict_rotation', 4, -10));
+
+      final shifts = mapRpShifts(earlier, later);
+
+      expect(shifts, hasLength(1));
+      expect(shifts.single.before, 10);
+      expect(shifts.single.after, -10);
+    });
+
+    test('pairs a map across a difference in case', () {
+      final earlier = _maps(_games('Axle', 'OLYMPUS_ROTATION', 4, 10));
+      final later = _maps(_games('Axle', 'olympus_rotation', 4, -5));
+
+      expect(mapRpShifts(earlier, later), hasLength(1));
+    });
+
     test('puts the biggest swing first, up or down', () {
       final flat = _maps([
         ..._games('Axle', 'olympus_rotation', 3, 0),
