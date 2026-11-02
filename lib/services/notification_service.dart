@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../constants/map_constants.dart';
 import '../models/map_rotation.dart';
 import '../utils/app_logger.dart';
+import '../utils/formatting/format.dart' show formatClock;
 
 /// A single scheduling decision produced by
 /// [NotificationService.projectModeSeries]: which alert id fires, with what body
@@ -597,7 +597,7 @@ class NotificationService {
         id: nextTestAlertId(),
         title: 'Apexlytics',
         body:
-            'Test alert at ${DateFormat('h:mm a').format(at)}: this is how a '
+            'Test alert at ${formatClock(at)}: this is how a '
             'map alert will look.',
         notificationDetails: _details,
       );

@@ -30,7 +30,7 @@ class PlayerInfoCard extends StatelessWidget {
           Row(
             children: [
               StatusDot(color: playerPresenceColor(stats)),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.sm),
               Expanded(
                 child: Text(
                   stats.name,
@@ -41,11 +41,8 @@ class PlayerInfoCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                stats.presence,
-                style: AppTheme.caption,
-              ),
+              const SizedBox(width: AppTheme.sm),
+              Text(stats.presence, style: AppTheme.caption),
             ],
           ),
           const SizedBox(height: 6),
@@ -61,7 +58,7 @@ class PlayerInfoCard extends StatelessWidget {
                 ),
               ),
               RankBadge(assetPath: rankAssetPath(stats), size: 14),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppTheme.xs),
               Text.rich(
                 TextSpan(
                   style: AppTheme.captionLarge,
@@ -81,10 +78,7 @@ class PlayerInfoCard extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        'UID: ${stats.uid}',
-                        style: AppTheme.caption,
-                      ),
+                      Text('UID: ${stats.uid}', style: AppTheme.caption),
                       const SizedBox(width: 2),
                       GestureDetector(
                         onTap: () async {
@@ -110,7 +104,7 @@ class PlayerInfoCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.sm),
                 _PlatformBadge(platform: stats.platform),
               ],
             ),
@@ -119,7 +113,7 @@ class PlayerInfoCard extends StatelessWidget {
           Row(
             children: [
               LegendIcon(legendName: stats.currentLegend, size: 14),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppTheme.xs),
               Text(
                 'Currently Tracking: ${stats.currentLegend}',
                 style: const TextStyle(color: AppTheme.accent2, fontSize: 13),
@@ -143,7 +137,7 @@ class PlayerInfoCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppTheme.sm),
                         Text(
                           formatNumber(t.value),
                           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -153,10 +147,7 @@ class PlayerInfoCard extends StatelessWidget {
                   ),
                 )
           else
-            const Text(
-              'No trackers equipped',
-              style: AppTheme.captionLarge,
-            ),
+            const Text('No trackers equipped', style: AppTheme.captionLarge),
         ],
       ),
     );
@@ -184,7 +175,7 @@ class _PlatformBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           FaIcon(p.icon, color: p.color, size: 11),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.xs),
           Text(
             ApiConstants.labelFor(platform),
             style: TextStyle(

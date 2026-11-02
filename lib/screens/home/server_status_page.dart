@@ -97,7 +97,7 @@ class ServerStatusPage extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 StatusDot(color: rc, size: 6),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: AppTheme.xs),
                                 Text(
                                   '${e.key} | $latency',
                                   style: AppTheme.captionSmall,
@@ -239,7 +239,7 @@ class _ProxyItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         StatusDot(color: color, size: 6),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.xs),
         Text('$label | $text', style: AppTheme.captionSmall),
       ],
     );

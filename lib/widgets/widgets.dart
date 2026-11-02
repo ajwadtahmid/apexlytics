@@ -1,5 +1,6 @@
 library;
 
+export 'confirm_dialog.dart';
 export 'control_pill.dart';
 export 'error_card.dart';
 export 'graph_season_picker.dart';

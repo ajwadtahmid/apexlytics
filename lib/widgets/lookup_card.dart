@@ -202,7 +202,7 @@ class _FindYourUid extends StatelessWidget {
                     style: TextStyle(color: AppTheme.accent, fontSize: 13),
                   ),
                 ),
-                SizedBox(width: 4),
+                SizedBox(width: AppTheme.xs),
                 Icon(Icons.open_in_new, size: 13, color: AppTheme.accent),
               ],
             ),
@@ -232,7 +232,7 @@ class _SwitchHint extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: AppTheme.xs, vertical: 2),
             child: Text.rich(
               TextSpan(
-                style: TextStyle(color: AppTheme.muted, fontSize: 13),
+                style: AppTheme.captionLarge,
                 children: [
                   TextSpan(text: 'Know their UID? '),
                   TextSpan(

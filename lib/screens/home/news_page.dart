@@ -90,7 +90,8 @@ class _CardTile extends StatelessWidget {
             : () async {
                 final uri = Uri.tryParse(url);
                 // Server-supplied link: web schemes only.
-                if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+                if (uri == null ||
+                    !(uri.isScheme('http') || uri.isScheme('https'))) {
                   return;
                 }
                 await openExternalLink(context, uri);
@@ -138,7 +139,7 @@ class _CardTile extends StatelessWidget {
                           ),
                         ),
                         if (description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppTheme.xs),
                           Text(
                             description,
                             maxLines: 3,
@@ -196,10 +197,6 @@ class _LinkCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => _CardTile(
-    title: title,
-    description: description,
-    imageUrl: '',
-    url: url,
-  );
+  Widget build(BuildContext context) =>
+      _CardTile(title: title, description: description, imageUrl: '', url: url);
 }

@@ -9,8 +9,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../constants/legend_constants.dart' show kUnknownLegendName;
 import '../constants/tracker_constants.dart';
 import '../utils/app_logger.dart';
+import '../utils/formatting/map_name_utils.dart' show kUnknownMapKey;
 
 /// RP swings at or beyond this magnitude are rank-reset artifacts
 /// (end-of-split/season placement drops), not real per-game RP. Such a match
@@ -316,7 +318,9 @@ class RankedMatch {
     rpChange: changes.containsKey('rp_change')
         ? changes['rp_change'] as int
         : null,
-    kills: changes.containsKey('kills') ? (value: changes['kills'] as int?) : null,
+    kills: changes.containsKey('kills')
+        ? (value: changes['kills'] as int?)
+        : null,
     damage: changes.containsKey('damage')
         ? (value: changes['damage'] as int?)
         : null,
@@ -440,9 +444,9 @@ class RankedMatch {
     return RankedMatch(
       uid: _text(json['uid'], ''),
       playerName: _text(json['name'], ''),
-      legend: _text(json['legendPlayed'], 'Unknown'),
+      legend: _text(json['legendPlayed'], kUnknownLegendName),
       gameMode: _text(json['gameMode'], 'UNKNOWN'),
-      mapKey: _text(json['map'], 'UNKNOWN'),
+      mapKey: _text(json['map'], kUnknownMapKey),
       rpChange: _num(json['BRScoreChange']).toInt(),
       cumulativeRp: _num(json['BRScore']).toInt(),
       rankImg: _text(json['BRRankImg'], ''),
@@ -559,9 +563,9 @@ class RankedMatch {
     return RankedMatch._(
       uid: _asString(m['uid']) ?? '',
       playerName: _asString(m['player_name']) ?? '',
-      legend: _asString(m['legend']) ?? 'Unknown',
+      legend: _asString(m['legend']) ?? kUnknownLegendName,
       gameMode: _asString(m['game_mode']) ?? 'UNKNOWN',
-      mapKey: _asString(m['map_key']) ?? 'UNKNOWN',
+      mapKey: _asString(m['map_key']) ?? kUnknownMapKey,
       rpChange: _asInt(m['rp_change']) ?? 0,
       cumulativeRp: _asInt(m['cumulative_rp']) ?? 0,
       rankImg: _asString(m['rank_img']) ?? '',

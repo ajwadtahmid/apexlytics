@@ -3,7 +3,8 @@ import '../../constants/api_constants.dart';
 import '../../constants/legend_constants.dart' show legendDisplayName;
 import '../../models/player_stats.dart';
 import '../../models/rank_info.dart';
-import '../../utils/formatting/format.dart' show formatNumber, timeAgo;
+import '../../utils/formatting/format.dart'
+    show formatNumber, formatNumberOrNone, timeAgo;
 import '../../utils/formatting/rank_utils.dart' show rankAssetPath;
 import '../../utils/theme.dart';
 import '../../utils/tracking/player_compare.dart';
@@ -149,8 +150,8 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
         if (data.lowSample) ...[
           const SizedBox(height: AppTheme.sm),
           Text(
-            'Few games on this legend (you: ${data.gamesA ?? '—'}, '
-            '${widget.them.name}: ${data.gamesB ?? '—'}). Per-game figures '
+            'Few games on this legend (you: ${formatNumberOrNone(data.gamesA)}, '
+            '${widget.them.name}: ${formatNumberOrNone(data.gamesB)}). Per-game figures '
             'can swing a lot over a handful of games.',
             style: AppTheme.caption,
           ),
@@ -261,8 +262,6 @@ class _PlayerCard extends StatelessWidget {
   }
 }
 
-String _games(int? n) => n == null ? '—' : formatNumber(n);
-
 /// The legend being compared, and the way to pick another.
 class _LegendSelector extends StatelessWidget {
   final LegendOption option;
@@ -304,8 +303,8 @@ class _LegendSelector extends StatelessWidget {
                   // when neither of you has it.
                   if (option.gamesA != null || option.gamesB != null)
                     Text(
-                      'Games: you ${_games(option.gamesA)} · '
-                      'them ${_games(option.gamesB)}',
+                      'Games: you ${formatNumberOrNone(option.gamesA)} · '
+                      'them ${formatNumberOrNone(option.gamesB)}',
                       style: AppTheme.caption,
                     ),
                 ],
@@ -476,7 +475,7 @@ class _LegendTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               LegendIcon(legendName: option.name, size: 32),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppTheme.xs),
               Text(
                 name,
                 textAlign: TextAlign.center,

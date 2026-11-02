@@ -139,7 +139,7 @@ class PlatformCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppTheme.xs),
               const Text(
                 'RP',
                 style: TextStyle(
@@ -150,7 +150,7 @@ class PlatformCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppTheme.xs),
           Text(
             '${formatNumber(info.totalMastersAndPreds)} Masters + Preds',
             style: AppTheme.captionLarge,

@@ -13,6 +13,7 @@ import '../../providers/navigation_provider.dart';
 import '../../providers/ranked_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/error_messages.dart';
+import '../../utils/formatting/format.dart' show kNoReading;
 import '../../utils/formatting/snapshot_types.dart';
 import '../../utils/ranked/ranked_period.dart';
 import '../../utils/theme.dart';
@@ -1079,7 +1080,7 @@ class _PreviewStat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '—',
+          kNoReading,
           style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 20,

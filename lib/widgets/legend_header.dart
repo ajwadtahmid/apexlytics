@@ -51,7 +51,7 @@ class LegendHeader extends StatelessWidget {
                 ),
               ),
               if (info != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppTheme.sm),
                 RoleBadge(role: info.role),
               ],
             ],

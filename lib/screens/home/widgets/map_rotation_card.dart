@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../models/map_rotation.dart';
+import '../../../utils/formatting/format.dart' show formatClock;
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
 import 'map_hero_image.dart';
@@ -22,7 +22,7 @@ String? formatNextMapEnd({
   if (durationMins <= 0) return null;
   final from = now ?? DateTime.now();
   final end = from.add(Duration(seconds: remainingSecs + durationMins * 60));
-  final time = DateFormat('h:mm a').format(end);
+  final time = formatClock(end);
   final sameDay =
       end.year == from.year && end.month == from.month && end.day == from.day;
   return sameDay ? time : '$time tomorrow';
@@ -235,8 +235,6 @@ class _MapCardState extends State<_MapCard> {
     super.dispose();
   }
 
-  static final _endTimeFormat = DateFormat('h:mm a');
-
   static String _formatCountdown(int secs) {
     final d = secs ~/ 86400;
     final h = (secs % 86400) ~/ 3600;
@@ -253,7 +251,7 @@ class _MapCardState extends State<_MapCard> {
 
   static String _formatEndTime(int remainingSecs) {
     final end = DateTime.now().add(Duration(seconds: remainingSecs));
-    return _endTimeFormat.format(end);
+    return formatClock(end);
   }
 
   static String _formatMapDisplay(
@@ -463,10 +461,7 @@ class _NextMapRow extends StatelessWidget {
             ),
             if (nextEnd != null) ...[
               const SizedBox(width: AppTheme.sm),
-              Text(
-                'Ends at $nextEnd',
-                style: AppTheme.caption,
-              ),
+              Text('Ends at $nextEnd', style: AppTheme.caption),
             ],
           ],
         ),

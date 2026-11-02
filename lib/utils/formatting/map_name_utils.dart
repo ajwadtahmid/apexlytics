@@ -1,3 +1,7 @@
+/// The key the API sends for a map it can't name, and the one a blank key
+/// folds into. The Dart and SQL ranked paths both rely on it.
+const kUnknownMapKey = 'UNKNOWN';
+
 /// Converts a raw map-rotation key from the `/games` endpoint into a
 /// human-readable name.
 ///
@@ -10,7 +14,9 @@
 ///   `UNKNOWN` / empty       → `Unknown`
 String formatRotationMapName(String raw) {
   final trimmed = raw.trim();
-  if (trimmed.isEmpty || trimmed.toUpperCase() == 'UNKNOWN') return 'Unknown';
+  if (trimmed.isEmpty || trimmed.toUpperCase() == kUnknownMapKey) {
+    return 'Unknown';
+  }
 
   var base = trimmed.toLowerCase();
   if (base.endsWith('_rotation')) {

@@ -8,6 +8,7 @@ import '../../../models/ranked_match.dart';
 import '../../../providers/ranked_provider.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/theme.dart';
+import '../../../widgets/confirm_dialog.dart';
 import '../../../widgets/legend_icon.dart';
 
 /// Opens the correction form for [match]. Resolves to the updated match if a
@@ -155,7 +156,8 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
     _mapKey = _canonicalMapOptionKey(widget.match.mapKey);
     final mapKeys = kBattleRoyaleMaps.keys.toList()
       ..sort(
-        (a, b) => kBattleRoyaleMaps[a]!.name.compareTo(kBattleRoyaleMaps[b]!.name),
+        (a, b) =>
+            kBattleRoyaleMaps[a]!.name.compareTo(kBattleRoyaleMaps[b]!.name),
       );
     // Same fallback as legend: keep an unrecognized stored key selectable.
     _mapOptions = mapKeys.contains(_mapKey) ? mapKeys : [_mapKey, ...mapKeys];
@@ -208,33 +210,16 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
   /// History. A real ranked game can rarely net exactly 0 RP, so this isn't
   /// rejected outright; the user is warned and can still choose to save it.
   Future<bool> _confirmZeroRpChange() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('RP change is 0'),
-        content: const Text(
+    return showConfirmDialog(
+      context,
+      title: 'RP change is 0',
+      body:
           'A match with 0 RP change will be left out of your ranked '
           'summary, legends, maps, sessions, and trends. '
           "It'll still show up in History.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
-            child: const Text('Save anyway'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Save anyway',
+      confirmColor: AppTheme.accent,
     );
-    return confirmed ?? false;
   }
 
   Future<void> _save() async {
@@ -296,9 +281,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await ref
-          .read(rankedHistoryStoreProvider)
-          .clearEdits(widget.match.id);
+      await ref.read(rankedHistoryStoreProvider).clearEdits(widget.match.id);
       _refreshBreakdown();
       if (mounted) Navigator.pop(context, widget.match.withEditsCleared());
     } catch (e, st) {
@@ -435,14 +418,9 @@ class _FieldLabel extends StatelessWidget {
       width: _kLabelWidth,
       child: Row(
         children: [
-          Flexible(
-            child: Text(
-              label,
-              style: AppTheme.captionLarge,
-            ),
-          ),
+          Flexible(child: Text(label, style: AppTheme.captionLarge)),
           if (edited) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: AppTheme.xs),
             const Icon(Icons.edit, size: 12, color: AppTheme.accent),
           ],
         ],
@@ -484,7 +462,7 @@ class _LegendRow extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       LegendIcon(legendName: name, size: 16),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppTheme.sm),
                       Flexible(
                         child: Text(name, overflow: TextOverflow.ellipsis),
                       ),

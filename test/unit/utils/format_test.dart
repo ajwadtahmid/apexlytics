@@ -156,6 +156,11 @@ void main() {
       expect(plural(2, 'game'), '2 games');
     });
 
+    test('groups thousands in the count', () {
+      expect(plural(1234, 'game'), '1,234 games');
+      expect(plural(1, 'game'), '1 game');
+    });
+
     test('an explicit plural form wins', () {
       expect(plural(1, 'ranked game', 'ranked games'), '1 ranked game');
       expect(plural(3, 'ranked game', 'ranked games'), '3 ranked games');
@@ -208,6 +213,16 @@ void main() {
       final day = '${months[local.month - 1]} ${local.day}';
       expect(formatShortDate(utc), day);
       expect(formatShortDateTime(utc), '$day, $h:$mm $ampm');
+    });
+  });
+
+  group('formatClock', () {
+    test('formats the time of day in the device time zone', () {
+      final local = DateTime.utc(2026, 3, 4, 21, 30).toLocal();
+      final h = local.hour % 12 == 0 ? 12 : local.hour % 12;
+      final mm = local.minute.toString().padLeft(2, '0');
+      final ampm = local.hour >= 12 ? 'PM' : 'AM';
+      expect(formatClock(DateTime.utc(2026, 3, 4, 21, 30)), '$h:$mm $ampm');
     });
   });
 

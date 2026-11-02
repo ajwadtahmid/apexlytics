@@ -9,6 +9,7 @@ import '../../constants/legend_constants.dart';
 import '../../constants/map_constants.dart';
 import '../../models/ranked_match.dart';
 import '../../models/season_meta.dart';
+import '../formatting/map_name_utils.dart' show kUnknownMapKey;
 import '../formatting/season_utils.dart';
 import '../app_logger.dart';
 import '../formatting/snapshot_types.dart';
@@ -978,7 +979,7 @@ class RankedHistoryStore {
 
     final byLegend = <String, List<Map<String, Object?>>>{};
     for (final r in rows) {
-      final rawLegend = r['legend'] as String? ?? 'Unknown';
+      final rawLegend = r['legend'] as String? ?? kUnknownLegendName;
       byLegend.putIfAbsent(canonicalLegendName(rawLegend), () => []).add(r);
     }
 
@@ -1011,7 +1012,7 @@ class RankedHistoryStore {
     final byMap = <String, List<Map<String, Object?>>>{};
     final representativeKey = <String, String>{};
     for (final r in rows) {
-      final rawKey = r['map_key'] as String? ?? 'UNKNOWN';
+      final rawKey = r['map_key'] as String? ?? kUnknownMapKey;
       final canonical = canonicalMapKey(rawKey);
       byMap.putIfAbsent(canonical, () => []).add(r);
       representativeKey.putIfAbsent(canonical, () => rawKey);
@@ -1103,7 +1104,8 @@ class RankedHistoryStore {
     final (where, args) = _rankedScope(uid, null);
     final rows = await db.rawQuery(
       "SELECT * FROM $table WHERE $where AND "
-      "LOWER(COALESCE(NULLIF(TRIM(legend), ''), 'Unknown')) = LOWER(?) "
+      "LOWER(COALESCE(NULLIF(TRIM(legend), ''), '$kUnknownLegendName')) "
+      '= LOWER(?) '
       'ORDER BY start_ms DESC',
       [...args, legend],
     );
@@ -1132,7 +1134,7 @@ class RankedHistoryStore {
     final placeholders = List.filled(variants.length, 'LOWER(?)').join(', ');
     final rows = await db.rawQuery(
       "SELECT * FROM $table WHERE $where AND "
-      "LOWER(COALESCE(NULLIF(TRIM(map_key), ''), 'UNKNOWN')) "
+      "LOWER(COALESCE(NULLIF(TRIM(map_key), ''), '$kUnknownMapKey')) "
       'IN ($placeholders) '
       'ORDER BY start_ms DESC',
       [...args, ...variants],

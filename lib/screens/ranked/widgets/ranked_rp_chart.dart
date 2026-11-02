@@ -1,9 +1,13 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/format.dart'
-    show formatNumber, formatShortDateTime, formatSignedInt, plural;
+    show
+        formatNumber,
+        formatShortDate,
+        formatShortDateTime,
+        formatSignedInt,
+        plural;
 import '../../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../../constants/map_constants.dart';
 import '../../../utils/ranked/ranked_aggregates.dart';
@@ -16,9 +20,6 @@ import '../../../widgets/surface_card.dart';
 typedef _WeekChoice = ({WeekRange range, int number, int games});
 
 /// Match and session times in the chart's tooltips and session picker.
-final _sessionFmt = DateFormat('MMM d, h:mm a');
-
-final _dayFmt = DateFormat('MMM d');
 
 /// Above this many plotted points, individual dots stop being useful (they
 /// overlap into a solid band) and cost more to paint than they convey.
@@ -177,7 +178,7 @@ class _RankedRpChartState extends State<RankedRpChart> {
                           choices: [
                             for (final s in sessions)
                               (
-                                label: _sessionFmt.format(s.start.toLocal()),
+                                label: formatShortDateTime(s.start),
                                 detail: '${s.games}g',
                               ),
                           ],
@@ -224,8 +225,8 @@ class _RankedRpChartState extends State<RankedRpChart> {
     final first = week.start.toLocal();
     final last = week.end.toLocal().subtract(const Duration(seconds: 1));
     return first.month == last.month
-        ? '${_dayFmt.format(first)}–${last.day}'
-        : '${_dayFmt.format(first)} – ${_dayFmt.format(last)}';
+        ? '${formatShortDate(first)}–${last.day}'
+        : '${formatShortDate(first)} – ${formatShortDate(last)}';
   }
 
   List<RankedMatch> _matchesForSelection(

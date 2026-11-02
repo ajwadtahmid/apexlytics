@@ -427,10 +427,7 @@ class _SplitDropdown extends StatelessWidget {
           isExpanded: true,
           dropdownColor: AppTheme.surface,
           style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-          hint: const Text(
-            'No recorded games',
-            style: TextStyle(color: AppTheme.muted, fontSize: 13),
-          ),
+          hint: const Text('No recorded games', style: AppTheme.captionLarge),
           items: [
             for (final b in splits)
               DropdownMenuItem(

@@ -20,7 +20,7 @@ class LegendStatsSection extends StatelessWidget {
       children: legends
           .where((legend) {
             // Skip Career/Global tracker if it only has weapon trackers
-            if (legend.name.toLowerCase() == 'global') {
+            if (isCareerLegend(legend.name)) {
               final nonWeaponTrackers = legend.trackers
                   .where((t) => findWeaponFromTracker(t.displayName) == null)
                   .toList();
@@ -63,7 +63,7 @@ class _LegendCard extends StatelessWidget {
         .toList();
     final card = legendCardTrackers(
       deduplicateTrackers(nonWeaponTrackers),
-      career: legend.name == kCareerLegendName,
+      career: isCareerLegend(legend.name),
     );
 
     return GestureDetector(
@@ -115,7 +115,7 @@ class _LegendCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppTheme.sm),
                     _TrackerGrid(card: card),
                   ],
                 ),

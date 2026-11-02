@@ -32,7 +32,7 @@ class LegendTrackersSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final career = legend.name == kCareerLegendName;
+    final career = isCareerLegend(legend.name);
     final trackers = deduplicateTrackers(legend.trackers);
     // The career entry has no Battle Royale figures to work out.
     final calculations = career

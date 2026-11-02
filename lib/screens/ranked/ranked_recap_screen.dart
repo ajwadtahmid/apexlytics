@@ -7,6 +7,7 @@ import '../../utils/formatting/format.dart'
     show
         formatDuration,
         formatNumber,
+        formatPercent,
         formatSigned,
         formatSignedInt,
         formatTotalOrNone,
@@ -165,7 +166,7 @@ Widget _figure(RecapTile tile, SplitRecap r) {
       final rate = r.winRate;
       return StatDisplay(
         label: 'Win rate',
-        value: rate == null ? kNoReading : '${(rate * 100).round()}%',
+        value: rate == null ? kNoReading : formatPercent(rate, decimals: 0),
         footnote:
             '${plural(r.wins, 'win')} · ${plural(r.losses, 'loss', 'losses')}',
       );

@@ -45,8 +45,7 @@ class CacheSettingsSection extends ConsumerWidget {
     if (u == null) return backup;
     final saved = u.games == 0
         ? 'No games saved yet'
-        : '${formatNumber(u.games)} ${u.games == 1 ? 'game' : 'games'} · '
-              '${formatBytes(u.historyBytes)}';
+        : '${plural(u.games, 'game')} · ${formatBytes(u.historyBytes)}';
     return '$saved · $backup';
   }
 
@@ -408,34 +407,14 @@ class CacheSettingsSection extends ConsumerWidget {
     final replaced = preview.profilesReplacedBy(
       ref.read(sharedPreferencesProvider),
     );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('Import backup?'),
-        content: Text(
-          _summarize(preview, replaced),
-          style: const TextStyle(color: AppTheme.muted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.muted),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Import',
-              style: TextStyle(color: AppTheme.accent),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Import backup?',
+      body: _summarize(preview, replaced),
+      confirmLabel: 'Import',
+      confirmColor: AppTheme.accent,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
     final prefs = ref.read(sharedPreferencesProvider);
     final importResult = await commitBackupImport(
@@ -455,7 +434,7 @@ class CacheSettingsSection extends ConsumerWidget {
         // The same counts the preview dialog showed.
         context.showMessage(
           'Backup restored: ${_profilesLabel(preview.profileCount)}, '
-          '${preview.matchCount} matches.'
+          '${plural(preview.matchCount, 'match')}.'
           '${skippedRows > 0 ? ' $skippedRows unreadable ${skippedRows == 1 ? 'entry was' : 'entries were'} skipped.' : ''}',
         );
       case ImportError(:final message):
@@ -463,8 +442,7 @@ class CacheSettingsSection extends ConsumerWidget {
     }
   }
 
-  String _profilesLabel(int count) =>
-      count == 1 ? '1 profile' : '$count profiles';
+  String _profilesLabel(int count) => plural(count, 'profile');
 
   // A heads-up, not a hard limit — restoring past this is still expected to
   // work fine, but it's large enough that "may take a moment" is honest.
@@ -476,10 +454,10 @@ class CacheSettingsSection extends ConsumerWidget {
     return [
       if (exportedAt != null)
         'Exported ${DateFormat('MMM d, yyyy').format(exportedAt.toLocal())}.',
-      '$profiles, ${preview.matchCount} matches '
-          '(${preview.newMatchCount} new to this device).',
+      '$profiles, ${plural(preview.matchCount, 'match')} '
+          '(${formatNumber(preview.newMatchCount)} new to this device).',
       if (preview.sizeBytes > _largeBackupWarningBytes)
-        'This is a large backup (${_formatSize(preview.sizeBytes)}) — '
+        'This is a large backup (${formatBytes(preview.sizeBytes)}) — '
             'restoring may take a moment.',
       "This will restore the backup's settings and profiles, and merge its "
           'match history into your current data.',
@@ -490,9 +468,6 @@ class CacheSettingsSection extends ConsumerWidget {
             'again.',
     ].join('\n\n');
   }
-
-  String _formatSize(int bytes) =>
-      '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
   /// Destructive-action dialog. [onConfirm] runs after the sheet is dismissed,
   /// and the returned future completes only once it has - so a caller can
@@ -505,28 +480,14 @@ class CacheSettingsSection extends ConsumerWidget {
     String confirmLabel = 'Confirm',
     Color confirmColor = AppTheme.red,
   }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: Text(title),
-        content: Text(body, style: const TextStyle(color: AppTheme.muted)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.muted),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(confirmLabel, style: TextStyle(color: confirmColor)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: title,
+      body: body,
+      confirmLabel: confirmLabel,
+      confirmColor: confirmColor,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     try {
       await onConfirm();
     } catch (e) {

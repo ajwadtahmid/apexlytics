@@ -1,16 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../providers/best_metric_provider.dart';
-import '../../utils/formatting/format.dart' show formatTotalOrNone, plural;
+import '../../utils/formatting/format.dart'
+    show formatShortDateTime, formatTotalOrNone, plural;
 import '../../utils/ranked/ranked_aggregates.dart';
 import '../../utils/ranked/session_overview.dart';
 import '../../utils/theme.dart';
 import '../../widgets/rp_pill.dart';
 import '../../widgets/surface_card.dart';
-
-final _sessionDateFmt = DateFormat('MMM d · h:mm a');
 
 /// A mark on the session that netted the most or the least RP.
 enum SessionBadge {
@@ -66,7 +64,7 @@ class SessionRecapBody extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                _sessionDateFmt.format(session.start.toLocal()),
+                formatShortDateTime(session.start),
                 style: const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 14,

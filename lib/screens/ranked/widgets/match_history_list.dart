@@ -466,15 +466,15 @@ class _SectionSliver extends ConsumerWidget {
 
 // ── Dates ───────────────────────────────────────────────────────────────────
 
-final _shortDayFmt = DateFormat('MMM d');
 final _shortDayYearFmt = DateFormat('MMM d, y');
 final _timeFmt = DateFormat.jm();
 
 /// "Oct 9 9:40 PM"; the year only when it isn't the current one.
 String _stamp(DateTime t) {
   final l = t.toLocal();
-  final day = (l.year == DateTime.now().year ? _shortDayFmt : _shortDayYearFmt)
-      .format(l);
+  final day = l.year == DateTime.now().year
+      ? formatShortDate(l)
+      : _shortDayYearFmt.format(l);
   return '$day ${_timeFmt.format(l)}';
 }
 
@@ -629,7 +629,7 @@ class _SessionStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (collapsed) {
-      if (!item.hasRanked) return const SizedBox(height: 4);
+      if (!item.hasRanked) return const SizedBox(height: AppTheme.xs);
       return Padding(
         padding: const EdgeInsets.only(left: _indent, bottom: AppTheme.sm),
         child: Text.rich(
@@ -806,7 +806,7 @@ class _MatchRow extends StatelessWidget {
       children: [
         if (!match.countsTowardStats) ...[
           const ExcludedTag(),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.xs),
         ],
         if (ranked)
           RpPill(totalRp: match.rpChange, compact: true)

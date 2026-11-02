@@ -611,7 +611,7 @@ class _AllTimeNote extends StatelessWidget {
           size: 14,
           color: color,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.xs),
         Flexible(
           child: Text(
             text,
@@ -744,11 +744,7 @@ class _SessionRecordCard extends StatelessWidget {
                 stats: [
                   (StatIcons.games, 'Games', '${s.games}'),
                   (StatIcons.totalKills, 'Kills', formatNumberOrNone(kills)),
-                  (
-                    StatIcons.totalDamage,
-                    'Damage',
-                    formatNumberOrNone(damage),
-                  ),
+                  (StatIcons.totalDamage, 'Damage', formatNumberOrNone(damage)),
                   (
                     StatIcons.time,
                     'Time played',

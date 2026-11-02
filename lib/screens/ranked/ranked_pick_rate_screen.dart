@@ -56,16 +56,16 @@ class RankedPickRateEntry extends StatelessWidget {
       icon: Icons.bubble_chart_outlined,
       title: 'Pick Rate',
       onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RankedPickRateScreen(
-              summary: summary,
-              legends: legends,
-              matchesFor: matchesFor,
-              onRefresh: onRefresh,
-              sessionPool: sessionPool,
-            ),
+        MaterialPageRoute(
+          builder: (_) => RankedPickRateScreen(
+            summary: summary,
+            legends: legends,
+            matchesFor: matchesFor,
+            onRefresh: onRefresh,
+            sessionPool: sessionPool,
           ),
         ),
+      ),
     );
   }
 }
@@ -874,7 +874,7 @@ class _KeyChip extends StatelessWidget {
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.xs),
         Text(quadrant.label, style: AppTheme.captionSmall),
       ],
     );

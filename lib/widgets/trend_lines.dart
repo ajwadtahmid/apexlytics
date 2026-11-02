@@ -123,7 +123,7 @@ class TrendFootnote extends StatelessWidget {
         'your average.',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 11, color: AppTheme.muted),
+        style: AppTheme.captionSmall,
       ),
     );
   }

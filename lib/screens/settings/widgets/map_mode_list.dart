@@ -84,10 +84,7 @@ class MapTimingTile extends StatelessWidget {
             ),
             const SizedBox(width: AppTheme.sm),
             const Expanded(
-              child: Text(
-                'Alert timing',
-                style: TextStyle(fontSize: 13, color: AppTheme.muted),
-              ),
+              child: Text('Alert timing', style: AppTheme.captionLarge),
             ),
             Text(
               label,
@@ -125,7 +122,7 @@ class MapExpandTile extends StatelessWidget {
           text: '$count more map${count == 1 ? '' : 's'}',
           iconSize: 14,
           iconColor: AppTheme.muted,
-          textStyle: const TextStyle(fontSize: 13, color: AppTheme.muted),
+          textStyle: AppTheme.captionLarge,
         ),
       ),
     );

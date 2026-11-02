@@ -1,3 +1,4 @@
+import '../formatting/format.dart' show formatSigned;
 import 'ranked_aggregates.dart';
 
 /// Plain-language reading of a before/after trend.
@@ -256,7 +257,7 @@ PerformanceHeadline? performanceHeadline({
       ? null
       : trendVerdict(trend.delta, steadyBand: kRpSteadyBand);
   final String? trendText = average != null
-      ? 'Averaging ${_signed(average)} RP per game over all '
+      ? 'Averaging ${formatSigned(average)} RP per game over all '
             '${sessions.length} sessions'
       : trend == null || verdict == null
       ? null
@@ -289,8 +290,6 @@ PerformanceHeadline? performanceHeadline({
     timing: timing,
   );
 }
-
-String _signed(double v) => '${v >= 0 ? '+' : ''}${v.toStringAsFixed(1)}';
 
 /// "in the evening", "at night".
 String _inThe(String part) =>

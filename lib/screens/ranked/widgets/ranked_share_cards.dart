@@ -7,6 +7,7 @@ import '../../../utils/formatting/format.dart'
     show
         formatDuration,
         formatNumber,
+        formatPercent,
         formatNumberOrNone,
         formatSessionSpan,
         formatSigned,
@@ -125,7 +126,7 @@ class RecapShareCard extends StatelessWidget {
           label: 'Win rate',
           value: r.winRate == null
               ? kNoReading
-              : '${(r.winRate! * 100).round()}%',
+              : formatPercent(r.winRate!, decimals: 0),
         );
       case RecapTile.rpPerGame:
         return ShareTile(

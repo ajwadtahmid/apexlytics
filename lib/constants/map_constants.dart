@@ -79,7 +79,7 @@ String _baseKey(String mapKey) {
 /// breakdowns — there's nothing meaningful to show for it).
 bool isUnknownMapKey(String mapKey) {
   final k = mapKey.trim();
-  return k.isEmpty || k.toUpperCase() == 'UNKNOWN';
+  return k.isEmpty || k.toUpperCase() == kUnknownMapKey;
 }
 
 BattleRoyaleMapInfo? battleRoyaleMapInfo(String mapKey) =>
@@ -120,7 +120,7 @@ String? battleRoyaleMapAsset(String mapKey) =>
 /// A blank key and `UNKNOWN` are the same (see [isUnknownMapKey]) and share one
 /// key, so they land in one "Unknown" row rather than two.
 String canonicalMapKey(String mapKey) => isUnknownMapKey(mapKey)
-    ? _baseKey('UNKNOWN')
+    ? _baseKey(kUnknownMapKey)
     : battleRoyaleMapInfo(mapKey)?.name ?? _baseKey(mapKey);
 
 /// Every raw `map_key` spelling that shares [mapKey]'s [canonicalMapKey],

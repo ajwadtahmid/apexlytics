@@ -452,7 +452,7 @@ class _MapCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppTheme.xs),
                     Row(
                       children: [
                         Expanded(

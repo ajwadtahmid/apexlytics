@@ -28,31 +28,13 @@ class FavoritesPane extends ConsumerWidget {
   static const _kRefreshConcurrency = 5;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('Clear favorites?'),
-        content: const Text(
-          'Your saved favorite players will be removed.',
-          style: TextStyle(color: AppTheme.muted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.muted),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear', style: TextStyle(color: AppTheme.red)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear favorites?',
+      body: 'Your saved favorite players will be removed.',
+      confirmLabel: 'Clear',
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await ref.read(searchStateProvider.notifier).clearFavorites();
       if (context.mounted) context.showMessage('Favorites cleared');
     }
@@ -260,10 +242,7 @@ class _ListHeader extends StatelessWidget {
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        child: const Text(
-          'Clear',
-          style: TextStyle(color: AppTheme.muted, fontSize: 12),
-        ),
+        child: const Text('Clear', style: AppTheme.caption),
       ),
     );
   }

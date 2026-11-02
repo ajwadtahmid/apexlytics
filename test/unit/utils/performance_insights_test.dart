@@ -367,6 +367,16 @@ void main() {
       expect(h.verdict, isNull);
     });
 
+    test('an average that rounds to zero is not shown as negative', () {
+      final h = performanceHeadline(
+        sessions: played([-1, ...List.filled(39, 0)]),
+        insights: const [],
+        window: kTrendWindowAll,
+      )!;
+
+      expect(h.trend, 'Averaging +0.0 RP per game over all 40 sessions');
+    });
+
     test('a losing average is signed', () {
       final h = performanceHeadline(
         sessions: played(List.filled(10, -6)),

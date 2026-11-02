@@ -125,7 +125,7 @@ class _Segment extends StatelessWidget {
                   ),
                 ),
                 if (option.locked) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppTheme.xs),
                   Icon(Icons.lock_outline, size: 11, color: color),
                 ],
               ],

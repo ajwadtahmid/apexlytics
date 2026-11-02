@@ -96,7 +96,7 @@ final Map<String, Legend> kLegendsByName = {
 /// name is `"Unknown"`, the same as a missing one.
 String canonicalLegendName(String name) {
   final trimmed = name.trim();
-  if (trimmed.isEmpty) return 'Unknown';
+  if (trimmed.isEmpty) return kUnknownLegendName;
   return legendInfo(trimmed)?.name ?? _titleCase(trimmed);
 }
 
@@ -112,8 +112,16 @@ String _titleCase(String s) => s
     .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
     .join(' ');
 
+/// The legend name a missing or blank one folds into. The Dart and SQL ranked
+/// paths both rely on it.
+const kUnknownLegendName = 'Unknown';
+
 /// API name for the career-wide stats entry returned alongside per-legend stats.
 const kCareerLegendName = 'Global';
 
-String legendDisplayName(String name) =>
-    name.toLowerCase() == kCareerLegendName.toLowerCase() ? 'Career' : name;
+/// Whether [name] is the career-wide entry, ignoring case and surrounding
+/// whitespace.
+bool isCareerLegend(String name) =>
+    name.trim().toLowerCase() == kCareerLegendName.toLowerCase();
+
+String legendDisplayName(String name) => isCareerLegend(name) ? 'Career' : name;

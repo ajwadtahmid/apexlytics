@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/legend_constants.dart' show isCareerLegend;
 import '../utils/theme.dart';
 
 /// Source portrait aspect ratio, for sizing a box to match it exactly.
@@ -8,8 +9,9 @@ const kLegendPortraitAspectRatio = 1680 / 1878;
 /// — lowercased with spaces as underscores. The synthetic "Global" career
 /// aggregate has no legend portrait, so it maps to the `career` image.
 String legendImageKey(String name) {
-  final lower = name.toLowerCase();
-  return lower == 'global' ? 'career' : lower.replaceAll(' ', '_');
+  return isCareerLegend(name)
+      ? 'career'
+      : name.toLowerCase().replaceAll(' ', '_');
 }
 
 /// Renders a legend portrait from assets with a two-level fallback:

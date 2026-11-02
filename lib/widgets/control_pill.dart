@@ -52,7 +52,7 @@ class ControlPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           leading ?? Icon(icon, size: 13, color: tint),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.xs),
           Text(
             label,
             style: TextStyle(
@@ -61,7 +61,10 @@ class ControlPill extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 4), trailing!],
+          if (trailing != null) ...[
+            const SizedBox(width: AppTheme.xs),
+            trailing!,
+          ],
         ],
       ),
     );
@@ -86,7 +89,7 @@ class ControlPill extends StatelessWidget {
               children: [
                 if (lead != null) ...[
                   Text(lead, style: AppTheme.caption),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppTheme.xs),
                 ],
                 pill,
               ],

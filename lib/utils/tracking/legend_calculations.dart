@@ -45,7 +45,7 @@ List<LegendRate> legendRates(List<LegendTracker> trackers) {
       (
         label: 'Win Rate',
         value: wins / games * 100,
-        text: '${(wins / games * 100).toStringAsFixed(1)}%',
+        text: formatPercent(wins / games),
       ),
     if (revives != null && hasGames)
       (
@@ -57,13 +57,13 @@ List<LegendRate> legendRates(List<LegendTracker> trackers) {
       (
         label: 'Top 3 Placement %',
         value: top3 / games * 100,
-        text: '${(top3 / games * 100).toStringAsFixed(1)}%',
+        text: formatPercent(top3 / games),
       ),
     if (killLeader != null && hasKills)
       (
         label: 'Kills as Kill Leader %',
         value: killLeader / kills * 100,
-        text: '${(killLeader / kills * 100).toStringAsFixed(1)}%',
+        text: formatPercent(killLeader / kills),
       ),
   ];
 }

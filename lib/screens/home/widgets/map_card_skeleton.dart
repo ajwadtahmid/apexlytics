@@ -25,9 +25,9 @@ class MapCardSkeleton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const ShimmerBox(width: 60, height: 14),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppTheme.xs),
                   const ShimmerBox(width: 180, height: 29),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.sm),
                   Row(
                     children: [
                       const ShimmerBox(width: 140, height: 17),
@@ -43,7 +43,7 @@ class MapCardSkeleton extends StatelessWidget {
                   const Divider(color: AppTheme.surface2, height: 1),
                   const SizedBox(height: 10),
                   const ShimmerBox(width: 50, height: 12),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppTheme.xs),
                   const ShimmerBox(width: 160, height: 16),
                 ],
               ),

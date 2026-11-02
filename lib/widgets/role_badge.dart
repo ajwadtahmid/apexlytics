@@ -40,7 +40,7 @@ class RoleBadge extends StatelessWidget {
             cacheWidth: (iconSize * MediaQuery.devicePixelRatioOf(context))
                 .ceil(),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.xs),
           Text(
             role.displayName,
             style: TextStyle(

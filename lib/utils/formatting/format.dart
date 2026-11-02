@@ -16,6 +16,9 @@ String formatShortDate(DateTime t) => _shortDate.format(t.toLocal());
 /// [formatShortDate] with the time: `Mar 4, 9:30 PM`.
 String formatShortDateTime(DateTime t) => _shortDateTime.format(t.toLocal());
 
+/// Just the time of day, in the device's time zone: `9:30 PM`.
+String formatClock(DateTime t) => _clock.format(t.toLocal());
+
 /// When a session ran, in the device's time zone. Within one day the date leads
 /// and the times follow in brackets: `Oct 9 (11:12 AM – 3:34 PM)`. Across
 /// midnight each end carries its own date: `Oct 9 11:59 PM to Oct 10 3:03 AM`.
@@ -53,7 +56,7 @@ String formatPercent(double ratio, {int decimals = 1}) =>
 /// `plural(3, 'game')` is `3 games`. [many] overrides the default `word + s`
 /// for the plural form (`plural(2, 'ranked game', 'ranked games')`).
 String plural(int n, String word, [String? many]) =>
-    n == 1 ? '$n $word' : '$n ${many ?? '${word}s'}';
+    n == 1 ? '$n $word' : '${formatNumber(n)} ${many ?? '${word}s'}';
 
 /// A storage size for people: `312 B`, `48 KB`, `3.2 MB`.
 String formatBytes(int bytes) {

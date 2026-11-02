@@ -4,7 +4,13 @@ import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/rank_utils.dart'
     show rankAssetPathFromImageUrl;
-import '../../../utils/formatting/format.dart' show formatDuration, formatNumber, formatNumberOrNone, formatSignedInt, kNoReading;
+import '../../../utils/formatting/format.dart'
+    show
+        formatDuration,
+        formatNumber,
+        formatNumberOrNone,
+        formatSignedInt,
+        kNoReading;
 import '../../../utils/ranked/legend_baseline.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/legend_asset_image.dart';
@@ -166,7 +172,7 @@ class _Header extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppTheme.xs),
               // The map leads the line, sized to sit beside the mode tag.
               Wrap(
                 spacing: AppTheme.sm,
@@ -224,10 +230,7 @@ class _RpBlock extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Ranked Points',
-              style: AppTheme.captionSmall,
-            ),
+            const Text('Ranked Points', style: AppTheme.captionSmall),
             Text(
               formatNumber(match.cumulativeRp),
               style: const TextStyle(
@@ -340,13 +343,8 @@ class _NoteRow extends StatelessWidget {
             padding: EdgeInsets.only(top: 1),
             child: Icon(Icons.info_outline, size: 13, color: AppTheme.muted),
           ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              note.text,
-              style: AppTheme.caption,
-            ),
-          ),
+          const SizedBox(width: AppTheme.xs),
+          Expanded(child: Text(note.text, style: AppTheme.caption)),
         ],
       ),
     );
@@ -373,12 +371,7 @@ class _Trackers extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    t.name,
-                    style: AppTheme.captionLarge,
-                  ),
-                ),
+                Expanded(child: Text(t.name, style: AppTheme.captionLarge)),
                 const SizedBox(width: AppTheme.sm),
                 Text(
                   formatNumber(t.value.toInt()),
