@@ -248,7 +248,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
     // Built purely for the AppBar's split dropdown + week strip — the actual
     // Ranked content (including its own loading/error handling) lives in
     // RankedStatsBody, which resolves the same split independently.
-    final splits = ref.watch(rankedSplitsProvider(uid)).asData?.value;
+    final splits = ref.watch(rankedSplitsProvider(uid)).value;
     final period = ref.watch(rankedPeriodProvider);
     RankedView? shell;
     if (splits != null && splits.isNotEmpty) {

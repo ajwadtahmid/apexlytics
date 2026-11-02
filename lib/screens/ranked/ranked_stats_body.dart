@@ -149,6 +149,9 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
           ),
         Expanded(
           child: splitsAsync.when(
+            // A reload (a sync landed, a week was picked) keeps what is on
+            // screen, so the tab you are on, its filters and its scroll stay.
+            skipLoadingOnReload: true,
             loading: () => const Center(
               child: CircularProgressIndicator(color: AppTheme.accent),
             ),
@@ -162,6 +165,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
                 return ref
                     .watch(rankedLifetimeAggregatesProvider(widget.uid))
                     .when(
+                      skipLoadingOnReload: true,
                       loading: _spinner,
                       error: (e, _) => _errorState(e),
                       data: _lifetimeTabs,
@@ -175,6 +179,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
                     rankedSplitViewProvider((uid: widget.uid, splitId: effId)),
                   )
                   .when(
+                    skipLoadingOnReload: true,
                     loading: _spinner,
                     error: (e, _) => _errorState(e),
                     data: _splitTabs,

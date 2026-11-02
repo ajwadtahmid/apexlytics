@@ -832,4 +832,62 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('the tab you are on', () {
+    const uid = 'uid123';
+    const splitId = 'br_ranked_s29_s1';
+
+    Future<ProviderContainer> openOnGames(WidgetTester tester) async {
+      final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 0});
+      await tester.pumpWidget(
+        app(
+          prefs: prefs,
+          outcome: RankedSyncOutcome.synced,
+          splits: const [
+            RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
+          ],
+          splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(TabBar),
+          matching: find.text('Games'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tabIndex(tester), 3);
+      return ProviderScope.containerOf(
+        tester.element(find.byType(RankedStatsBody)),
+      );
+    }
+
+    testWidgets('stays put when the saved games reload, as after a sync', (
+      tester,
+    ) async {
+      final container = await openOnGames(tester);
+
+      container.invalidate(
+        rankedSplitMatchesProvider((uid: uid, splitId: splitId)),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(tabIndex(tester), 3);
+    });
+
+    testWidgets('stays put when a week is picked', (tester) async {
+      final container = await openOnGames(tester);
+
+      container.read(rankedPeriodProvider.notifier).selectWeek(0);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(tabIndex(tester), 3);
+    });
+  });
 }
+
+int tabIndex(WidgetTester tester) =>
+    DefaultTabController.of(tester.element(find.byType(TabBarView))).index;
