@@ -45,6 +45,10 @@ Future<bool> refreshAndMarkSynced(
         .add(byUid ? query.trim() : playerSessionKey(platform, query));
     return true;
   }
+  // Taken now: the page this was started from can be left while the request is
+  // out, and a ref can't be used after that. These outlive it.
+  final favorites = ref.read(searchStateProvider.notifier);
+  final synced = ref.read(sessionRefreshedProvider.notifier);
   try {
     // Call service directly to force a network fetch, bypassing the
     // cache-first path in searchPlayerProvider.
@@ -52,16 +56,21 @@ Future<bool> refreshAndMarkSynced(
         ? await service.getPlayerStatsByUid(query.trim(), platform)
         : await service.getPlayerStats(query.trim(), platform);
 
-    // The answer goes to the provider as it is: re-reading the cache entry it
-    // just wrote would come back with a save time and show as stale. A stale
-    // fallback already carries its own staleAt, and handing it over also spares
-    // the provider a second request when the copy is too old to read back.
-    ref.read(liveSearchResultProvider(params).notifier).set(result);
+    // Nothing is showing the result once the page is gone; the fetch has
+    // already refreshed the cache.
+    if (ref.context.mounted) {
+      // The answer goes to the provider as it is: re-reading the cache entry it
+      // just wrote would come back with a save time and show as stale. A stale
+      // fallback already carries its own staleAt, and handing it over also
+      // spares the provider a second request when the copy is too old to read
+      // back.
+      ref.read(liveSearchResultProvider(params).notifier).set(result);
 
-    // Always invalidate so the provider reflects the latest result, whether
-    // the response was fresh or a stale fallback.
-    ref.invalidate(searchPlayerProvider(params));
-    await ref.read(searchPlayerProvider(params).future);
+      // Always invalidate so the provider reflects the latest result, whether
+      // the response was fresh or a stale fallback.
+      ref.invalidate(searchPlayerProvider(params));
+      await ref.read(searchPlayerProvider(params).future);
+    }
 
     // The request failed and the service fell back to the cached copy:
     // nothing was fetched, so the player is not synced.
@@ -70,21 +79,16 @@ Future<bool> refreshAndMarkSynced(
     // A favorite's card keeps what this lookup found, for when the cache no
     // longer has it.
     try {
-      await ref
-          .read(searchStateProvider.notifier)
-          .updateSnapshot(platform, result.data);
+      await favorites.updateSnapshot(platform, result.data);
     } catch (e) {
       log.w('Favorite snapshot not saved', error: e);
     }
 
     // Mark this player as synced so the favorites list shows live status.
-    final stats = ref
-        .read(searchPlayerProvider(params))
-        .whenOrNull(data: (r) => r.data);
-    final key = (stats != null && stats.uid.isNotEmpty)
-        ? stats.uid
+    final key = result.data.uid.isNotEmpty
+        ? result.data.uid
         : playerSessionKey(platform, query);
-    ref.read(sessionRefreshedProvider.notifier).add(key);
+    synced.add(key);
     return true;
   } catch (e) {
     log.w('Player refresh failed', error: e);

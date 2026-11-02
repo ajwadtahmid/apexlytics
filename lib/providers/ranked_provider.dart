@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../constants/prefs_keys.dart';
@@ -519,13 +520,21 @@ void invalidatePlayerDerivedProviders(WidgetRef ref) {
 /// Defined here, next to the providers it names, for the same reason
 /// [invalidatePlayerDerivedProviders] is — a list maintained at the call
 /// site rots the moment a new store-derived provider is added.
-void invalidateMatchDerivedProviders(WidgetRef ref) {
+void invalidateMatchDerivedProviders(WidgetRef ref) =>
+    _invalidateMatchDerived(ref.invalidate);
+
+/// The same, for a caller whose widget may be gone by the time it runs (it
+/// waited on the database first): a [ProviderContainer] outlives the widget.
+void invalidateMatchDerivedProvidersIn(ProviderContainer container) =>
+    _invalidateMatchDerived(container.invalidate);
+
+void _invalidateMatchDerived(void Function(ProviderOrFamily provider) ref) {
   // Split counts skip excluded games, so an exclusion can empty a split.
-  ref.invalidate(rankedSplitsProvider);
-  ref.invalidate(rankedSplitMatchesProvider);
-  ref.invalidate(rankedSplitViewProvider);
-  ref.invalidate(rankedLifetimeAggregatesProvider);
-  ref.invalidate(rankedSplitDetailProvider);
-  ref.invalidate(rankedPersonalBestProvider);
-  ref.invalidate(rankedAllTimeBestProvider);
+  ref(rankedSplitsProvider);
+  ref(rankedSplitMatchesProvider);
+  ref(rankedSplitViewProvider);
+  ref(rankedLifetimeAggregatesProvider);
+  ref(rankedSplitDetailProvider);
+  ref(rankedPersonalBestProvider);
+  ref(rankedAllTimeBestProvider);
 }

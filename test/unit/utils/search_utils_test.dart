@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:apexlytics/models/player_stats.dart';
 import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/player_provider.dart';
 import 'package:apexlytics/providers/search_provider.dart';
@@ -309,6 +312,53 @@ void main() {
       verify(() => service.getPlayerStatsByUid(any(), any())).called(1);
       final after = container.read(searchPlayerProvider(params)).requireValue;
       expect(after.staleAt, fallbackAt);
+    });
+  });
+
+  group('refreshAndMarkSynced when the page is left meanwhile', () {
+    const params = (query: 'uid123', platform: 'PC', searchByUid: true);
+
+    testWidgets('still finishes, instead of failing on the dead ref', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        'search_favorites':
+            '[{"query":"TestPlayer","platform":"PC","uid":"uid123"}]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final service = MockPlayerService();
+      final reply = Completer<ApiResult<PlayerStats>>();
+      when(
+        () => service.getPlayerStatsByUid(any(), any()),
+      ).thenAnswer((_) => reply.future);
+      final container = ProviderContainer(
+        overrides: [
+          playerServiceProvider.overrideWithValue(service),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+      final ref = await refFrom(tester, container);
+
+      final refresh = refreshAndMarkSynced(ref, service, 'uid123', 'PC', true);
+      // The page goes away while the request is out.
+      await tester.pumpWidget(const SizedBox());
+      reply.complete(ApiResult(buildStats(rankScore: 1100)));
+
+      expect(await refresh, isTrue);
+      expect(container.read(sessionRefreshedProvider), contains('uid123'));
+      // The favorite still got its figures.
+      expect(
+        container
+            .read(searchStateProvider)
+            .favorites
+            .single
+            .snapshot
+            ?.rankScore,
+        1100,
+      );
+      // And nothing was left showing a result for a page that is gone.
+      expect(container.exists(liveSearchResultProvider(params)), isFalse);
     });
   });
 }

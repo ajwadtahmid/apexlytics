@@ -2,6 +2,8 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/utils/ranked/ranked_period.dart'
+    show RankedSplitBucket;
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,6 +109,70 @@ void main() {
     expect(stored!.where((m) => m.excluded), hasLength(2));
     expect(find.text('Excluded 2 games'), findsOneWidget);
     expect(find.text('HEADER'), findsOneWidget);
+  });
+
+  testWidgets('an exclusion still reaches the other screens after the list '
+      'is left', (tester) async {
+    var splitBuilds = 0;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.runAsync(() async {
+      store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      games = [
+        for (var i = 0; i < 3; i++)
+          buildMatch(start: 1782090000 + (2 - i) * 1000, rp: 10 + i),
+      ];
+      await store.upsertAll('1', games);
+    });
+    addTearDown(store.close);
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        rankedHistoryStoreProvider.overrideWithValue(store),
+        rankedSplitsProvider.overrideWith((ref, uid) {
+          splitBuilds++;
+          return <RankedSplitBucket>[];
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    // Something else on screen shows the split counts.
+    container.listen(rankedSplitsProvider('1'), (_, _) {});
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: MatchHistoryList(
+              matches: games,
+              onRefresh: () async {},
+              selectable: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(splitBuilds, 1);
+
+    await tester.longPress(find.text('Axle').first);
+    await tester.pump();
+    await tester.tap(find.text('Axle').at(1));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Exclude'));
+      await tester.pump();
+      // The list is left while the database works.
+      await tester.pumpWidget(const SizedBox());
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+
+    final stored = await tester.runAsync(() => store.getAll('1'));
+    expect(stored!.where((m) => m.excluded), hasLength(2));
+    expect(splitBuilds, 2);
   });
 
   testWidgets('a list that is not selectable ignores a long press', (

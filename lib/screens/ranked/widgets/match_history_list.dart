@@ -220,11 +220,14 @@ class _MatchHistoryListState extends ConsumerState<MatchHistoryList> {
   Future<void> _applyExclusion(bool excluded) async {
     if (_applying || _selected.isEmpty) return;
     setState(() => _applying = true);
+    // Taken now: the list can be left while the database works, and a ref
+    // cannot be used after that, but the change still has to reach the screens.
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       final count = await ref
           .read(rankedHistoryStoreProvider)
           .setExcludedFor(_selected, excluded);
-      invalidateMatchDerivedProviders(ref);
+      invalidateMatchDerivedProvidersIn(container);
       if (!mounted) return;
       setState(_selected.clear);
       context.showMessage(
