@@ -9,6 +9,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/services/games_service.dart';
 import 'package:apexlytics/services/player_service.dart';
 import 'package:apexlytics/utils/error_messages.dart';
+import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/storage/legend_stats_storage.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:apexlytics/utils/storage/rp_snapshot_storage.dart';
@@ -274,6 +275,22 @@ void main() {
     });
   });
 
+  group('refreshProfiles with a clear between its writes', () {
+    test('writes no legend stats after the RP reading was cleared', () async {
+      await setUpWorld();
+      final clearing = _ClearingOnSnapshotStore();
+      addTearDown(clearing.close);
+      store = clearing;
+
+      final report = await run([a, b]);
+
+      expect(report.aborted, isTrue);
+      expect(loadLegendStats(prefs, uid: a.uid), isEmpty);
+      expect(await store.snapshotsFor(a.uid), isEmpty);
+      verifyNever(() => games.getMatches(b.uid, forceTracking: true));
+    });
+  });
+
   group('RefreshAllNotifier', () {
     Future<ProviderContainer> containerFor({
       required bool owner,
@@ -356,4 +373,21 @@ void main() {
       expect(await container.read(refreshAllProvider.notifier).run(), isNull);
     });
   });
+}
+
+/// A store that is cleared (as "Clear all data" would) just as a profile's RP
+/// reading is being written, so the writes that follow it are the ones that
+/// must not happen.
+class _ClearingOnSnapshotStore extends RankedHistoryStore {
+  _ClearingOnSnapshotStore() : super(overridePath: inMemoryDatabasePath);
+
+  @override
+  Future<void> appendSnapshotFor(
+    String uid,
+    StatSnapshot snapshot, {
+    int? onlyIfEpoch,
+  }) async {
+    await deleteAll();
+    return super.appendSnapshotFor(uid, snapshot, onlyIfEpoch: onlyIfEpoch);
+  }
 }

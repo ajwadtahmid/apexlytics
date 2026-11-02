@@ -114,10 +114,21 @@ Future<RefreshAllReport> refreshProfiles({
       if (fetched.staleAt == null) {
         final stats = fetched.data;
         final season = stats.rankedSeason;
+        // Each of these writes is a turn at which "Clear all data" may have
+        // landed, so it is checked again before the next one: a write after the
+        // clear would bring back data for a profile that was just erased.
         if (season != null && await upsertSeason(season, prefs)) {
           seasonsChanged = true;
         }
+        if (cleared()) {
+          aborted = true;
+          break;
+        }
         await appendSnapshot(stats, store, uid: profile.uid);
+        if (cleared()) {
+          aborted = true;
+          break;
+        }
         await mergeLegendStats(stats.legendStats, prefs, uid: profile.uid);
         statsOk = true;
       }
@@ -145,7 +156,10 @@ Future<RefreshAllReport> refreshProfiles({
         // The owner asked for every profile, tracked on this server or not.
         forceTracking: true,
       );
-      added = (await store.count(profile.uid) - before).clamp(0, 1 << 30);
+      // A clear during the sync leaves nothing to count.
+      added = cleared()
+          ? 0
+          : (await store.count(profile.uid) - before).clamp(0, 1 << 30);
     } catch (e) {
       log.w('Refresh all: history failed (${e.runtimeType})');
     }
