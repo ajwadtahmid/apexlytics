@@ -9,7 +9,7 @@ import 'package:apexlytics/providers/proxy_health_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/home/server_status_page.dart';
 import 'package:apexlytics/services/proxy_health.dart';
-import 'package:apexlytics/screens/ranked/ranked_compare_tab.dart';
+import 'package:apexlytics/screens/ranked/ranked_compare_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_personal_records_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_recap_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_recap_share_screen.dart';
@@ -557,7 +557,7 @@ void main() {
   testWidgets('the Comparison switch', (tester) async {
     await pump(
       tester,
-      const RankedCompareTab(uid: '1', splits: [], matches: []),
+      const RankedCompareBody(uid: '1', splits: [], matches: []),
     );
     expectNoOverflow();
   });

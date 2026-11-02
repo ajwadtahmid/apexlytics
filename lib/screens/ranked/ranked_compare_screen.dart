@@ -72,7 +72,7 @@ class RankedCompareScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppTheme.md),
           children: [
-            RankedCompareTab(uid: uid, splits: splits, matches: matches),
+            RankedCompareBody(uid: uid, splits: splits, matches: matches),
           ],
         ),
       ),
@@ -80,8 +80,9 @@ class RankedCompareScreen extends StatelessWidget {
   }
 }
 
-/// Split-vs-split comparison. Embedded inline (not in its own scrollable) on
-/// the Compare page; the caller supplies the surrounding `ListView`.
+/// The body of the Compare page: split-vs-split, legend-vs-legend and
+/// map-vs-map comparison. Embedded inline (not in its own scrollable); the
+/// caller supplies the surrounding `ListView`.
 ///
 /// Only real, named splits are selectable — not Lifetime (comparing "every
 /// split combined" against one split isn't a split-vs-split comparison) and
@@ -95,7 +96,7 @@ class RankedCompareScreen extends StatelessWidget {
 ///
 /// A selector at the top switches between comparing two splits (the default),
 /// and two legends or two maps within [matches], the screen's own period.
-class RankedCompareTab extends ConsumerStatefulWidget {
+class RankedCompareBody extends ConsumerStatefulWidget {
   final String uid;
   final List<RankedSplitBucket> splits;
 
@@ -103,7 +104,7 @@ class RankedCompareTab extends ConsumerStatefulWidget {
   /// map comparisons.
   final List<RankedMatch> matches;
 
-  const RankedCompareTab({
+  const RankedCompareBody({
     super.key,
     required this.uid,
     required this.splits,
@@ -111,12 +112,12 @@ class RankedCompareTab extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<RankedCompareTab> createState() => _RankedCompareTabState();
+  ConsumerState<RankedCompareBody> createState() => _RankedCompareBodyState();
 }
 
 enum _CompareMode { splits, legends, maps }
 
-class _RankedCompareTabState extends ConsumerState<RankedCompareTab> {
+class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
   _CompareMode _mode = _CompareMode.splits;
   String? _splitAId;
   String? _splitBId;

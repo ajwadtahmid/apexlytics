@@ -865,7 +865,7 @@ typedef PersonalBestGames = ({
   RankedMatch? bestDamageGame,
 });
 
-/// Standout single-game and streak stats for the Records & Compare screen.
+/// Standout single-game and streak stats for the Personal Records screen.
 /// Built from ranked matches only; null best-kills/best-damage mean no match
 /// in range reported that tracker. [bestStreakStart] is the
 /// first match of the best streak, null when that streak is 0.

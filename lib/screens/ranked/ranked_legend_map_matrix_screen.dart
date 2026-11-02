@@ -154,9 +154,8 @@ void _showInfoSheet(BuildContext context) => showInfoSheet(
   ],
 );
 
-/// The grid itself, reused by [RankedLegendMapMatrixScreen] (from in-memory
-/// matches) and the split-comparison tab (from a precomputed SQL breakdown for
-/// a split that may not be the one currently loaded).
+/// The grid itself, used by [RankedLegendMapMatrixScreen] (from in-memory
+/// matches).
 class RankedLegendMapMatrixView extends StatelessWidget {
   final List<LegendMapCell> cells;
 
@@ -380,10 +379,7 @@ class _HeaderCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 1,
-        vertical: AppTheme.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 1, vertical: AppTheme.sm),
       // Two-word names break at the space and shrink to fit, so a narrow
       // column shows the whole name rather than a clipped one.
       child: FittedBox(

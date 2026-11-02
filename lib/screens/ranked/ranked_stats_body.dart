@@ -23,7 +23,7 @@ import '../../widgets/graph_card.dart' show showSnapshotBackupSheet;
 import 'ranked_all_trackers_screen.dart';
 import 'ranked_available_now_screen.dart';
 import 'ranked_legend_map_matrix_screen.dart';
-import 'ranked_compare_tab.dart';
+import 'ranked_compare_screen.dart';
 import 'ranked_share_screens.dart';
 import 'ranked_personal_records_screen.dart';
 import 'ranked_pick_rate_screen.dart';

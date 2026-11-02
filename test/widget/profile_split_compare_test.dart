@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/models/season_meta.dart';
-import 'package:apexlytics/screens/ranked/ranked_compare_tab.dart';
+import 'package:apexlytics/screens/ranked/ranked_compare_screen.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
 import 'package:flutter/material.dart';
@@ -114,7 +114,7 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: RankedCompareTab(uid: '1', splits: mine),
+              child: RankedCompareBody(uid: '1', splits: mine),
             ),
           ),
         ),

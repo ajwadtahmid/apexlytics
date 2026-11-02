@@ -1,5 +1,5 @@
 import 'package:apexlytics/models/ranked_match.dart';
-import 'package:apexlytics/screens/ranked/ranked_compare_tab.dart';
+import 'package:apexlytics/screens/ranked/ranked_compare_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_entity_compare.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -144,7 +144,7 @@ void main() {
     ) async {
       await pump(
         tester,
-        RankedCompareTab(uid: '1', splits: const [], matches: matches),
+        RankedCompareBody(uid: '1', splits: const [], matches: matches),
       );
 
       expect(find.text('Splits'), findsOneWidget);
