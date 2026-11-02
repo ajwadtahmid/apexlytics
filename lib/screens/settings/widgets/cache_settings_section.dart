@@ -28,6 +28,7 @@ import '../../../utils/error_messages.dart';
 import '../../../utils/formatting/format.dart'
     show formatBytes, formatNumber, plural;
 import '../../../utils/notifications.dart';
+import '../../../utils/share_image.dart' show clearSharedCardCopies;
 import '../../../utils/storage/backup_service.dart';
 import '../../../utils/storage/ranked_history_store.dart';
 import '../../../utils/storage/rp_snapshot_storage.dart';
@@ -247,13 +248,16 @@ class CacheSettingsSection extends ConsumerWidget {
     );
   }
 
-  /// Drops saved profiles and favourites, keeping everything else.
+  /// Drops saved profiles, favourites and recent searches, keeping everything
+  /// else.
   Future<void> _clearProfilesAndFavorites(
     BuildContext context,
     WidgetRef ref,
   ) async {
     await ref.read(playerSettingsProvider.notifier).clearProfilesAndFavorites();
-    await ref.read(searchStateProvider.notifier).clearFavorites();
+    final search = ref.read(searchStateProvider.notifier);
+    await search.clearFavorites();
+    await search.clearRecents();
     if (context.mounted) {
       context.showMessage('Profiles & favorites cleared.');
     }
@@ -336,7 +340,9 @@ class CacheSettingsSection extends ConsumerWidget {
       () => ref.read(rankedHistoryStoreProvider).deleteAll(),
     );
     await step('profiles, favorites & settings', () async {
-      await ref.read(searchStateProvider.notifier).clearFavorites();
+      final search = ref.read(searchStateProvider.notifier);
+      await search.clearFavorites();
+      await search.clearRecents();
       await ref
           .read(playerSettingsProvider.notifier)
           .clearAll(keepOwnerUnlock: !removeOwnerToken);
@@ -352,6 +358,7 @@ class CacheSettingsSection extends ConsumerWidget {
       'cached responses',
       () => ref.read(apiServiceProvider).clearCache(),
     );
+    await step('shared card copies', clearSharedCardCopies);
     // clearAll() wipes every notification pref, but nothing else tears down
     // alerts already scheduled with the OS or resets the background-fetch
     // cadence — without this, up to a dozen map-rotation alerts per enabled

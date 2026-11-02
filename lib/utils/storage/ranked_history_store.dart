@@ -1407,10 +1407,16 @@ class RankedHistoryStore {
       final rp = r is Map ? r['rp'] : null;
       final seasonId = r is Map ? r['season_id'] : null;
       // uid/ts_ms are NOT NULL primary-key columns, and a wrong type can't be
-      // bound at all — any of these would fail the whole batch.
+      // bound at all — any of these would fail the whole batch. An infinite rp
+      // can't be turned into an int, and one outside the plausible range is
+      // not a real reading.
       if (uid is! String ||
           !_isEpochMs(tsMs) ||
-          (rp != null && rp is! num) ||
+          (rp != null &&
+              (rp is! num ||
+                  !rp.isFinite ||
+                  rp < 0 ||
+                  rp > kMaxPlausibleCumulativeRp)) ||
           (seasonId != null && seasonId is! String)) {
         skipped++;
         continue;

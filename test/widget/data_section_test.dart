@@ -6,6 +6,7 @@ import 'package:apexlytics/providers/best_metric_provider.dart';
 import 'package:apexlytics/providers/entity_trend_overrides_provider.dart';
 import 'package:apexlytics/providers/entity_trend_window_provider.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
+import 'package:apexlytics/providers/search_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/providers/storage_usage_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/cache_settings_section.dart';
@@ -317,6 +318,59 @@ void main() {
 
       expect(await t.runAsync(() => store.countStartedSince(null)), 2);
       expect(container.read(playerSettingsProvider).name, 'Aceu');
+    });
+
+    testWidgets('Clear profiles & favorites also clears recent searches, in '
+        'memory and on disk', (t) async {
+      await pump(t, games: 2);
+      const looked = PlayerRef(
+        query: 'Rival123',
+        platform: 'PC',
+        searchedByUid: false,
+      );
+      await container.read(searchStateProvider.notifier).recordRecent(looked);
+      final prefs = container.read(sharedPreferencesProvider);
+      expect(prefs.containsKey(PrefsKeys.recentSearches), isTrue);
+      await openSheet(t);
+
+      await t.tap(find.text('Clear profiles & favorites'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Clear'));
+      await t.pump();
+      await letStorageFinish(t);
+
+      expect(container.read(searchStateProvider).recents, isEmpty);
+      expect(prefs.containsKey(PrefsKeys.recentSearches), isFalse);
+    });
+
+    testWidgets('Clear all data also clears recent searches, and the next '
+        'lookup does not bring the old one back', (t) async {
+      await pump(t, games: 2);
+      const old = PlayerRef(
+        query: 'Rival123',
+        platform: 'PC',
+        searchedByUid: false,
+      );
+      const next = PlayerRef(
+        query: 'Newcomer',
+        platform: 'PC',
+        searchedByUid: false,
+      );
+      await container.read(searchStateProvider.notifier).recordRecent(old);
+      await openSheet(t);
+
+      await t.tap(find.text('Clear all data'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Continue'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Erase everything'));
+      await t.pump();
+      await letStorageFinish(t);
+
+      expect(container.read(searchStateProvider).recents, isEmpty);
+
+      await container.read(searchStateProvider.notifier).recordRecent(next);
+      expect(container.read(searchStateProvider).recents, [next]);
     });
   });
 

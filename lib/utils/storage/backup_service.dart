@@ -375,8 +375,10 @@ Future<bool> shareBackupFile(
   List<int> bytes, {
   Future<ShareResult> Function(ShareParams params)? share,
 }) async {
-  await file.writeAsBytes(bytes);
+  // The write is inside the try: a write that fails partway (a full disk) must
+  // not leave the partial export behind either.
   try {
+    await file.writeAsBytes(bytes);
     final result = await (share ?? SharePlus.instance.share)(
       ShareParams(files: [XFile(file.path, mimeType: 'application/gzip')]),
     );
@@ -657,7 +659,10 @@ Future<PreviewResult> previewBackup({RankedHistoryStore? rankedStore}) async {
   if (pickedFile == null) return PreviewCancelled();
 
   try {
-    final rawBytes = await pickedFile.readAsBytes();
+    // A file past the cap is refused without being loaded. A real export is
+    // far smaller, compressed or not. Its picker copy is removed either way.
+    final tooLarge = await pickedFile.length() > _kMaxDecompressedBackupBytes;
+    final rawBytes = tooLarge ? null : await pickedFile.readAsBytes();
     if (Platform.isAndroid || Platform.isIOS) {
       await deletePickerCopy(
         pickedFile.path,
@@ -665,6 +670,7 @@ Future<PreviewResult> previewBackup({RankedHistoryStore? rankedStore}) async {
         alsoWithin: Directory.systemTemp,
       );
     }
+    if (rawBytes == null) throw const BackupTooLargeException();
     // Off the UI isolate: a large backup is tens of MB of JSON.
     final (:envelope, :sizeBytes) = await Isolate.run(
       () => _decodeBackupEnvelope(rawBytes),
@@ -712,7 +718,9 @@ Future<PreviewResult> previewBackup({RankedHistoryStore? rankedStore}) async {
     log.w('Backup preview failed — invalid JSON', error: e);
     return PreviewError('The selected file is not a valid backup.');
   } catch (e) {
-    log.w('Backup preview failed', error: e);
+    // The type only: a file error's text carries the picked file's path, and
+    // so its name.
+    log.w('Backup preview failed (${e.runtimeType})');
     return PreviewError('Failed to read the backup file.');
   }
 }
@@ -776,15 +784,22 @@ class _BoundedByteSink implements Sink<List<int>> {
 /// Feeds the input through [GZipCodec.decoder]'s chunked conversion API in
 /// pieces, rather than `gzip.decode` on it all at once, so a decompression
 /// bomb is caught by [_BoundedByteSink] and aborted partway through instead
-/// of first allocating its full size. The overflow check runs *before* each
-/// chunk, so [BackupTooLargeException] is always thrown deliberately —
-/// never by catching a byproduct exception from the codec itself, which is
-/// reserved for a genuinely malformed stream ([BackupCorruptedException]).
+/// of first allocating its full size. The overflow check runs before each
+/// chunk and again after the last one, so a stream that crosses the cap only
+/// in its final chunk is refused too, and [BackupTooLargeException] is always
+/// thrown deliberately — never by catching a byproduct exception from the
+/// codec itself, which is reserved for a genuinely malformed stream
+/// ([BackupCorruptedException]). Plain JSON is held to the same cap.
+///
+/// [maxBytes] is the cap; tests pass a small one.
 @visibleForTesting
-List<int> decompressIfGzipped(List<int> bytes) {
+List<int> decompressIfGzipped(
+  List<int> bytes, {
+  int maxBytes = _kMaxDecompressedBackupBytes,
+}) {
   if (bytes.length >= 2 && bytes[0] == 0x1F && bytes[1] == 0x8B) {
     const chunkSize = 64 * 1024;
-    final sink = _BoundedByteSink(_kMaxDecompressedBackupBytes);
+    final sink = _BoundedByteSink(maxBytes);
     final input = gzip.decoder.startChunkedConversion(sink);
     try {
       for (var i = 0; i < bytes.length; i += chunkSize) {
@@ -793,6 +808,7 @@ List<int> decompressIfGzipped(List<int> bytes) {
         input.add(bytes.sublist(i, end));
       }
       input.close();
+      if (sink.overflowed) throw const BackupTooLargeException();
     } on BackupTooLargeException {
       rethrow;
     } catch (e) {
@@ -803,6 +819,7 @@ List<int> decompressIfGzipped(List<int> bytes) {
     }
     return sink.bytes;
   }
+  if (bytes.length > maxBytes) throw const BackupTooLargeException();
   return bytes;
 }
 
@@ -938,7 +955,7 @@ Future<ImportResult> commitBackupImport(
     );
     return ImportSuccess(skippedRows: skippedRows);
   } catch (e) {
-    log.w('Backup import failed', error: e);
+    log.w('Backup import failed (${e.runtimeType})');
     // The database half is transactional, restorePrefsData rolls back its
     // own failures, and outerSnapshot covers the gap between them (see its
     // doc) — so this should leave the device as it was. Still say so rather

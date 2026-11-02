@@ -944,6 +944,27 @@ void main() {
       },
     );
 
+    test('a write that fails never reaches the share sheet', () async {
+      final dir = await Directory.systemTemp.createTemp('share_test');
+      addTearDown(() => dir.delete(recursive: true));
+      var shared = false;
+
+      await expectLater(
+        shareImageFile(
+          Uint8List.fromList([1, 2, 3]),
+          dir: Directory('${dir.path}/missing'),
+          share: (_) async {
+            shared = true;
+            return const ShareResult('', ShareResultStatus.success);
+          },
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect(shared, isFalse);
+      expect(dir.listSync(), isEmpty);
+    });
+
     test('a dismissed share sheet is not a success', () async {
       final dir = await Directory.systemTemp.createTemp('share_test');
       addTearDown(() => dir.delete(recursive: true));

@@ -591,6 +591,22 @@ void main() {
       }
     });
 
+    test('a write that fails partway leaves no partial file and rethrows', () async {
+      var shared = false;
+
+      await expectLater(
+        shareBackupFile(
+          _PartialWriteFile(file),
+          [1, 2, 3],
+          share: answering(ShareResultStatus.success, onShare: () => shared = true),
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect(shared, isFalse);
+      expect(file.existsSync(), isFalse);
+    });
+
     test('a failing share still removes the file and rethrows', () async {
       await expectLater(
         shareBackupFile(
@@ -624,6 +640,37 @@ void main() {
         expect(result, plain);
       },
     );
+
+    test('allows exactly the cap and refuses one byte more', () {
+      final atCap = utf8.encode('x' * 1000);
+      final overCap = utf8.encode('x' * 1001);
+
+      expect(decompressIfGzipped(atCap, maxBytes: 1000), atCap);
+      expect(
+        () => decompressIfGzipped(overCap, maxBytes: 1000),
+        throwsA(isA<BackupTooLargeException>()),
+      );
+      expect(
+        decompressIfGzipped(gzip.encode(atCap), maxBytes: 1000).length,
+        1000,
+      );
+      expect(
+        () => decompressIfGzipped(gzip.encode(overCap), maxBytes: 1000),
+        throwsA(isA<BackupTooLargeException>()),
+      );
+    });
+
+    test('refuses a stream that crosses the cap only in its last chunk', () {
+      // Zeros shrink to a few KB, so the whole stream is a single input
+      // chunk and the overflow only shows once that chunk has been decoded.
+      final bomb = gzip.encode(List.filled(5 * 1024 * 1024, 0));
+      expect(bomb.length, lessThan(64 * 1024));
+
+      expect(
+        () => decompressIfGzipped(bomb, maxBytes: 1024 * 1024),
+        throwsA(isA<BackupTooLargeException>()),
+      );
+    });
 
     test(
       'throws BackupCorruptedException for a truncated/malformed gzip '
@@ -806,4 +853,33 @@ class _SnapshotDrainFails extends RankedHistoryStore {
     String uid,
     List<StatSnapshot> snapshots,
   ) async => throw Exception('simulated drain failure');
+}
+
+/// A file whose write puts some bytes down and then fails, as a full disk does.
+class _PartialWriteFile implements File {
+  final File _real;
+  _PartialWriteFile(this._real);
+
+  @override
+  String get path => _real.path;
+
+  @override
+  Future<File> writeAsBytes(
+    List<int> bytes, {
+    FileMode mode = FileMode.write,
+    bool flush = false,
+  }) async {
+    await _real.writeAsBytes(bytes.sublist(0, 1));
+    throw const FileSystemException('No space left on device');
+  }
+
+  @override
+  Future<bool> exists() => _real.exists();
+
+  @override
+  Future<FileSystemEntity> delete({bool recursive = false}) =>
+      _real.delete(recursive: recursive);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

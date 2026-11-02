@@ -39,8 +39,10 @@ Future<bool> shareImageFile(
 }) async {
   final folder = dir ?? await getTemporaryDirectory();
   final file = File('${folder.path}${Platform.pathSeparator}$name');
-  await file.writeAsBytes(png);
+  // The write is inside the try, so a write that fails partway is cleaned up
+  // too.
   try {
+    await file.writeAsBytes(png);
     final result = await (share ?? SharePlus.instance.share)(
       ShareParams(files: [XFile(file.path, mimeType: 'image/png')]),
     );
@@ -51,6 +53,26 @@ Future<bool> shareImageFile(
     } catch (e) {
       log.w('Share image cleanup failed', error: e);
     }
+  }
+}
+
+/// Removes the copy of a shared card that Android's share helper keeps.
+///
+/// share_plus first copies every shared file into `<cache>/share_plus` and
+/// empties that folder only at the start of the next share, so a card (a
+/// player's name, rank and stats) would otherwise outlive "Clear all data".
+/// Does nothing on other platforms, and never throws. [tempDir] and [android]
+/// are test seams.
+Future<void> clearSharedCardCopies({Directory? tempDir, bool? android}) async {
+  if (!(android ?? Platform.isAndroid)) return;
+  try {
+    final folder = Directory(
+      '${(tempDir ?? await getTemporaryDirectory()).path}'
+      '${Platform.pathSeparator}share_plus',
+    );
+    if (await folder.exists()) await folder.delete(recursive: true);
+  } catch (e) {
+    log.w('Shared card copy cleanup failed (${e.runtimeType})');
   }
 }
 

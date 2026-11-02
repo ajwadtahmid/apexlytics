@@ -1081,6 +1081,22 @@ void main() {
       expect((await store.snapshotsFor('1')).single.rp, 1200);
     });
 
+    test('a snapshot with an impossible rp is skipped, not the whole restore', () async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+
+      final skipped = await store.importSnapshotRows([
+        {'uid': '1', 'ts_ms': 1782090000000, 'rp': double.infinity},
+        {'uid': '1', 'ts_ms': 1782090001000, 'rp': double.nan},
+        {'uid': '1', 'ts_ms': 1782090002000, 'rp': 1e30},
+        {'uid': '1', 'ts_ms': 1782090003000, 'rp': -5},
+        {'uid': '1', 'ts_ms': 1782090004000, 'rp': 1200},
+      ]);
+
+      expect(skipped, 4);
+      expect((await store.snapshotsFor('1')).single.rp, 1200);
+    });
+
     test(
       'a non-finite number in any numeric column skips just that row',
       () async {
