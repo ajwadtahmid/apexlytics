@@ -5,7 +5,7 @@ import '../../utils/ranked/session_groups.dart';
 import '../../utils/ranked/session_overview.dart';
 import '../../utils/theme.dart';
 import 'ranked_session_detail_screen.dart';
-import 'ranked_sessions_screen.dart';
+import 'widgets/session_card.dart';
 import 'widgets/sessions_overview.dart';
 import '../../widgets/nav_entry_card.dart';
 
@@ -117,7 +117,7 @@ class RankedSessionsListScreen extends StatelessWidget {
                     final s = row as RankedSession;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: AppTheme.sm),
-                      child: SessionRecapTile(
+                      child: SessionCard(
                         session: s,
                         badge: badgeOf(s),
                         onTap: () => open(s),

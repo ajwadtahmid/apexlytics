@@ -1,14 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/best_metric_provider.dart';
-import '../../utils/formatting/format.dart'
+import '../../../providers/best_metric_provider.dart';
+import '../../../utils/formatting/format.dart'
     show formatShortDateTime, formatTotalOrNone, plural;
-import '../../utils/ranked/ranked_aggregates.dart';
-import '../../utils/ranked/session_overview.dart';
-import '../../utils/theme.dart';
-import '../../widgets/rp_pill.dart';
-import '../../widgets/surface_card.dart';
+import '../../../utils/ranked/ranked_aggregates.dart';
+import '../../../utils/ranked/session_overview.dart';
+import '../../../utils/theme.dart';
+import '../../../widgets/rp_pill.dart';
+import '../../../widgets/surface_card.dart';
 
 /// A mark on the session that netted the most or the least RP.
 enum SessionBadge {
@@ -22,12 +22,12 @@ enum SessionBadge {
 
 /// A tappable session summary as its own card. Used by the Sessions
 /// screen's session list.
-class SessionRecapTile extends StatelessWidget {
+class SessionCard extends StatelessWidget {
   final RankedSession session;
   final VoidCallback onTap;
   final SessionBadge? badge;
 
-  const SessionRecapTile({
+  const SessionCard({
     super.key,
     required this.session,
     required this.onTap,
@@ -39,18 +39,18 @@ class SessionRecapTile extends StatelessWidget {
     return SurfaceCard(
       onTap: onTap,
       padding: const EdgeInsets.all(AppTheme.md),
-      child: SessionRecapBody(session: session, badge: badge),
+      child: SessionCardBody(session: session, badge: badge),
     );
   }
 }
 
 /// Card-less session summary: date, net RP, a stat strip (games · kills ·
 /// time · top legend), and how the session went game by game. Used by
-/// [SessionRecapTile].
-class SessionRecapBody extends ConsumerWidget {
+/// [SessionCard].
+class SessionCardBody extends ConsumerWidget {
   final RankedSession session;
   final SessionBadge? badge;
-  const SessionRecapBody({super.key, required this.session, this.badge});
+  const SessionCardBody({super.key, required this.session, this.badge});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

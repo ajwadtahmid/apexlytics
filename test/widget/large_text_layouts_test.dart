@@ -16,7 +16,7 @@ import 'package:apexlytics/screens/ranked/ranked_recap_share_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_pick_rate_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_performance_trends_screen.dart';
-import 'package:apexlytics/screens/ranked/ranked_sessions_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
 import 'package:apexlytics/screens/ranked/widgets/sessions_overview.dart';
 import 'package:apexlytics/screens/ranked/ranked_recap_entry.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_share_cards.dart';
@@ -469,7 +469,7 @@ void main() {
       Column(
         children: [
           SessionsOverview(sessions: played, onOpen: (_) {}),
-          SessionRecapTile(
+          SessionCard(
             session: played.first,
             badge: SessionBadge.best,
             onTap: () {},

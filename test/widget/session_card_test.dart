@@ -1,5 +1,5 @@
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/screens/ranked/ranked_sessions_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/widgets/rp_pill.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +27,7 @@ void main() {
         ProviderScope(
           overrides: [await prefsOverride()],
           child: MaterialApp(
-            home: Scaffold(body: SessionRecapBody(session: s)),
+            home: Scaffold(body: SessionCardBody(session: s)),
           ),
         ),
       );
@@ -81,7 +81,7 @@ void main() {
           home: Scaffold(
             body: Padding(
               padding: const EdgeInsets.all(32),
-              child: SessionRecapBody(session: played),
+              child: SessionCardBody(session: played),
             ),
           ),
         ),
@@ -114,7 +114,7 @@ void main() {
           key: UniqueKey(),
           overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
           child: MaterialApp(
-            home: Scaffold(body: SessionRecapBody(session: s)),
+            home: Scaffold(body: SessionCardBody(session: s)),
           ),
         ),
       );

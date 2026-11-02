@@ -2,7 +2,7 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
-import 'package:apexlytics/screens/ranked/ranked_sessions_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -192,9 +192,7 @@ void main() {
 
       final today = tester.getTopLeft(find.text('TODAY')).dy;
       final yesterday = tester.getTopLeft(find.text('YESTERDAY')).dy;
-      final firstTile = tester
-          .getTopLeft(find.byType(SessionRecapTile).first)
-          .dy;
+      final firstTile = tester.getTopLeft(find.byType(SessionCard).first).dy;
       expect(today, lessThan(firstTile));
       expect(firstTile, lessThan(yesterday));
     });
@@ -253,11 +251,11 @@ void main() {
     ) async {
       await pump(tester, many, size: const Size(400, 900));
       final oldest = find.byWidgetPredicate(
-        (w) => w is SessionRecapTile && w.session.games == 7,
+        (w) => w is SessionCard && w.session.games == 7,
       );
 
       // Not built yet, far below the screen.
-      expect(find.byType(SessionRecapTile).evaluate().length, lessThan(40));
+      expect(find.byType(SessionCard).evaluate().length, lessThan(40));
       expect(oldest, findsNothing);
 
       await tester.scrollUntilVisible(
