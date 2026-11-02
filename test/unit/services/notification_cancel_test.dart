@@ -106,4 +106,43 @@ void main() {
       expect(NotificationService.pendingDesktopAlertIds, isEmpty);
     });
   });
+
+  group('on a computer', () {
+    test('planning again leaves alerts already shown alone', () async {
+      await armRankedAndPubs();
+      await armRankedAndPubs();
+
+      // Only the timers are replaced; closing shown alerts is cancelAll's job.
+      expect(plugin.cancelAllCalls, 0);
+      expect(_hasBlock(NotificationService.rankedIdBase), isTrue);
+    });
+
+    test('turning everything off still clears the plugin', () async {
+      await armRankedAndPubs();
+      await NotificationService.cancelAll();
+
+      expect(plugin.cancelAllCalls, 1);
+      expect(NotificationService.pendingDesktopAlertIds, isEmpty);
+    });
+
+    test('an alert is dropped once it fires over a minute late', () {
+      final at = DateTime.utc(2026, 11, 2, 14, 45);
+
+      expect(NotificationService.desktopAlertIsLate(at, at), isFalse);
+      expect(
+        NotificationService.desktopAlertIsLate(
+          at,
+          at.add(NotificationService.desktopLateMargin),
+        ),
+        isFalse,
+      );
+      expect(
+        NotificationService.desktopAlertIsLate(
+          at,
+          at.add(const Duration(minutes: 30)),
+        ),
+        isTrue,
+      );
+    });
+  });
 }

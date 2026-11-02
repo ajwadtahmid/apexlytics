@@ -16,6 +16,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required Map<String, Object> prefsValues,
   required bool? permissionEnabled,
+  bool? hasBackgroundTask,
 }) async {
   SharedPreferences.setMockInitialValues(prefsValues);
   final prefs = await SharedPreferences.getInstance();
@@ -30,8 +31,12 @@ Future<void> _pump(
               : Future.value(permissionEnabled),
         ),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: NotificationSettingsSection()),
+      child: MaterialApp(
+        home: Scaffold(
+          body: NotificationSettingsSection(
+            hasBackgroundTask: hasBackgroundTask,
+          ),
+        ),
       ),
     ),
   );
@@ -91,6 +96,39 @@ void main() {
       );
 
       expect(find.text(_bannerText), findsNothing);
+    });
+  });
+
+  group('NotificationSettingsSection background refresh row', () {
+    final alertOn = {
+      PrefsKeys.notifyRankedMapRotation: true,
+      PrefsKeys.rankedNotifyMinutes: 5,
+    };
+
+    testWidgets('waits for the first refresh on a phone', (tester) async {
+      await _pump(
+        tester,
+        prefsValues: alertOn,
+        permissionEnabled: true,
+        hasBackgroundTask: true,
+      );
+
+      expect(find.text('Waiting for first background refresh'), findsOneWidget);
+    });
+
+    testWidgets('says alerts need the app open on a computer', (tester) async {
+      await _pump(
+        tester,
+        prefsValues: alertOn,
+        permissionEnabled: true,
+        hasBackgroundTask: false,
+      );
+
+      expect(find.text('Waiting for first background refresh'), findsNothing);
+      expect(
+        find.text('Alerts are shown only while the app is open'),
+        findsOneWidget,
+      );
     });
   });
 }

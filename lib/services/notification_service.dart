@@ -575,6 +575,16 @@ class NotificationService {
     return alerts;
   }
 
+  /// How far past its planned instant a desktop alert may fire and still be
+  /// shown.
+  @visibleForTesting
+  static const desktopLateMargin = Duration(minutes: 1);
+
+  /// Whether a desktop alert planned for [at] is too late to show at [now].
+  @visibleForTesting
+  static bool desktopAlertIsLate(DateTime at, DateTime now) =>
+      now.isAfter(at.add(desktopLateMargin));
+
   /// Arms a single alert. Mobile hands it to the OS scheduler so it fires even
   /// when the app is closed; desktop sets an in-app timer that fires [show]
   /// only while the app keeps running.
@@ -597,6 +607,9 @@ class NotificationService {
       _desktopTimers[id]?.cancel();
       _desktopTimers[id] = Timer(at.difference(now), () {
         _desktopTimers.remove(id);
+        // A timer doesn't count the time the computer slept, so it can fire
+        // long after the rotation it announces.
+        if (desktopAlertIsLate(at, DateTime.now())) return;
         _plugin.show(
           id: id,
           title: 'Apexlytics',
@@ -684,11 +697,13 @@ class NotificationService {
     }
     _desktopTimers.clear();
     try {
-      if (pendingOnly && _supportsScheduled) {
-        await _plugin.cancelAllPendingNotifications();
-      } else {
+      if (!pendingOnly) {
         await _plugin.cancelAll();
+      } else if (_supportsScheduled) {
+        await _plugin.cancelAllPendingNotifications();
       }
+      // On desktop the only pending alerts are the timers cleared above, and
+      // the plugin's cancelAll would also close alerts already shown.
     } catch (e) {
       // Best-effort: no worse than the unconditional no-op this used to be,
       // and the desktop-timer cleanup above has already run either way.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/background_service.dart' show BackgroundService;
 import '../../../utils/formatting/format.dart' show timeAgo;
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
@@ -9,7 +10,11 @@ import 'notification_health_banners.dart';
 import '../../../constants/prefs_keys.dart';
 
 class NotificationSettingsSection extends ConsumerWidget {
-  const NotificationSettingsSection({super.key});
+  /// Whether this device runs a background task to top up alerts. Defaults to
+  /// phones; a computer's alerts are in-app timers.
+  final bool? hasBackgroundTask;
+
+  const NotificationSettingsSection({super.key, this.hasBackgroundTask});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,7 +105,10 @@ class NotificationSettingsSection extends ConsumerWidget {
               // background refresh starts mattering.
               if (activeCount > 0) ...[
                 const Divider(color: AppTheme.surface2, height: 24),
-                const _LastBackgroundRefreshRow(),
+                _LastBackgroundRefreshRow(
+                  hasBackgroundTask:
+                      hasBackgroundTask ?? BackgroundService.runsInBackground,
+                ),
               ],
             ],
           ),
@@ -114,7 +122,9 @@ class NotificationSettingsSection extends ConsumerWidget {
 /// so this is the one signal distinguishing "the OS isn't running the task"
 /// from "it ran and something else is wrong".
 class _LastBackgroundRefreshRow extends ConsumerWidget {
-  const _LastBackgroundRefreshRow();
+  final bool hasBackgroundTask;
+
+  const _LastBackgroundRefreshRow({required this.hasBackgroundTask});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -122,20 +132,23 @@ class _LastBackgroundRefreshRow extends ConsumerWidget {
         .watch(sharedPreferencesProvider)
         .getString(PrefsKeys.bgFetchLastResult);
 
-    final (label, color) = switch (_parse(raw)) {
-      null => (
-        // Expected on iOS until the OS decides to run the task, and on Android
-        // until the first 15-minute window elapses - so it is phrased as a
-        // wait, not a failure.
-        'Waiting for first background refresh',
-        AppTheme.muted,
-      ),
-      (final ok, final at) => (
-        '${ok ? 'Last background refresh' : 'Last attempt failed'}: '
-            '${timeAgo(at)}',
-        ok ? AppTheme.muted : AppTheme.orange,
-      ),
-    };
+    final (label, color) = !hasBackgroundTask
+        // A computer has no background task: its alerts are in-app timers.
+        ? ('Alerts are shown only while the app is open', AppTheme.muted)
+        : switch (_parse(raw)) {
+            null => (
+              // Expected on iOS until the OS decides to run the task, and on Android
+              // until the first 15-minute window elapses - so it is phrased as a
+              // wait, not a failure.
+              'Waiting for first background refresh',
+              AppTheme.muted,
+            ),
+            (final ok, final at) => (
+              '${ok ? 'Last background refresh' : 'Last attempt failed'}: '
+                  '${timeAgo(at)}',
+              ok ? AppTheme.muted : AppTheme.orange,
+            ),
+          };
 
     return Row(
       children: [

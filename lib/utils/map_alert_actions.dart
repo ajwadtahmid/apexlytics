@@ -155,10 +155,11 @@ Future<bool> turnOnMapAlert(
           backgroundColor: AppTheme.surface,
           title: const Text('Background Refresh Disabled'),
           content: const Text(
-            'Notifications will only fire while the app is open.\n\n'
-            'To get alerts when the app is closed, enable Background App '
-            'Refresh in:\niOS Settings → General → Background App Refresh '
-            '→ Apexlytics',
+            'Alerts are set for the next few rotations each time you open the '
+            'app, and they still arrive when it is closed.\n\n'
+            'To keep them coming after that, enable Background App Refresh '
+            'in:\niOS Settings → General → Background App Refresh → '
+            'Apexlytics',
             style: TextStyle(color: AppTheme.muted, height: 1.5),
           ),
           actions: [

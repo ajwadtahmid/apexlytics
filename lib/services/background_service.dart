@@ -215,6 +215,9 @@ Future<void> _backgroundFetchAndSchedule() async {
 class BackgroundService {
   static bool get _supported => Platform.isAndroid || Platform.isIOS;
 
+  /// Whether this device runs a background task at all (phones, not computers).
+  static bool get runsInBackground => _supported;
+
   static BackgroundFetchConfig _config(int intervalMinutes) =>
       BackgroundFetchConfig(
         minimumFetchInterval: intervalMinutes,
@@ -254,21 +257,39 @@ class BackgroundService {
     // The cadence the user's alert timings call for, not always the default:
     // a restart used to reset it until an alert setting was touched again.
     final prefs = await SharedPreferences.getInstance();
-    final interval = backgroundFetchIntervalFor(
-      BackgroundFetchSettings.fromPrefs(prefs)?.minActiveMinutes ?? 0,
-    );
-    if (!await _configure(interval)) return;
+    final active = BackgroundFetchSettings.fromPrefs(prefs);
     if (Platform.isAndroid) {
       BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
     }
+    if (active == null) {
+      // With no alert on there is nothing to top up; this also ends a task an
+      // earlier version left running.
+      await _stop();
+      return;
+    }
+    final interval = backgroundFetchIntervalFor(active.minActiveMinutes);
+    if (!await _configure(interval)) return;
     log.i('BackgroundService initialised (interval: ${interval}min)');
   }
 
+  static Future<void> _stop() async {
+    try {
+      await BackgroundFetch.stop();
+      log.i('BackgroundService stopped: no alert is on');
+    } catch (e) {
+      log.w('BackgroundService stop failed', error: e);
+    }
+  }
+
   /// Reconfigures the background fetch interval to the smallest active
-  /// notification timing. Pass [minNotifyMinutes] == 0 to fall back to the
-  /// default 30-min cadence.
+  /// notification timing. Pass [minNotifyMinutes] == 0 when no alert is on, to
+  /// stop the background fetch until one is.
   static Future<void> updateInterval(int minNotifyMinutes) async {
     if (!_supported) return;
+    if (minNotifyMinutes <= 0) {
+      await _stop();
+      return;
+    }
     // iOS and Android enforce a 15-min minimum for background fetch — values
     // below 15 (e.g. user picks 5 or 10 min) are silently rounded up by the OS.
     final interval = backgroundFetchIntervalFor(minNotifyMinutes);
