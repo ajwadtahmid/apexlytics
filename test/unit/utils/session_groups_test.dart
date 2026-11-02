@@ -82,4 +82,50 @@ void main() {
   test('is empty with no sessions', () {
     expect(groupSessions(const [], now: now), isEmpty);
   });
+
+  group('around a change of the clocks', () {
+    // The days after New York's changes in 2026 (November 1 and March 8). The
+    // headings are judged on calendar days, so they hold in any time zone.
+    List<String> on(DateTime today, List<DateTime> starts) => [
+      for (final g in groupSessions([
+        for (final s in starts) _session(s),
+      ], now: today))
+        g.label,
+    ];
+
+    test('after the clocks go back, Sunday is still Yesterday', () {
+      expect(
+        on(DateTime(2026, 11, 2, 15), [
+          DateTime(2026, 11, 2, 9), // Monday
+          DateTime(2026, 11, 1, 20), // Sunday
+          DateTime(2026, 10, 26, 20), // the Monday before
+          DateTime(2026, 10, 25, 20), // the Sunday before
+        ]),
+        ['Today', 'Yesterday', 'Last week', 'October 2026'],
+      );
+    });
+
+    test('after the clocks go forward, Sunday is still Yesterday', () {
+      expect(
+        on(DateTime(2026, 3, 9, 15), [
+          DateTime(2026, 3, 9, 9),
+          DateTime(2026, 3, 8, 20),
+          DateTime(2026, 3, 2, 20),
+          DateTime(2026, 3, 1, 20),
+        ]),
+        ['Today', 'Yesterday', 'Last week', 'March 2026'],
+      );
+    });
+
+    test('a whole week of headings around the change', () {
+      for (var day = 2; day <= 8; day++) {
+        final today = DateTime(2026, 11, day, 12);
+        expect(
+          on(today, [DateTime(2026, 10, 26, 20)]),
+          ['Last week'],
+          reason: 'on November $day',
+        );
+      }
+    });
+  });
 }

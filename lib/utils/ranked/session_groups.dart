@@ -23,9 +23,15 @@ List<SessionGroup> groupSessions(
   DateTime? now,
 }) {
   final today = _dayOf(now ?? DateTime.now());
-  final yesterday = today.subtract(const Duration(days: 1));
-  final thisWeek = today.subtract(Duration(days: today.weekday - 1));
-  final lastWeek = thisWeek.subtract(const Duration(days: 7));
+  // Calendar days, not 24-hour steps: across a clock change a day is 23 or 25
+  // hours long, and a step of 24 hours would miss midnight.
+  final yesterday = DateTime(today.year, today.month, today.day - 1);
+  final thisWeek = DateTime(
+    today.year,
+    today.month,
+    today.day - (today.weekday - 1),
+  );
+  final lastWeek = DateTime(thisWeek.year, thisWeek.month, thisWeek.day - 7);
   final month = DateFormat('MMMM yyyy');
 
   String labelOf(DateTime start) {
