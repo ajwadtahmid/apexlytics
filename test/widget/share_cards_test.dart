@@ -886,9 +886,10 @@ void main() {
   group('whether a file can be shared', () {
     tearDown(() => debugCanShareFiles = null);
 
-    test('is no on Linux and yes elsewhere, unless a test says otherwise', () {
+    test('is no on Linux and Windows and yes elsewhere, unless a test says '
+        'otherwise', () {
       debugCanShareFiles = null;
-      expect(canShareFiles, !Platform.isLinux);
+      expect(canShareFiles, !(Platform.isLinux || Platform.isWindows));
 
       debugCanShareFiles = true;
       expect(canShareFiles, isTrue);

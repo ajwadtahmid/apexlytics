@@ -77,8 +77,11 @@ Future<void> clearSharedCardCopies({Directory? tempDir, bool? android}) async {
 }
 
 /// Whether the platform's share can send a file. It can't on Linux, where
-/// share_plus only shares text, so a card is saved to a file there instead.
-bool get canShareFiles => debugCanShareFiles ?? !Platform.isLinux;
+/// share_plus only shares text, and on Windows the share target reads the file
+/// only after the call has returned, by which time it is gone; a card is saved
+/// to a file on both instead.
+bool get canShareFiles =>
+    debugCanShareFiles ?? !(Platform.isLinux || Platform.isWindows);
 
 /// Overrides [canShareFiles] in tests, which run on whatever host they are on.
 @visibleForTesting
