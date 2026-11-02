@@ -93,12 +93,6 @@ String timeAgo(DateTime timestamp) {
   return '${elapsed.inDays}d ago';
 }
 
-/// Capitalizes the first character of a string (e.g., 'apex' → 'Apex').
-String capitalize(String s) {
-  if (s.isEmpty) return s;
-  return s[0].toUpperCase() + s.substring(1);
-}
-
 /// One-line split orientation: 'Week 2 of 6 · Split ends in ~36 days'.
 ///
 /// Days truncate (the final day reads '~0 days'); below a day the unit steps

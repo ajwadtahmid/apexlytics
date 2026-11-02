@@ -367,12 +367,12 @@ class _MapCard extends StatelessWidget {
       onTap: onTap,
       child: SizedBox(
         height: AppTheme.scaledWithText(context, 152),
-        child: _mapArt(context, asset, rpColor),
+        child: _mapArt(asset, rpColor),
       ),
     );
   }
 
-  Widget _mapArt(BuildContext context, String? asset, Color rpColor) {
+  Widget _mapArt(String? asset, Color rpColor) {
     return Stack(
       fit: StackFit.expand,
       children: [

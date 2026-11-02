@@ -515,7 +515,12 @@ class _StatsBodyState extends ConsumerState<_StatsBody>
     final (snaps, legends, stack) = await (
       // Primes the snapshot cache on first call for this UID.
       // A cached copy of the stats is shown straight away; it isn't a reading.
-      appendAndLoadSnapshots(widget.stats, store, staleAt: widget.staleAt),
+      appendSnapshot(
+        widget.stats,
+        store,
+        uid: widget.stats.uid,
+        staleAt: widget.staleAt,
+      ),
       mergeLegendStats(widget.stats.legendStats, prefs, uid: widget.stats.uid),
       legendChanged && legend.isNotEmpty
           ? pushToLegendStack(legend, prefs, uid: widget.stats.uid)

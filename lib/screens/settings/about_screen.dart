@@ -33,7 +33,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   int _taps = 0;
   DateTime? _lastTap;
 
-  void _onVersionTap(String version) {
+  void _onVersionTap() {
     final now = DateTime.now();
     final last = _lastTap;
     _taps = last != null && now.difference(last) <= _tapWindow ? _taps + 1 : 1;
@@ -70,7 +70,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               children: [
                 InkWell(
                   borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                  onTap: () => _onVersionTap(version),
+                  onTap: _onVersionTap,
                   child: Row(
                     children: [
                       const Expanded(

@@ -30,7 +30,6 @@ class SplitRecap {
 
   /// The play session that gained the most RP.
   final RankedSession? bestSession;
-  final int longestWinStreak;
   final int totalKills;
 
   /// Games whose kills upstream reported: with none, [totalKills] is unknown
@@ -54,7 +53,6 @@ class SplitRecap {
     required this.bestMap,
     required this.metric,
     required this.bestSession,
-    required this.longestWinStreak,
     required this.totalKills,
     required this.killsGames,
     required this.totalDamage,
@@ -101,7 +99,6 @@ SplitRecap splitRecap(List<RankedMatch> matches, {required BestMetric metric}) {
     ).firstOrNull,
     metric: metric,
     bestSession: sessions.firstOrNull,
-    longestWinStreak: personalRecords(ranked).bestWinStreak,
     totalKills: summary.totalKills,
     killsGames: summary.killsGames,
     totalDamage: summary.totalDamage,

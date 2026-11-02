@@ -261,13 +261,6 @@ Future<List<StatSnapshot>> _appendSnapshotLocked(
   return updated;
 }
 
-/// Appends a snapshot and returns the updated list for `stats.uid`.
-Future<List<StatSnapshot>> appendAndLoadSnapshots(
-  PlayerStats stats,
-  RankedHistoryStore store, {
-  DateTime? staleAt,
-}) => appendSnapshot(stats, store, uid: stats.uid, staleAt: staleAt);
-
 /// Loads snapshots and seasons for a player in one call. Used by state
 /// initialization in stats views to populate all snapshot-related data.
 /// Reads the primed cache, so it stays synchronous.

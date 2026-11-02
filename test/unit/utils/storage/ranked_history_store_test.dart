@@ -97,20 +97,23 @@ void main() {
     expect(await store.count('1'), 3); // 100, 200, 300 — no duplicate
   });
 
-  test('a match carrying another uid is not filed under the requested one', () async {
-    final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-    addTearDown(store.close);
+  test(
+    'a match carrying another uid is not filed under the requested one',
+    () async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
 
-    await store.upsertAll('1', [
-      match('1', 100),
-      match('2', 200), // not the requested player
-      match('', 300), // upstream left the uid out
-    ]);
+      await store.upsertAll('1', [
+        match('1', 100),
+        match('2', 200), // not the requested player
+        match('', 300), // upstream left the uid out
+      ]);
 
-    expect(await store.count('1'), 1);
-    expect(await store.count('2'), 0);
-    expect(await store.count(''), 0);
-  });
+      expect(await store.count('1'), 1);
+      expect(await store.count('2'), 0);
+      expect(await store.count(''), 0);
+    },
+  );
 
   group('what the backup reminder reads', () {
     test('counts games after a moment, across every player', () async {
@@ -168,11 +171,16 @@ void main() {
   test('exportRowPages walks every row once, whatever the page size', () async {
     final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
     addTearDown(store.close);
-    await store.upsertAll('1', [for (var i = 0; i < 10; i++) match('1', i * 1000)]);
+    await store.upsertAll('1', [
+      for (var i = 0; i < 10; i++) match('1', i * 1000),
+    ]);
 
     for (final size in [1, 3, 5, 10, 50]) {
       final pages = await store.exportRowPages(pageSize: size).toList();
-      final ids = [for (final p in pages) for (final r in p) r['id']];
+      final ids = [
+        for (final p in pages)
+          for (final r in p) r['id'],
+      ];
 
       expect(ids.length, 10, reason: 'page size $size');
       expect(ids.toSet().length, 10, reason: 'page size $size');
@@ -194,15 +202,24 @@ void main() {
     }
 
     test('an absurd or negative running RP is dropped, not stored', () async {
-      expect((await restoredRow({'cumulative_rp': 5000000}))['cumulative_rp'], isNull);
+      expect(
+        (await restoredRow({'cumulative_rp': 5000000}))['cumulative_rp'],
+        isNull,
+      );
     });
 
     test('a negative running RP is dropped too', () async {
-      expect((await restoredRow({'cumulative_rp': -40}))['cumulative_rp'], isNull);
+      expect(
+        (await restoredRow({'cumulative_rp': -40}))['cumulative_rp'],
+        isNull,
+      );
     });
 
     test('a real running RP is kept', () async {
-      expect((await restoredRow({'cumulative_rp': 24500}))['cumulative_rp'], 24500);
+      expect(
+        (await restoredRow({'cumulative_rp': 24500}))['cumulative_rp'],
+        24500,
+      );
     });
 
     test('rank badges are kept only from the API hosts over https', () async {
@@ -222,7 +239,11 @@ void main() {
         'file:///etc/passwd',
         'not a url',
       ]) {
-        expect((await restoredRow({'rank_img': url}))['rank_img'], isNull, reason: url);
+        expect(
+          (await restoredRow({'rank_img': url}))['rank_img'],
+          isNull,
+          reason: url,
+        );
       }
     });
 
@@ -249,7 +270,9 @@ void main() {
   test('a restore larger than one commit chunk lands every row', () async {
     final source = RankedHistoryStore(overridePath: inMemoryDatabasePath);
     addTearDown(source.close);
-    await source.upsertAll('1', [for (var i = 1; i <= 1250; i++) match('1', i * 1000)]);
+    await source.upsertAll('1', [
+      for (var i = 1; i <= 1250; i++) match('1', i * 1000),
+    ]);
     final rows = await source.exportRows();
     await source.close(); // the in-memory path is shared while it stays open
 
@@ -274,36 +297,39 @@ void main() {
         '${now.difference(s.timestamp).inDays}': s.rp,
     };
 
-    test('keeps profiles forever, favourites 90 days, everyone else 14', () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      for (final uid in ['profile', 'fav', 'other']) {
-        await store.appendSnapshotsFor(uid, [
-          reading(400),
-          reading(100),
-          reading(80),
-          reading(20),
-          reading(10),
+    test(
+      'keeps profiles forever, favourites 90 days, everyone else 14',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        for (final uid in ['profile', 'fav', 'other']) {
+          await store.appendSnapshotsFor(uid, [
+            reading(400),
+            reading(100),
+            reading(80),
+            reading(20),
+            reading(10),
+          ]);
+        }
+
+        final removed = await store.pruneSnapshots(
+          profileUids: {'profile'},
+          favoriteUids: {'fav'},
+          now: now,
+        );
+
+        expect((await remainingDays(store, 'profile')).keys, [
+          '400',
+          '100',
+          '80',
+          '20',
+          '10',
         ]);
-      }
-
-      final removed = await store.pruneSnapshots(
-        profileUids: {'profile'},
-        favoriteUids: {'fav'},
-        now: now,
-      );
-
-      expect((await remainingDays(store, 'profile')).keys, [
-        '400',
-        '100',
-        '80',
-        '20',
-        '10',
-      ]);
-      expect((await remainingDays(store, 'fav')).keys, ['80', '20', '10']);
-      expect((await remainingDays(store, 'other')).keys, ['10']);
-      expect(removed, 6); // favourite loses 2, the stranger 4
-    });
+        expect((await remainingDays(store, 'fav')).keys, ['80', '20', '10']);
+        expect((await remainingDays(store, 'other')).keys, ['10']);
+        expect(removed, 6); // favourite loses 2, the stranger 4
+      },
+    );
 
     test('a player the store holds match history for is never trimmed', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
@@ -312,7 +338,9 @@ void main() {
       await store.upsertAll('gone', [match('gone', 100)]);
       await store.appendSnapshotsFor('gone', [reading(400)]);
       await store.appendSnapshotsFor('stranger', [reading(400)]);
-      await store.appendSnapshotsFor('', [reading(400)]); // legacy UID-less bucket
+      await store.appendSnapshotsFor('', [
+        reading(400),
+      ]); // legacy UID-less bucket
 
       await store.pruneSnapshots(
         profileUids: const {},
@@ -425,27 +453,24 @@ void main() {
     },
   );
 
-  test(
-    'rankedSeasonCounts keeps a split whose games are all excluded, so the '
-    'History tab can still reach and restore them',
-    () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
+  test('rankedSeasonCounts keeps a split whose games are all excluded, so the '
+      'History tab can still reach and restore them', () async {
+    final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+    addTearDown(store.close);
 
-      final seasons = {'s1': season('br_ranked_s1_s1', 0, 1000)};
-      final handExcluded = match('1', 100);
-      await store.upsertAll('1', [
-        handExcluded,
-        match('1', 300, rp: -1500), // auto-excluded reset artifact
-      ], seasons: seasons);
-      await store.setExcluded(handExcluded.id, true);
+    final seasons = {'s1': season('br_ranked_s1_s1', 0, 1000)};
+    final handExcluded = match('1', 100);
+    await store.upsertAll('1', [
+      handExcluded,
+      match('1', 300, rp: -1500), // auto-excluded reset artifact
+    ], seasons: seasons);
+    await store.setExcludedFor([handExcluded.id], true);
 
-      expect((await store.rankedSeasonCounts('1'))['br_ranked_s1_s1'], 2);
-      // The aggregates still leave both games out.
-      expect((await store.summaryFor('1')).games, 0);
-      expect(await store.getBySeason('1', 'br_ranked_s1_s1'), hasLength(2));
-    },
-  );
+    expect((await store.rankedSeasonCounts('1'))['br_ranked_s1_s1'], 2);
+    // The aggregates still leave both games out.
+    expect((await store.summaryFor('1')).games, 0);
+    expect(await store.getBySeason('1', 'br_ranked_s1_s1'), hasLength(2));
+  });
 
   test('getBySeason returns one split; Unknown includes NULL rows', () async {
     final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
@@ -589,10 +614,10 @@ void main() {
     addTearDown(store.close);
     await store.upsertAll('1', [match('1', 100), match('1', 200)]);
 
-    expect(
-      await store.existingIds(['1_100', '1_999', '1_200', '1_100']),
-      {'1_100', '1_200'},
-    );
+    expect(await store.existingIds(['1_100', '1_999', '1_200', '1_100']), {
+      '1_100',
+      '1_200',
+    });
     expect(await store.existingIds(const []), isEmpty);
 
     // More ids than fit in one query's bound variables.
@@ -833,21 +858,41 @@ void main() {
     });
 
     // 100: repaired kills (null, flagged, blob still carries 9999).
-    await seed(100, flags: ',kills,', trackers: blob(kills: 9999, damage: 500), damage: 500);
+    await seed(
+      100,
+      flags: ',kills,',
+      trackers: blob(kills: 9999, damage: 500),
+      damage: 500,
+    );
     // 200: a person nulled a plausible value: flag stays.
-    await seed(200, flags: ',kills,', trackers: blob(kills: 3, damage: 500), damage: 500);
+    await seed(
+      200,
+      flags: ',kills,',
+      trackers: blob(kills: 3, damage: 500),
+      damage: 500,
+    );
     // 300: a person set a real value: flag stays.
     await seed(300, kills: 7, flags: ',kills,', trackers: blob(kills: 9999));
     // 400: both repaired.
-    await seed(400, flags: ',damage,kills,', trackers: blob(kills: 9999, damage: 99999));
+    await seed(
+      400,
+      flags: ',damage,kills,',
+      trackers: blob(kills: 9999, damage: 99999),
+    );
     // 500: damage repaired, kills hand-edited to a real value.
-    await seed(500, kills: 5, flags: ',damage,kills,', trackers: blob(kills: 9999, damage: 99999));
+    await seed(
+      500,
+      kills: 5,
+      flags: ',damage,kills,',
+      trackers: blob(kills: 9999, damage: 99999),
+    );
     await v10.close();
 
     final store = RankedHistoryStore(overridePath: path);
     addTearDown(store.close);
     final byStart = {
-      for (final r in await store.exportRows()) (r['start_ms'] as int) ~/ 1000: r,
+      for (final r in await store.exportRows())
+        (r['start_ms'] as int) ~/ 1000: r,
     };
 
     expect(byStart[100]!['edited_fields'], isNull);
@@ -943,64 +988,70 @@ void main() {
       expect(await store.count('1'), 0);
     });
 
-    test('a restore carries the excluded flag, and never clears a local one',
-        () async {
-      final source = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      await source.upsertAll('1', [match('1', 100), match('1', 200)]);
-      await source.setExcluded('1_100', true);
-      final rows = await source.exportRows();
-      await source.close();
+    test(
+      'a restore carries the excluded flag, and never clears a local one',
+      () async {
+        final source = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        await source.upsertAll('1', [match('1', 100), match('1', 200)]);
+        await source.setExcludedFor(['1_100'], true);
+        final rows = await source.exportRows();
+        await source.close();
 
-      final restored = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(restored.close);
-      // 1_200 is excluded locally; the backup has it included.
-      await restored.upsertAll('1', [match('1', 200)]);
-      await restored.setExcluded('1_200', true);
-      await restored.importRows(rows);
+        final restored = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(restored.close);
+        // 1_200 is excluded locally; the backup has it included.
+        await restored.upsertAll('1', [match('1', 200)]);
+        await restored.setExcludedFor(['1_200'], true);
+        await restored.importRows(rows);
 
-      final byId = {for (final m in await restored.getAll('1')) m.id: m};
-      expect(byId['1_100']!.excluded, isTrue);
-      expect(byId['1_200']!.excluded, isTrue);
-    });
+        final byId = {for (final m in await restored.getAll('1')) m.id: m};
+        expect(byId['1_100']!.excluded, isTrue);
+        expect(byId['1_200']!.excluded, isTrue);
+      },
+    );
 
-    test('a row with text in a numeric column is skipped, not stored',
-        () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      final bad = Map<String, Object?>.from(match('1', 100).toStoredMap())
-        ..['kills'] = 'n/a';
-      final good = match('1', 200).toStoredMap();
+    test(
+      'a row with text in a numeric column is skipped, not stored',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        final bad = Map<String, Object?>.from(match('1', 100).toStoredMap())
+          ..['kills'] = 'n/a';
+        final good = match('1', 200).toStoredMap();
 
-      final skipped = await store.importRows([bad, good]);
+        final skipped = await store.importRows([bad, good]);
 
-      expect(skipped, 1);
-      expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
-    });
+        expect(skipped, 1);
+        expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
+      },
+    );
 
-    test('a row whose timestamp cannot be read back is skipped, not stored',
-        () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      final good = match('1', 200).toStoredMap();
-      // One past what DateTime holds, non-finite, and not after the epoch.
-      for (final bad in [9e15, double.infinity, 0, -5]) {
-        for (final column in ['start_ms', 'end_ms']) {
-          if (column == 'end_ms' && bad == 0) continue; // allowed, see below
-          final row = Map<String, Object?>.from(match('1', 100).toStoredMap())
-            ..[column] = bad;
+    test(
+      'a row whose timestamp cannot be read back is skipped, not stored',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        final good = match('1', 200).toStoredMap();
+        // One past what DateTime holds, non-finite, and not after the epoch.
+        for (final bad in [9e15, double.infinity, 0, -5]) {
+          for (final column in ['start_ms', 'end_ms']) {
+            if (column == 'end_ms' && bad == 0) continue; // allowed, see below
+            final row = Map<String, Object?>.from(match('1', 100).toStoredMap())
+              ..[column] = bad;
 
-          expect(
-            await store.importRows([row, good]),
-            1,
-            reason: '$column = $bad',
-          );
+            expect(
+              await store.importRows([row, good]),
+              1,
+              reason: '$column = $bad',
+            );
+          }
         }
-      }
 
-      // getAll throws on a stored out-of-range timestamp, so reaching the
-      // assertion at all shows none was stored.
-      expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
-    });
+        // getAll throws on a stored out-of-range timestamp, so reaching the
+        // assertion at all shows none was stored.
+        expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
+      },
+    );
 
     test('a row with no end time is still restored', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
@@ -1009,7 +1060,10 @@ void main() {
         ..['end_ms'] = 0;
 
       expect(await store.importRows([row]), 0);
-      expect((await store.getAll('1')).single.endTime.millisecondsSinceEpoch, 0);
+      expect(
+        (await store.getAll('1')).single.endTime.millisecondsSinceEpoch,
+        0,
+      );
     });
 
     test('a snapshot with an unreadable timestamp is skipped', () async {
@@ -1027,22 +1081,24 @@ void main() {
       expect((await store.snapshotsFor('1')).single.rp, 1200);
     });
 
-    test('a non-finite number in any numeric column skips just that row',
-        () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      final bad = Map<String, Object?>.from(match('1', 100).toStoredMap())
-        ..['rp_change'] = double.infinity;
-      final nan = Map<String, Object?>.from(match('1', 150).toStoredMap())
-        ..['kills'] = double.nan;
-      final good = match('1', 200).toStoredMap();
+    test(
+      'a non-finite number in any numeric column skips just that row',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        final bad = Map<String, Object?>.from(match('1', 100).toStoredMap())
+          ..['rp_change'] = double.infinity;
+        final nan = Map<String, Object?>.from(match('1', 150).toStoredMap())
+          ..['kills'] = double.nan;
+        final good = match('1', 200).toStoredMap();
 
-      // Used to throw from `toInt()` and fail the whole restore.
-      final skipped = await store.importRows([bad, nan, good]);
+        // Used to throw from `toInt()` and fail the whole restore.
+        final skipped = await store.importRows([bad, nan, good]);
 
-      expect(skipped, 2);
-      expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
-    });
+        expect(skipped, 2);
+        expect((await store.getAll('1')).map((m) => m.id), ['1_200']);
+      },
+    );
   });
 
   group('rows whose legend or map is blank or padded', () {
@@ -1071,34 +1127,38 @@ void main() {
       ]);
     });
 
-    test('Unknown covers a blank, a whitespace-only and a missing legend',
-        () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      await store.importRows([
-        row(100, legend: ''),
-        row(200, legend: '  '),
-        row(300, legend: null),
-        row(400, legend: 'Unknown'),
-        row(500, legend: 'Axle'),
-      ]);
+    test(
+      'Unknown covers a blank, a whitespace-only and a missing legend',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        await store.importRows([
+          row(100, legend: ''),
+          row(200, legend: '  '),
+          row(300, legend: null),
+          row(400, legend: 'Unknown'),
+          row(500, legend: 'Axle'),
+        ]);
 
-      expect(await store.matchesForLegend('1', 'Unknown'), hasLength(4));
-    });
+        expect(await store.matchesForLegend('1', 'Unknown'), hasLength(4));
+      },
+    );
 
-    test('Unknown map covers a blank and a missing key as well as UNKNOWN',
-        () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      await store.importRows([
-        row(100, mapKey: 'UNKNOWN'),
-        row(200, mapKey: ''),
-        row(300, mapKey: null),
-        row(400, mapKey: 'olympus_rotation'),
-      ]);
+    test(
+      'Unknown map covers a blank and a missing key as well as UNKNOWN',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        await store.importRows([
+          row(100, mapKey: 'UNKNOWN'),
+          row(200, mapKey: ''),
+          row(300, mapKey: null),
+          row(400, mapKey: 'olympus_rotation'),
+        ]);
 
-      expect(await store.matchesForMap('1', 'unknown'), hasLength(3));
-    });
+        expect(await store.matchesForMap('1', 'unknown'), hasLength(3));
+      },
+    );
 
     test('the Unknown row\'s own key opens every match behind it, even when '
         'that key is blank', () async {
@@ -1119,31 +1179,34 @@ void main() {
     });
   });
 
-  test('a later sync updates a match\'s length, like its other columns',
-      () async {
-    final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-    addTearDown(store.close);
-    RankedMatch withLength(int secs) =>
-        buildMatch(start: 100, length: secs);
-
-    await store.upsertAll('1', [withLength(600)]);
-    await store.upsertAll('1', [withLength(900)]);
-
-    expect((await store.getAll('1')).single.lengthSecs, 900);
-  });
-
-  group('importRows hardening, continued', () {
-
-    test('an implausible imported kills value is dropped, like a sync', () async {
+  test(
+    'a later sync updates a match\'s length, like its other columns',
+    () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
       addTearDown(store.close);
-      final row = Map<String, Object?>.from(match('1', 100).toStoredMap())
-        ..['kills'] = 5000;
+      RankedMatch withLength(int secs) => buildMatch(start: 100, length: secs);
 
-      await store.importRows([row]);
+      await store.upsertAll('1', [withLength(600)]);
+      await store.upsertAll('1', [withLength(900)]);
 
-      expect((await store.getAll('1')).single.kills, isNull);
-    });
+      expect((await store.getAll('1')).single.lengthSecs, 900);
+    },
+  );
+
+  group('importRows hardening, continued', () {
+    test(
+      'an implausible imported kills value is dropped, like a sync',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        final row = Map<String, Object?>.from(match('1', 100).toStoredMap())
+          ..['kills'] = 5000;
+
+        await store.importRows([row]);
+
+        expect((await store.getAll('1')).single.kills, isNull);
+      },
+    );
 
     test('a restored row is filed under the id its own uid and start time '
         'give, whatever id the file claims', () async {
@@ -1189,8 +1252,14 @@ void main() {
       addTearDown(store.close);
       await store.upsertAll('1', [match('1', 100)]);
 
-      expect(await store.editMatch('nope', {'kills': 4}, excluded: true), false);
-      expect(await store.editMatch('1_100', {'kills': 4}, excluded: true), true);
+      expect(
+        await store.editMatch('nope', {'kills': 4}, excluded: true),
+        false,
+      );
+      expect(
+        await store.editMatch('1_100', {'kills': 4}, excluded: true),
+        true,
+      );
 
       final m = (await store.getAll('1')).single;
       expect(m.kills, 4);
@@ -1362,17 +1431,20 @@ void main() {
       expect(await store.snapshotCount('1'), 1);
     });
 
-    test('a JSON boolean is stored as 1/0 rather than skipping the row', () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
+    test(
+      'a JSON boolean is stored as 1/0 rather than skipping the row',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
 
-      final skipped = await store.importRows([
-        {...match('1', 100).toStoredMap(), 'is_party_full': true},
-      ]);
+        final skipped = await store.importRows([
+          {...match('1', 100).toStoredMap(), 'is_party_full': true},
+        ]);
 
-      expect(skipped, 0);
-      expect((await store.getAll('1')).single.isPartyFull, isTrue);
-    });
+        expect(skipped, 0);
+        expect((await store.getAll('1')).single.isPartyFull, isTrue);
+      },
+    );
 
     test('a restorePrefs failure rolls back the row imports too', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
@@ -1620,24 +1692,11 @@ void main() {
       return store;
     }
 
-    test('setExcluded flags the row and reports success', () async {
-      final m = match('1', 100);
-      final store = await storeWithMatch(m);
-
-      expect(await store.setExcluded(m.dedupKey, true), true);
-      expect((await store.getAll('1')).single.excluded, isTrue);
-    });
-
-    test('setExcluded on an unknown match is a no-op and reports failure', () async {
-      final store = await storeWithMatch(match('1', 100));
-      expect(await store.setExcluded('nope', true), false);
-    });
-
     test('an excluded match is dropped from summaryFor', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
       addTearDown(store.close);
       await store.upsertAll('1', [match('1', 100, rp: 20), match('1', 200)]);
-      await store.setExcluded('1_100', true);
+      await store.setExcludedFor(['1_100'], true);
 
       final summary = await store.summaryFor('1');
       expect(summary.games, 1);
@@ -1648,7 +1707,7 @@ void main() {
       final m = match('1', 100);
       final store = await storeWithMatch(m);
 
-      await store.setExcluded(m.dedupKey, true);
+      await store.setExcludedFor([m.dedupKey], true);
       await store.upsertAll('1', [m]); // same match served again
 
       expect((await store.getAll('1')).single.excluded, isTrue);
@@ -1659,8 +1718,8 @@ void main() {
       addTearDown(store.close);
       final m = match('1', 100);
       await store.upsertAll('1', [m]);
-      await store.setExcluded(m.dedupKey, true);
-      await store.setExcluded(m.dedupKey, false);
+      await store.setExcludedFor([m.dedupKey], true);
+      await store.setExcludedFor([m.dedupKey], false);
 
       final summary = await store.summaryFor('1');
       expect(summary.games, 1);
@@ -1743,17 +1802,13 @@ void main() {
       expect(summary.totalKills, 6, reason: 'its kills are left out too');
 
       expect(await store.matchesForLegend('1', 'Axle'), hasLength(2));
-      expect(
-        (await store.legendBreakdownsFor('1')).single.games,
-        2,
-      );
+      expect((await store.legendBreakdownsFor('1')).single.games, 2);
       // The picker still counts the reset artifact, so a split holding only
       // excluded games stays reachable; the aggregates above skip it.
       expect(
-        (await store.rankedSeasonCounts('1')).values.fold<int>(
-          0,
-          (a, b) => a + b,
-        ),
+        (await store.rankedSeasonCounts(
+          '1',
+        )).values.fold<int>(0, (a, b) => a + b),
         3,
       );
       expect((await store.personalBestGamesFor('1')).bestRpGame?.rpChange, 40);
@@ -1905,7 +1960,11 @@ void main() {
       for (final cell in [sql, dart]) {
         expect(cell.games, 4);
         expect(cell.totalKills, 6);
-        expect(cell.killsGames, 3, reason: 'a reported 0 counts, a gap does not');
+        expect(
+          cell.killsGames,
+          3,
+          reason: 'a reported 0 counts, a gap does not',
+        );
         expect(cell.totalDamage, 800);
         expect(cell.damageGames, 2);
         expect(cell.wins, 2);
@@ -1955,23 +2014,33 @@ void main() {
 
       expect(await store.setExcludedFor([games[0].id], false), 1);
       expect(
-        (await store.getAll('1')).firstWhere((m) => m.id == games[0].id).excluded,
+        (await store.getAll(
+          '1',
+        )).firstWhere((m) => m.id == games[0].id).excluded,
         isFalse,
       );
       expect(await store.setExcludedFor(const [], true), 0);
     });
 
-    test('setExcludedFor copes with more ids than one statement allows', () async {
-      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(store.close);
-      final games = [for (var i = 0; i < 620; i++) match('1', 100 + i * 1000)];
-      await store.upsertAll('1', games);
+    test(
+      'setExcludedFor copes with more ids than one statement allows',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        final games = [
+          for (var i = 0; i < 620; i++) match('1', 100 + i * 1000),
+        ];
+        await store.upsertAll('1', games);
 
-      final changed = await store.setExcludedFor(games.map((m) => m.id), true);
+        final changed = await store.setExcludedFor(
+          games.map((m) => m.id),
+          true,
+        );
 
-      expect(changed, 620);
-      expect((await store.getAll('1')).every((m) => m.excluded), isTrue);
-    });
+        expect(changed, 620);
+        expect((await store.getAll('1')).every((m) => m.excluded), isTrue);
+      },
+    );
 
     test('empty scope returns the empty summary', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
@@ -2137,7 +2206,9 @@ void main() {
           .close(); // flush schema + rows to the file for a 2nd connection
 
       expect(
-        await planFor("season_id IS NULL OR season_id NOT GLOB '*s[0-9]*_s[0-9]*'"),
+        await planFor(
+          "season_id IS NULL OR season_id NOT GLOB '*s[0-9]*_s[0-9]*'",
+        ),
         contains('idx_needs_season_id'),
       );
     });
@@ -2385,9 +2456,7 @@ void main() {
         {...match('1', 100).toStoredMap(), 'season_id': '__other__'},
       ]);
 
-      await store.backfillSeasonIds({
-        's1': season('br_ranked_s1_s1', 0, 1000),
-      });
+      await store.backfillSeasonIds({'s1': season('br_ranked_s1_s1', 0, 1000)});
 
       expect((await store.getAll('1')).single.seasonId, 'br_ranked_s1_s1');
     });
@@ -2460,9 +2529,7 @@ void main() {
       await v8.close();
 
       final store = RankedHistoryStore(overridePath: path);
-      await store.backfillSeasonIds({
-        's1': season('br_ranked_s1_s1', 0, 1000),
-      });
+      await store.backfillSeasonIds({'s1': season('br_ranked_s1_s1', 0, 1000)});
       expect((await store.getAll('1')).single.seasonId, 'br_ranked_s1_s1');
       await store.close();
 

@@ -209,7 +209,7 @@ class RankedSummary {
 }
 
 /// Assumes [matches] is already ranked-only filtered (the caller owns that via
-/// [rankedOnly]/`matchesInSplit`) — re-filtering on every call was pure waste.
+/// [rankedOnly], after loading the split with `getBySeason`) — re-filtering on every call was pure waste.
 ///
 /// [currentRpFrom] supplies the newest match for `currentRp`/`latestRankImg`
 /// when it should include matches [matches] leaves out (excluded ones still

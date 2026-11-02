@@ -2,22 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apexlytics/constants/rank_constants.dart';
-import 'package:apexlytics/models/player_stats.dart';
 import 'package:apexlytics/utils/formatting/rank_utils.dart';
-
-PlayerStats _stubStats({required String rank, required int rankScore}) =>
-    PlayerStats(
-      name: 'Test',
-      uid: '1',
-      level: 1,
-      rank: rank,
-      rankScore: rankScore,
-      platform: 'PC',
-      currentLegend: 'Wraith',
-      isOnline: false,
-      isInGame: false,
-      trackers: [],
-    );
 
 void main() {
   group('Apex Predator rules', () {
@@ -63,21 +48,17 @@ void main() {
     });
   });
 
-  group('rankLabel', () {
+  group('rankLabelFor', () {
     test('returns kApexPredatorRank string for predator rank', () {
-      final stats = _stubStats(rank: kApexPredatorRank, rankScore: 20000);
-      expect(rankLabel(stats), kApexPredatorRank);
+      expect(rankLabelFor(kApexPredatorRank, 20000), kApexPredatorRank);
     });
 
     test('returns ladder label for non-predator', () {
-      final stats = _stubStats(rank: 'Gold', rankScore: 5500);
-      expect(rankLabel(stats), contains('Gold'));
+      expect(rankLabelFor('Gold', 5500), contains('Gold'));
     });
 
     test('non-predator label matches kRankLadder entry', () {
-      final stats = _stubStats(rank: 'Silver', rankScore: 3000);
-      final expected = kRankLadder[rankIndex(3000)].label;
-      expect(rankLabel(stats), expected);
+      expect(rankLabelFor('Silver', 3000), kRankLadder[rankIndex(3000)].label);
     });
   });
 

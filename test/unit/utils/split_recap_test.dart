@@ -123,16 +123,12 @@ void main() {
     expect(r.bestLegend!.legend, 'Axle');
   });
 
-  test(
-    'best session gained the most RP, and the streak counts wins in a row',
-    () {
-      final r = splitRecap(games, metric: BestMetric.totalRp);
+  test('best session gained the most RP', () {
+    final r = splitRecap(games, metric: BestMetric.totalRp);
 
-      expect(r.bestSession!.netRp, 40);
-      expect(r.bestSession!.games, 3);
-      expect(r.longestWinStreak, 2);
-    },
-  );
+    expect(r.bestSession!.netRp, 40);
+    expect(r.bestSession!.games, 3);
+  });
 
   test('excluded and casual games are left out', () {
     final r = splitRecap([

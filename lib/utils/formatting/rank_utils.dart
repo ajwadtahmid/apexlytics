@@ -18,7 +18,7 @@ int rankIndex(int rankPoints) {
 //      below the Master floor is a missing or placeholder value (parsed as 0),
 //      so it counts as no cutoff, not as "everyone qualifies".
 //   3. So: Predator = a usable cutoff, and RP at or above it.
-// The API's own rank name (see [rankLabel]) is a separate source.
+// The API's own rank name (see [rankLabelFor]) is a separate source.
 
 /// [cutoff] if it can be a real Predator cutoff (at or above the Master
 /// floor), otherwise null.
@@ -31,13 +31,8 @@ bool isApexPredatorRp(int rp, int? cutoff) {
   return usable != null && rp >= usable;
 }
 
-/// Returns the display label for [stats.rank], using the Apex Predator
-/// constant when the rank string matches it.
-String rankLabel(PlayerStats stats) =>
-    rankLabelFor(stats.rank, stats.rankScore);
-
-/// [rankLabel] from a stored rank name and RP, for a player whose full stats
-/// aren't to hand.
+/// The display label for a stored rank name and RP: the Apex Predator constant
+/// when the name matches it, otherwise the ladder label for the RP.
 String rankLabelFor(String rank, int rankScore) => rank == kApexPredatorRank
     ? kApexPredatorRank
     : kRankLadder[rankIndex(rankScore)].label;

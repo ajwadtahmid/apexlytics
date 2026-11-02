@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:intl/intl.dart';
 
 import 'backup_reminder.dart' show backupAgeLabel;
@@ -121,7 +122,9 @@ class BugReport {
   final Uri uri;
 
   /// How many log lines went in, out of how many were kept.
+  @visibleForTesting
   final int logLinesIncluded;
+  @visibleForTesting
   final int logLinesAvailable;
 
   const BugReport(this.uri, this.logLinesIncluded, this.logLinesAvailable);
@@ -196,7 +199,9 @@ BugReport composeBugReport(
   // Then the log, newest first, until the budget is spent.
   final time = DateFormat('HH:mm:ss');
   final logLines = <String>[];
-  var logCost = size(section('Recent log (latest 00000 of 00000 lines, newest last)', []));
+  var logCost = size(
+    section('Recent log (latest 00000 of 00000 lines, newest last)', []),
+  );
   for (final entry in logs.reversed) {
     final line = scrubForReport(
       '${time.format(entry.time)} ${entry.level} ${entry.text}',

@@ -51,23 +51,6 @@ void main() {
     );
   });
 
-  group('capitalize', () {
-    test(
-      'capitalizes first letter',
-      () => expect(capitalize('hello'), 'Hello'),
-    );
-    test(
-      'leaves already-capitalized unchanged',
-      () => expect(capitalize('Hello'), 'Hello'),
-    );
-    test('handles single char', () => expect(capitalize('a'), 'A'));
-    test('handles empty string', () => expect(capitalize(''), ''));
-    test(
-      'capitalizes only first letter',
-      () => expect(capitalize('hello world'), 'Hello world'),
-    );
-  });
-
   group('timeAgo', () {
     test('returns minutes for recent timestamps', () {
       final ts = DateTime.now().subtract(const Duration(minutes: 30));

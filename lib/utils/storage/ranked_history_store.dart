@@ -777,24 +777,6 @@ class RankedHistoryStore {
     );
   }
 
-  /// Sets only [RankedMatch.excluded] on the match [id]. Test-only: the app
-  /// excludes a match via [editMatch] (`excluded:`) from the edit sheet. A
-  /// sync never writes the flag, and a restore can only set it (see
-  /// [_conflictUpdateSet]).
-  ///
-  /// Returns `false` when no row matches [id], same as [editMatch].
-  @visibleForTesting
-  Future<bool> setExcluded(String id, bool excluded) async {
-    final db = await _open();
-    final count = await db.update(
-      table,
-      {'excluded': excluded ? 1 : 0},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    return count > 0;
-  }
-
   /// Sets [RankedMatch.excluded] on every match in [ids] in one transaction,
   /// so a failure leaves none of them changed. Ids that match no row are
   /// skipped. Returns how many rows were found.
