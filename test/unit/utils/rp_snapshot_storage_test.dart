@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -284,6 +285,54 @@ void main() {
     );
   });
 
+  group('a clear while appends are waiting', () {
+    test('drops the reading queued behind the one in flight', () async {
+      final gated = _GatedSnapshotStore();
+      addTearDown(gated.close);
+
+      // The first append reaches the table and waits there; the second is
+      // queued behind it with a reading taken before the clear.
+      final first = appendSnapshot(
+        buildStats(rankScore: 3000),
+        gated,
+        uid: 'u',
+      );
+      final second = appendSnapshot(
+        buildStats(rankScore: 4000),
+        gated,
+        uid: 'u',
+      );
+      await gated.reachedTable.future;
+
+      await gated.deleteAll();
+      resetSnapshotCache();
+      gated.open.complete();
+      await first;
+      await second;
+
+      expect(await gated.snapshotsFor('u'), isEmpty);
+      expect(loadSnapshotsSync(uid: 'u'), isEmpty);
+    });
+
+    test('a read begun before a clear is not cached after it', () async {
+      final gated = _GatedSnapshotStore();
+      addTearDown(gated.close);
+      await gated.appendSnapshotsFor('u', [
+        StatSnapshot(timestamp: DateTime(2026, 9, 1), rp: 1500),
+      ]);
+
+      gated.gateReads();
+      final reading = primeSnapshots(gated, 'u');
+      await gated.readStarted.future;
+      await gated.deleteAll();
+      resetSnapshotCache();
+      gated.readOpen.complete();
+      await reading;
+
+      expect(loadSnapshotsSync(uid: 'u'), isEmpty);
+    });
+  });
+
   group('migrateSnapshotsFromPrefs', () {
     Future<SharedPreferences> seedLegacy(Map<String, Object> values) async {
       SharedPreferences.setMockInitialValues(values);
@@ -404,4 +453,44 @@ void main() {
 
     expect(notified, 1);
   });
+}
+
+/// A store whose snapshot write, and optionally its snapshot read, can be held
+/// until the test lets them through, to line a clear up between steps.
+class _GatedSnapshotStore extends RankedHistoryStore {
+  _GatedSnapshotStore() : super(overridePath: inMemoryDatabasePath);
+
+  final Completer<void> reachedTable = Completer<void>();
+  final Completer<void> open = Completer<void>();
+  final Completer<void> readStarted = Completer<void>();
+  final Completer<void> readOpen = Completer<void>();
+  bool _gateReads = false;
+  bool _firstWrite = true;
+
+  void gateReads() => _gateReads = true;
+
+  @override
+  Future<void> appendSnapshotFor(
+    String uid,
+    StatSnapshot snapshot, {
+    int? onlyIfEpoch,
+  }) async {
+    if (_firstWrite) {
+      _firstWrite = false;
+      reachedTable.complete();
+      await open.future;
+    }
+    return super.appendSnapshotFor(uid, snapshot, onlyIfEpoch: onlyIfEpoch);
+  }
+
+  @override
+  Future<List<StatSnapshot>> snapshotsFor(String uid) async {
+    final rows = await super.snapshotsFor(uid);
+    if (_gateReads) {
+      _gateReads = false;
+      readStarted.complete();
+      await readOpen.future;
+    }
+    return rows;
+  }
 }

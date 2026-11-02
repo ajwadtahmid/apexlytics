@@ -38,9 +38,15 @@ class _SnapshotCacheResets extends ChangeNotifier {
   void _notify() => notifyListeners();
 }
 
+/// Counts [resetSnapshotCache] calls. A read that began before a reset checks
+/// it before caching what it read, so rows read just before a clear or a
+/// restore are not cached after it.
+int _resetGeneration = 0;
+
 /// Drops every cached entry. For "Clear all data" and for test isolation -
 /// without it a cleared database would still read back through this cache.
 void resetSnapshotCache() {
+  _resetGeneration++;
   _cache.clear();
   snapshotCacheResets._notify();
 }
@@ -131,8 +137,13 @@ Future<List<StatSnapshot>> primeSnapshots(
   RankedHistoryStore store,
   String? uid,
 ) async {
+  final generation = _resetGeneration;
   final snaps = await store.snapshotsFor(uid ?? '');
-  _remember(PrefsKeys.snapshotKeyFor(uid), snaps);
+  // The cache was reset while this was reading (a clear or a restore): what was
+  // read may be gone from the table, so it is handed back but not remembered.
+  if (generation == _resetGeneration) {
+    _remember(PrefsKeys.snapshotKeyFor(uid), snaps);
+  }
   return snaps;
 }
 
@@ -173,6 +184,9 @@ Future<List<StatSnapshot>> appendSnapshot(
   DateTime? staleAt,
 }) {
   final key = PrefsKeys.snapshotKeyFor(uid);
+  // Read now, not when this call's turn comes: a clear that lands while it
+  // waits behind an earlier append must still drop this reading.
+  final epoch = store.dataEpoch;
   final previous = _appending[key];
   // Swallow a prior failure rather than propagate it - it was already
   // surfaced to its own caller, and chaining its rejection here would skip
@@ -187,6 +201,7 @@ Future<List<StatSnapshot>> appendSnapshot(
       uid: uid,
       deduplicateRp: deduplicateRp,
       isStale: staleAt != null,
+      epoch: epoch,
     ),
   );
   _appending[key] = chained;
@@ -206,10 +221,9 @@ Future<List<StatSnapshot>> _appendSnapshotLocked(
   String? uid,
   bool deduplicateRp = true,
   bool isStale = false,
+  required int epoch,
 }) async {
   final key = PrefsKeys.snapshotKeyFor(uid);
-  // Read before any await, so a clear mid-append can't be undone below.
-  final epoch = store.dataEpoch;
   // A UID that was never primed would otherwise dedup against an empty list
   // and re-append a reading already on disk.
   final snapshots = _cache.containsKey(key)
