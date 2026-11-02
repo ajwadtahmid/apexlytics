@@ -40,6 +40,51 @@ void main() {
       l.legend,
   ];
 
+  group('a measure that averages only the games that reported it', () {
+    // Twelve games but one kills reading, against thirty with all of them.
+    final thin = legend(
+      'Wraith',
+      games: 12,
+      kills: 14,
+      killsGames: 1,
+      damage: 9000,
+      damageGames: 2,
+    );
+    final solid = legend(
+      'Bloodhound',
+      games: 30,
+      kills: 75,
+      damage: 15000,
+    );
+
+    test('counts the games behind the figure', () {
+      expect(BestMetric.avgKills.samplesIn(thin), 1);
+      expect(BestMetric.avgDamage.samplesIn(thin), 2);
+      expect(BestMetric.totalKills.samplesIn(thin), 12);
+      expect(BestMetric.avgRp.samplesIn(thin), 12);
+    });
+
+    test('one kills reading cannot crown a legend by average kills', () {
+      expect(order([thin, solid], BestMetric.avgKills), ['Bloodhound']);
+    });
+
+    test('two damage readings cannot crown one by average damage', () {
+      expect(order([thin, solid], BestMetric.avgDamage), ['Bloodhound']);
+    });
+
+    test('a measure over all games still ranks it', () {
+      expect(order([thin, solid], BestMetric.totalKills), [
+        'Bloodhound',
+        'Wraith',
+      ]);
+    });
+
+    test('with the soft gate the thin one is ranked when nobody has enough', () {
+      expect(order([thin], BestMetric.avgKills, softGate: true), ['Wraith']);
+      expect(order([thin], BestMetric.avgKills), isEmpty);
+    });
+  });
+
   group('BestMetric.valueOf', () {
     final tally = legend(
       'A',

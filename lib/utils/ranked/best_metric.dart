@@ -44,6 +44,16 @@ enum BestMetric {
   String formatInline(double value) =>
       this == avgRp ? '${formatSigned(value)} RP/game' : formatValue(value);
 
+  /// How many games the figure [valueOf] gives is worked out from. An average
+  /// is over the games that reported the thing it averages, not all of them,
+  /// so a legend with a dozen games and one kills reading has one sample.
+  int samplesIn(RankedTally tally) => switch (this) {
+    avgKills => tally.killsGames,
+    avgDamage => tally.damageGames,
+    winRate => tally.wins + tally.losses,
+    avgRp || totalRp || totalKills || totalDamage => tally.games,
+  };
+
   /// [tally]'s figure under this measure, or null when it has none to give:
   /// no games, no game that reported kills or damage (not the same as a
   /// reported 0), or no game that moved RP either way for a win rate.
@@ -70,9 +80,10 @@ const kDefaultBestMetric = BestMetric.totalRp;
 /// with more games, then to the name [nameOf] gives, so the order never depends
 /// on the order they came in.
 ///
-/// Only items with at least [kMinGamesForInsight] games are ranked, so one
-/// lucky game can't crown anything. With [softGate], when none has that many
-/// the rest are ranked instead of nothing.
+/// Only items with at least [kMinGamesForInsight] samples under [metric] (see
+/// [BestMetric.samplesIn]) are ranked, so one lucky game can't crown anything.
+/// With [softGate], when none has that many the rest are ranked instead of
+/// nothing.
 List<T> rankByMetric<T extends RankedTally>(
   Iterable<T> items,
   BestMetric metric, {
@@ -85,7 +96,7 @@ List<T> rankByMetric<T extends RankedTally>(
   ];
   final enough = [
     for (final v in valued)
-      if (v.item.games >= kMinGamesForInsight) v,
+      if (metric.samplesIn(v.item) >= kMinGamesForInsight) v,
   ];
   final pool = enough.isEmpty && softGate ? valued : enough;
   pool.sort((a, b) {
