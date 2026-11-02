@@ -281,7 +281,34 @@ void main() {
       });
 
       final after = container.read(searchPlayerProvider(params)).requireValue;
-      expect(after.staleAt, cachedAt);
+      expect(after.staleAt, fallbackAt);
+    });
+
+    testWidgets('a stale fallback does not send the request a second time', (
+      tester,
+    ) async {
+      // The copy is past the age the cache will read back, so the provider has
+      // nothing to fall back on but another request.
+      when(
+        () => service.getCachedStats(
+          any(),
+          any(),
+          searchByUid: any(named: 'searchByUid'),
+        ),
+      ).thenReturn(null);
+      final fallbackAt = DateTime(2026, 9, 28, 10);
+      when(() => service.getPlayerStatsByUid(any(), any())).thenAnswer(
+        (_) async =>
+            ApiResult(buildStats(rankScore: 1000), staleAt: fallbackAt),
+      );
+      final ref = await refFrom(tester, container);
+      await tester.runAsync(() async {
+        await refreshAndMarkSynced(ref, service, 'uid123', 'PC', true);
+      });
+
+      verify(() => service.getPlayerStatsByUid(any(), any())).called(1);
+      final after = container.read(searchPlayerProvider(params)).requireValue;
+      expect(after.staleAt, fallbackAt);
     });
   });
 }

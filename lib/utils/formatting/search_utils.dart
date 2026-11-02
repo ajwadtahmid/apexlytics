@@ -52,12 +52,11 @@ Future<bool> refreshAndMarkSynced(
         ? await service.getPlayerStatsByUid(query.trim(), platform)
         : await service.getPlayerStats(query.trim(), platform);
 
-    // A live answer goes to the provider as it is: re-reading the cache entry
-    // it just wrote would come back with a save time and show as stale. A
-    // stale fallback is left to the cache read, which keeps it marked stale.
-    ref
-        .read(liveSearchResultProvider(params).notifier)
-        .set(result.staleAt == null ? result : null);
+    // The answer goes to the provider as it is: re-reading the cache entry it
+    // just wrote would come back with a save time and show as stale. A stale
+    // fallback already carries its own staleAt, and handing it over also spares
+    // the provider a second request when the copy is too old to read back.
+    ref.read(liveSearchResultProvider(params).notifier).set(result);
 
     // Always invalidate so the provider reflects the latest result, whether
     // the response was fresh or a stale fallback.

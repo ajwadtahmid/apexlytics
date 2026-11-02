@@ -39,12 +39,14 @@ final searchPlayerProvider = FutureProvider.autoDispose
 
 /// A live result a refresh just fetched, for [searchPlayerProvider] to serve
 /// instead of the cache entry that fetch wrote (which always has a save time,
-/// so it would read back as stale). Null until a live refresh succeeds; a
-/// stale fallback clears it.
+/// so it would read back as stale). Null until a refresh has answered; a stale
+/// fallback is held too, with its own `staleAt`.
 final liveSearchResultProvider = NotifierProvider.autoDispose
-    .family<LiveSearchResultNotifier, ApiResult<PlayerStats>?, PlayerSearchQuery>(
-      LiveSearchResultNotifier.new,
-    );
+    .family<
+      LiveSearchResultNotifier,
+      ApiResult<PlayerStats>?,
+      PlayerSearchQuery
+    >(LiveSearchResultNotifier.new);
 
 class LiveSearchResultNotifier extends Notifier<ApiResult<PlayerStats>?> {
   LiveSearchResultNotifier(this.params);
