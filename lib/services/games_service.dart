@@ -82,10 +82,11 @@ typedef GamesCapacity = ({
 class GamesService {
   final ApiService _api;
 
-  /// Supplies the owner token, when this device has one. Only `/games` sends
-  /// it: the server lifts the per-client quota and grants priority on a match
-  /// (and lets [getMatches] skip its tracking check), and ignores anything
-  /// else.
+  /// Supplies the owner token, when this device has one. Only `/games` and
+  /// `/games/eligibility` send it: the server lifts the per-client quota and
+  /// grants priority on a match (and lets [getMatches] skip its tracking
+  /// check), answers the eligibility check as it would the owner's own
+  /// address, and ignores anything else.
   final Future<String?> Function()? ownerToken;
 
   GamesService(this._api, {this.ownerToken});
@@ -162,12 +163,16 @@ class GamesService {
   /// Checks whether history is currently accruing for [uid], without spending
   /// a `/games` request.
   Future<GamesEligibility> getEligibility(String uid) async {
+    final token = await ownerToken?.call();
     final response = await _api.getWithStatus(
       ApiConstants.gamesEligibilityPath,
       params: {'uid': uid},
       // Tracking state lives on each server separately, so the backup would
       // answer "not seen yet" for a profile the primary is tracking fine.
       failover: false,
+      // The owner is answered as the owner even on an address the server has
+      // not seen poll this profile.
+      headers: token == null ? null : {ApiConstants.ownerTokenHeader: token},
     );
     final body = response.data is Map ? response.data as Map : const {};
     return (

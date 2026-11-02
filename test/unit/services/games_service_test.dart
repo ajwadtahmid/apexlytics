@@ -347,6 +347,30 @@ void main() {
       ).called(1);
     });
 
+    test('eligibility sends the owner token when there is one', () async {
+      when(
+        () => mockApi.getWithStatus(
+          ApiConstants.gamesEligibilityPath,
+          params: any(named: 'params'),
+          failover: false,
+          headers: {ApiConstants.ownerTokenHeader: 'secret'},
+        ),
+      ).thenAnswer((_) async => (status: 200, data: {'eligible': true}));
+
+      final owner = GamesService(mockApi, ownerToken: () async => 'secret');
+      final result = await owner.getEligibility('uid123');
+
+      expect(result.eligible, isTrue);
+      verify(
+        () => mockApi.getWithStatus(
+          ApiConstants.gamesEligibilityPath,
+          params: any(named: 'params'),
+          failover: false,
+          headers: {ApiConstants.ownerTokenHeader: 'secret'},
+        ),
+      ).called(1);
+    });
+
     test(
       'a poll count the server leaves out stays unknown, not zero',
       () async {
