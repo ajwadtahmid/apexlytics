@@ -69,6 +69,117 @@ void main() {
       expect(doneCalls, 1);
     });
 
+    group('the notification button', () {
+      Future<void> openHomeSlide(
+        WidgetTester tester, {
+        bool? offer,
+        Future<bool> Function()? request,
+        double textScale = 1,
+      }) async {
+        tester.view.physicalSize = const Size(360, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: const Size(360, 640),
+                textScaler: TextScaler.linear(textScale),
+              ),
+              child: OnboardingScreen(
+                onDone: () async {},
+                offerNotificationAccess: offer,
+                requestNotifications: request ?? () async => true,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+        expect(find.text("Know where you're dropping"), findsOneWidget);
+      }
+
+      testWidgets('asks for access and says it is allowed', (tester) async {
+        var asked = 0;
+        await openHomeSlide(
+          tester,
+          offer: true,
+          request: () async {
+            asked++;
+            return true;
+          },
+        );
+
+        await tester.ensureVisible(find.text('Allow notifications'));
+        await tester.tap(find.text('Allow notifications'));
+        await tester.pump();
+
+        expect(asked, 1);
+        expect(find.text('Notifications are allowed'), findsOneWidget);
+        expect(find.text('Allow notifications'), findsNothing);
+      });
+
+      testWidgets('points to the phone settings when it is refused', (
+        tester,
+      ) async {
+        await openHomeSlide(tester, offer: true, request: () async => false);
+
+        await tester.ensureVisible(find.text('Allow notifications'));
+        await tester.tap(find.text('Allow notifications'));
+        await tester.pump();
+
+        expect(find.textContaining('Not allowed'), findsOneWidget);
+        // It can be tried again.
+        expect(find.text('Allow notifications'), findsOneWidget);
+      });
+
+      testWidgets('is treated as refused if the system cannot be asked', (
+        tester,
+      ) async {
+        await openHomeSlide(
+          tester,
+          offer: true,
+          request: () async => throw StateError('no plugin'),
+        );
+
+        await tester.ensureVisible(find.text('Allow notifications'));
+        await tester.tap(find.text('Allow notifications'));
+        await tester.pump();
+
+        expect(find.textContaining('Not allowed'), findsOneWidget);
+      });
+
+      testWidgets('is not offered where the system does not ask', (
+        tester,
+      ) async {
+        await openHomeSlide(tester, offer: false);
+
+        expect(find.text('Allow notifications'), findsNothing);
+      });
+
+      testWidgets('is only on the map slide', (tester) async {
+        await openHomeSlide(tester, offer: true);
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Allow notifications'), findsNothing);
+      });
+
+      testWidgets('leaves the slide readable at large text on a small phone', (
+        tester,
+      ) async {
+        await openHomeSlide(tester, offer: true, textScale: 2);
+
+        expect(tester.takeException(), isNull);
+        await tester.scrollUntilVisible(
+          find.text('Allow notifications'),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('Allow notifications'), findsOneWidget);
+      });
+    });
+
     testWidgets('every slide fits a small phone without overflowing, and its '
         'text can be reached', (tester) async {
       // 360x616 body is what a 360x640 phone leaves under the header.

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/map_provider.dart';
@@ -48,10 +49,34 @@ extension MapAlertSettingsX on PlayerSettings {
     MapAlertMode.mixtape => mixtapeNotifyMinutesBefore,
   };
 
+  /// The maps [mode] is limited to; empty means every map. Only Ranked and Pubs
+  /// can be limited.
+  List<String> alertFavorites(MapAlertMode mode) => switch (mode) {
+    MapAlertMode.ranked => favoriteRankedMapNames,
+    MapAlertMode.pubs => favoritePubsMapNames,
+    MapAlertMode.wildcard || MapAlertMode.mixtape => const [],
+  };
+
+  /// Whether anything that shapes [mode]'s alerts differs from [other]'s.
+  bool alertPlanDiffers(MapAlertMode mode, PlayerSettings other) =>
+      alertEnabled(mode) != other.alertEnabled(mode) ||
+      alertMinutes(mode) != other.alertMinutes(mode) ||
+      !listEquals(alertFavorites(mode), other.alertFavorites(mode));
+
   /// An alert is on when the mode is switched on and has a lead time.
   bool alertActive(MapAlertMode mode) =>
       alertEnabled(mode) && alertMinutes(mode) > 0;
 }
+
+/// Cancels [mode]'s armed alerts and leaves the other modes' alone. Needs no
+/// rotation, so it works when the rotation can't be loaded.
+Future<void> cancelMapAlertMode(MapAlertMode mode) =>
+    NotificationService.cancelMode(switch (mode) {
+      MapAlertMode.ranked => NotificationService.rankedIdBase,
+      MapAlertMode.pubs => NotificationService.pubsIdBase,
+      MapAlertMode.wildcard => NotificationService.wildcardIdBase,
+      MapAlertMode.mixtape => NotificationService.ltmIdBase,
+    });
 
 /// Plans the alerts again from the current rotation. Delegates to the call Home
 /// makes, so every caller names the upcoming map the same way.

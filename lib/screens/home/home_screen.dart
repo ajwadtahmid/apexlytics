@@ -64,16 +64,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _settingsSub = ref.listenManual(playerSettingsProvider, (prev, next) {
       final p = prev as PlayerSettings?;
       final n = next as PlayerSettings;
-      final changed =
-          p?.notifyPubsMapRotation != n.notifyPubsMapRotation ||
-          p?.notifyRankedMapRotation != n.notifyRankedMapRotation ||
-          p?.notifyMixtapeMapRotation != n.notifyMixtapeMapRotation ||
-          p?.notifyWildcardMapRotation != n.notifyWildcardMapRotation ||
-          p?.rankedNotifyMinutesBefore != n.rankedNotifyMinutesBefore ||
-          p?.pubsNotifyMinutesBefore != n.pubsNotifyMinutesBefore ||
-          p?.mixtapeNotifyMinutesBefore != n.mixtapeNotifyMinutesBefore ||
-          p?.wildcardNotifyMinutesBefore != n.wildcardNotifyMinutesBefore;
-      if (!changed) return;
+      final changedModes = [
+        for (final m in MapAlertMode.values)
+          if (p == null || n.alertPlanDiffers(m, p)) m,
+      ];
+      if (changedModes.isEmpty) return;
       // Sync background fetch cadence with the smallest active timing.
       BackgroundService.updateInterval(
         calculateMinActiveNotificationInterval(
@@ -91,6 +86,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         :final value,
       )) {
         MapNotificationService.schedule(ref, value.data);
+      } else if (p != null) {
+        // Nothing to plan from yet. A mode that was armed under settings it no
+        // longer has must not keep firing until the next fetch re-plans it.
+        for (final m in changedModes) {
+          if (p.alertActive(m)) unawaited(cancelMapAlertMode(m));
+        }
       }
     });
   }

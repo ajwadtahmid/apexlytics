@@ -102,6 +102,54 @@ void backgroundFetchHeadlessTask(HeadlessEvent event) async {
   }
 }
 
+/// Plans the alerts from a freshly fetched [rotation], using the settings as
+/// they are now. The request can take up to 20 s, and the user may have turned
+/// the alerts off, or cleared all data, in that time: planning from the
+/// settings read before the request would arm alerts they just removed. Returns
+/// false when no alert is on any more, after cancelling what was armed.
+@visibleForTesting
+Future<bool> scheduleFetchedRotation(
+  SharedPreferences prefs,
+  MapRotation rotation,
+) async {
+  // This isolate may hold a copy of the prefs from before the change.
+  await prefs.reload();
+  final settings = BackgroundFetchSettings.fromPrefs(prefs);
+  if (settings == null) {
+    await NotificationService.cancelAll();
+    return false;
+  }
+
+  // The cyclic rotation order (cached by the foreground /maps provider) lets
+  // every projected Ranked/Pubs alert be named. The isolate has no provider
+  // tree, so read it straight from prefs; absence just falls back to generic.
+  final seasonal = _cachedSeasonalMaps(prefs);
+
+  await NotificationService.scheduleAll(
+    rotation,
+    notifyPubs: settings.notifyPubs,
+    pubsMinutesBefore: settings.pubsMinutesBefore,
+    notifyRanked: settings.notifyRanked,
+    rankedMinutesBefore: settings.rankedMinutesBefore,
+    notifyMixtape: settings.notifyMixtape,
+    mixtapeMinutesBefore: settings.mixtapeMinutesBefore,
+    notifyWildcard: settings.notifyWildcard,
+    wildcardMinutesBefore: settings.wildcardMinutesBefore,
+    favoriteRankedMapNames: settings.favoriteRankedMapNames,
+    favoritePubsMapNames: settings.favoritePubsMapNames,
+    rankedSequence: seasonal?.rankedNames ?? const [],
+    pubsSequence: seasonal?.pubsNames ?? const [],
+  );
+  // scheduleAll is a silent no-op when the plugin never finished
+  // initialising — without this check, that skip reads as a successful
+  // run here, and Settings' "Last background refresh" row would then
+  // claim alerts are armed when nothing was actually scheduled.
+  if (!NotificationService.isInitialized) {
+    throw StateError('Notification service failed to initialise');
+  }
+  return true;
+}
+
 Future<void> _backgroundFetchAndSchedule() async {
   SharedPreferences? prefs;
   try {
@@ -148,32 +196,11 @@ Future<void> _backgroundFetchAndSchedule() async {
       response.data as Map<String, dynamic>,
     );
 
-    // The cyclic rotation order (cached by the foreground /maps provider) lets
-    // every projected Ranked/Pubs alert be named. The isolate has no provider
-    // tree, so read it straight from prefs; absence just falls back to generic.
-    final seasonal = _cachedSeasonalMaps(prefs);
-
-    await NotificationService.scheduleAll(
-      rotation,
-      notifyPubs: settings.notifyPubs,
-      pubsMinutesBefore: settings.pubsMinutesBefore,
-      notifyRanked: settings.notifyRanked,
-      rankedMinutesBefore: settings.rankedMinutesBefore,
-      notifyMixtape: settings.notifyMixtape,
-      mixtapeMinutesBefore: settings.mixtapeMinutesBefore,
-      notifyWildcard: settings.notifyWildcard,
-      wildcardMinutesBefore: settings.wildcardMinutesBefore,
-      favoriteRankedMapNames: settings.favoriteRankedMapNames,
-      favoritePubsMapNames: settings.favoritePubsMapNames,
-      rankedSequence: seasonal?.rankedNames ?? const [],
-      pubsSequence: seasonal?.pubsNames ?? const [],
-    );
-    // scheduleAll is a silent no-op when the plugin never finished
-    // initialising — without this check, that skip reads as a successful
-    // run here, and Settings' "Last background refresh" row would then
-    // claim alerts are armed when nothing was actually scheduled.
-    if (!NotificationService.isInitialized) {
-      throw StateError('Notification service failed to initialise');
+    final scheduled = await scheduleFetchedRotation(prefs, rotation);
+    if (!scheduled) {
+      // Alerts were turned off while the request was out; the cancel is done.
+      await _recordFetchResult(ok: true, prefs: prefs);
+      return;
     }
     _debugLog('Notifications scheduled successfully');
     await _recordFetchResult(ok: true, prefs: prefs);

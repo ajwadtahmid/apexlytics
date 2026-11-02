@@ -23,6 +23,7 @@ import '../../../providers/ranked_provider.dart';
 import '../../../providers/search_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/background_service.dart';
+import '../../../providers/notification_provider.dart';
 import '../../../services/notification_service.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/backup_reminder.dart';
@@ -525,6 +526,18 @@ class CacheSettingsSection extends ConsumerWidget {
           '${plural(preview.matchCount, 'match')}.'
           '${skippedRows > 0 ? ' $skippedRows unreadable ${skippedRows == 1 ? 'entry was' : 'entries were'} skipped.' : ''}',
         );
+        // A restore turns alerts on through the saved settings, so on a new
+        // device the system has not been asked yet and every alert would be
+        // skipped without a word.
+        if (ref.read(playerSettingsProvider).anyMapAlertActive) {
+          try {
+            await NotificationService.requestPermissions();
+          } catch (e) {
+            // No notification plugin to ask: the same as being refused.
+            log.w('Notification permission request failed', error: e);
+          }
+          ref.invalidate(notificationsEnabledProvider);
+        }
       case ImportError(:final message):
         context.showError(message);
     }

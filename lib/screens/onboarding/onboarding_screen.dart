@@ -1,9 +1,12 @@
 import 'dart:async' show unawaited;
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 
 import '../../providers/navigation_provider.dart' show AppTab;
 import '../../providers/settings_provider.dart' show PlayerSettingsNotifier;
+import '../../services/notification_service.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/theme.dart';
 
 /// One point on a slide: an icon, an optional bold [label] (a tile or tab name
@@ -41,6 +44,10 @@ class _OnboardingPage {
   /// Optional small print shown under the body (e.g. the not-affiliated note).
   final String? footnote;
 
+  /// Whether the slide offers a button to allow notifications, where the
+  /// system asks for that.
+  final bool notificationAccess;
+
   const _OnboardingPage({
     this.tab,
     this.section,
@@ -50,6 +57,7 @@ class _OnboardingPage {
     this.points = const [],
     this.closing,
     this.footnote,
+    this.notificationAccess = false,
   });
 
   IconData get displayIcon => tab?.activeIcon ?? icon ?? Icons.insights;
@@ -74,6 +82,7 @@ const _pages = <_OnboardingPage>[
   ),
   _OnboardingPage(
     tab: AppTab.home,
+    notificationAccess: true,
     title: "Know where you're dropping",
     body:
         'Live map rotations for Ranked, Pubs, Wildcards and Mixtape, with a '
@@ -212,10 +221,19 @@ class OnboardingScreen extends StatefulWidget {
   /// What the button on the last slide says, for what comes next.
   final String finishLabel;
 
+  /// Asks the system to allow notifications; true when they are allowed.
+  final Future<bool> Function() requestNotifications;
+
+  /// Whether to offer the notification button. Defaults to phones, the only
+  /// places the system asks.
+  final bool? offerNotificationAccess;
+
   const OnboardingScreen({
     super.key,
     required this.onDone,
     this.finishLabel = 'Get started',
+    this.requestNotifications = NotificationService.requestPermissions,
+    this.offerNotificationAccess,
   });
 
   @override
@@ -309,7 +327,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _controller,
                 itemCount: _pages.length,
                 onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (_, i) => _OnboardingPageContent(page: _pages[i]),
+                itemBuilder: (_, i) => _OnboardingPageContent(
+                  page: _pages[i],
+                  notificationButton:
+                      _pages[i].notificationAccess &&
+                          (widget.offerNotificationAccess ??
+                              (Platform.isAndroid || Platform.isIOS))
+                      ? _NotificationAccessButton(
+                          request: widget.requestNotifications,
+                        )
+                      : null,
+                ),
               ),
             ),
             _DotsIndicator(count: _pages.length, active: _page),
@@ -339,7 +367,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _OnboardingPageContent extends StatelessWidget {
   final _OnboardingPage page;
 
-  const _OnboardingPageContent({required this.page});
+  /// The button that asks for notification access, when the slide offers one.
+  final Widget? notificationButton;
+
+  const _OnboardingPageContent({required this.page, this.notificationButton});
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +431,10 @@ class _OnboardingPageContent extends StatelessWidget {
                 const SizedBox(height: AppTheme.lg),
                 _Points(page.points),
               ],
+              if (notificationButton != null) ...[
+                const SizedBox(height: AppTheme.lg),
+                notificationButton!,
+              ],
               if (page.closing != null) ...[
                 const SizedBox(height: AppTheme.md),
                 Text(
@@ -428,6 +463,77 @@ class _OnboardingPageContent extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Asks the system to allow notifications, and says how that went. Map alerts
+/// need it, and asking here saves the prompt arriving mid-use.
+class _NotificationAccessButton extends StatefulWidget {
+  final Future<bool> Function() request;
+
+  const _NotificationAccessButton({required this.request});
+
+  @override
+  State<_NotificationAccessButton> createState() =>
+      _NotificationAccessButtonState();
+}
+
+class _NotificationAccessButtonState extends State<_NotificationAccessButton> {
+  bool _asking = false;
+  bool? _granted;
+
+  Future<void> _ask() async {
+    setState(() => _asking = true);
+    var granted = false;
+    try {
+      granted = await widget.request();
+    } catch (e) {
+      // No notification plugin to ask: the same as being refused.
+      log.w('Notification permission request failed', error: e);
+    }
+    if (!mounted) return;
+    setState(() {
+      _asking = false;
+      _granted = granted;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final granted = _granted;
+    if (granted == true) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle, size: 18, color: AppTheme.accent),
+          SizedBox(width: AppTheme.sm),
+          Flexible(
+            child: Text(
+              'Notifications are allowed',
+              style: TextStyle(color: AppTheme.textPrimary, fontSize: 13.5),
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        OutlinedButton.icon(
+          onPressed: _asking ? null : _ask,
+          icon: const Icon(Icons.notifications_active_outlined, size: 18),
+          label: const Text('Allow notifications'),
+        ),
+        if (granted == false) ...[
+          const SizedBox(height: AppTheme.sm),
+          const Text(
+            'Not allowed. You can turn notifications on for Apexlytics in '
+            'your phone settings.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppTheme.muted, fontSize: 12, height: 1.4),
+          ),
+        ],
+      ],
     );
   }
 }

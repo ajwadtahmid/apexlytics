@@ -179,6 +179,7 @@ class _MapAlertsSheetContentState
                 case MapAlertMode.mixtape:
                   await notifier.setMixtapeNotifyMinutesBefore(minutes);
               }
+              if (minutes == 0) await cancelMapAlertMode(mode);
               await _reschedule();
             },
             child: Row(
@@ -230,7 +231,11 @@ class _MapAlertsSheetContentState
         await notifier.setNotifyMixtapeMapRotation(enabled);
     }
 
-    if (!enabled) await _cancelIfAllOff();
+    if (!enabled) {
+      // Straight to the OS: re-planning needs a rotation, which may not load.
+      await cancelMapAlertMode(mode);
+      await _cancelIfAllOff();
+    }
   }
 
   Future<void> _cancelIfAllOff() async {

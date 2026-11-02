@@ -42,7 +42,25 @@ enum TestAlertResult {
 }
 
 class NotificationService {
-  static final _plugin = FlutterLocalNotificationsPlugin();
+  static FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
+
+  /// Swaps the plugin for a fake, and says whether it has started.
+  @visibleForTesting
+  static void useFakePlugin(
+    FlutterLocalNotificationsPlugin plugin, {
+    bool initialized = true,
+  }) {
+    _plugin = plugin;
+    _initialized = initialized;
+    _desktopTimers.clear();
+    // A chain left by another test's clock would never run.
+    _pending = Future.value();
+  }
+
+  /// Ids of the desktop timers still waiting to fire.
+  @visibleForTesting
+  static List<int> get pendingDesktopAlertIds => _desktopTimers.keys.toList();
   static bool _initialized = false;
 
   /// Whether [init] has completed successfully in *this* isolate. `scheduleAll`
@@ -55,7 +73,7 @@ class NotificationService {
   // Desktop has no OS-level scheduler or background wakeup, so pending alerts
   // are held as in-app timers and fire only while the app is running. They are
   // re-armed on every fetch and cancelled wholesale, mirroring [cancelAll].
-  static final List<Timer> _desktopTimers = [];
+  static final Map<int, Timer> _desktopTimers = {};
 
   /// Tail of the chain every [scheduleAll]/[cancelAll] runs on. Several
   /// callers fire these independently (Home's listeners, the Map Alerts
@@ -252,18 +270,18 @@ class NotificationService {
   // batch of upcoming-rotation alerts can be scheduled — and cancelled —
   // cleanly. IDs 1–10 stay reserved for future categories (RP milestones, etc.).
   static const _maxPerMode = 12;
-  static const _rankedIdBase = 100; // 100–111
-  static const _pubsIdBase = 120; // 120–131
-  static const _ltmIdBase = 140; // 140–151
-  static const _wildcardIdBase = 160; // 160–171
+  static const rankedIdBase = 100; // 100–111
+  static const pubsIdBase = 120; // 120–131
+  static const ltmIdBase = 140; // 140–151
+  static const wildcardIdBase = 160; // 160–171
 
   /// One entry per mode block above; a new mode's base goes here too, so
   /// [totalScheduledUpperBound] counts it.
   static const _modeIdBases = [
-    _rankedIdBase,
-    _pubsIdBase,
-    _ltmIdBase,
-    _wildcardIdBase,
+    rankedIdBase,
+    pubsIdBase,
+    ltmIdBase,
+    wildcardIdBase,
   ];
 
   /// The real ceiling this service must never exceed — iOS's 64-pending
@@ -375,7 +393,7 @@ class NotificationService {
 
     if (notifyRanked && rankedMinutesBefore > 0) {
       budget -= await _scheduleModeSeries(
-        _rankedIdBase,
+        rankedIdBase,
         'Ranked',
         rotation.rankedNext,
         rotation.rankedCurrent.remainingSecs,
@@ -387,7 +405,7 @@ class NotificationService {
     }
     if (notifyPubs && pubsMinutesBefore > 0) {
       budget -= await _scheduleModeSeries(
-        _pubsIdBase,
+        pubsIdBase,
         'Pubs',
         rotation.battleRoyaleNext,
         rotation.battleRoyaleCurrent.remainingSecs,
@@ -402,7 +420,7 @@ class NotificationService {
         rotation.ltmCurrent != null &&
         rotation.ltmNext != null) {
       budget -= await _scheduleModeSeries(
-        _ltmIdBase,
+        ltmIdBase,
         'Mixtape',
         rotation.ltmNext!,
         rotation.ltmCurrent!.remainingSecs,
@@ -415,7 +433,7 @@ class NotificationService {
         rotation.wildcardCurrent != null &&
         rotation.wildcardNext != null) {
       budget -= await _scheduleModeSeries(
-        _wildcardIdBase,
+        wildcardIdBase,
         'Wildcards',
         rotation.wildcardNext!,
         rotation.wildcardCurrent!.remainingSecs,
@@ -576,16 +594,16 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     } else {
-      _desktopTimers.add(
-        Timer(at.difference(now), () {
-          _plugin.show(
-            id: id,
-            title: 'Apexlytics',
-            body: body,
-            notificationDetails: _details,
-          );
-        }),
-      );
+      _desktopTimers[id]?.cancel();
+      _desktopTimers[id] = Timer(at.difference(now), () {
+        _desktopTimers.remove(id);
+        _plugin.show(
+          id: id,
+          title: 'Apexlytics',
+          body: body,
+          notificationDetails: _details,
+        );
+      });
     }
   }
 
@@ -643,9 +661,25 @@ class NotificationService {
   /// schedule that started before it.
   static Future<void> cancelAll() => _serialized(_cancelAllInternal);
 
+  /// Cancels the alerts of the one mode whose ids start at [idBase], leaving the
+  /// other modes' alerts armed. Needs no rotation, so it works offline.
+  ///
+  /// Queued like [scheduleAll].
+  static Future<void> cancelMode(int idBase) => _serialized(() async {
+    for (var id = idBase; id < idBase + _maxPerMode; id++) {
+      _desktopTimers.remove(id)?.cancel();
+      try {
+        await _plugin.cancel(id: id);
+      } catch (e) {
+        log.w('NotificationService: cancel failed', error: e);
+        break;
+      }
+    }
+  });
+
   /// [pendingOnly] keeps alerts already posted in the shade (Android and iOS only).
   static Future<void> _cancelAllInternal({bool pendingOnly = false}) async {
-    for (final t in _desktopTimers) {
+    for (final t in _desktopTimers.values) {
       t.cancel();
     }
     _desktopTimers.clear();
