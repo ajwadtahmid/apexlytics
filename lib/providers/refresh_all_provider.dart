@@ -25,29 +25,60 @@ class ProfileRefreshResult {
   /// Matches the sync added to the local history.
   final int newMatches;
 
+  /// How many matches are stored for the profile after the sync.
+  final int totalMatches;
+
+  /// When the newest stored game ended; null when none is stored.
+  final DateTime? lastGameAt;
+
   const ProfileRefreshResult({
     required this.profile,
     required this.statsOk,
     required this.history,
     required this.newMatches,
+    this.totalMatches = 0,
+    this.lastGameAt,
   });
 
   bool get historyOk => history == RankedSyncOutcome.synced;
 
-  /// Whether anything needs a second look.
-  bool get hasProblem => !statsOk || !historyOk;
+  /// The server said it isn't tracking this profile. Not an error: the profile
+  /// may be tracked another way (Apexlytics left open, or the ALS site).
+  bool get serverNotTracking => history == RankedSyncOutcome.notTracked;
+
+  /// How long without a new game counts as a long gap worth saying so.
+  static const quietPeriod = Duration(days: 14);
+
+  /// Whether the sync found nothing new to record.
+  bool get nothingNew => historyOk && newMatches == 0;
+
+  /// Whether anything needs a second look. Having no games, or no new ones, is
+  /// not a problem; the server not tracking the profile is shown as a warning
+  /// beside its name.
+  bool get hasProblem => !statsOk || !(historyOk || serverNotTracking);
+
+  /// Said under an empty or quiet history: how to make sure games are recorded.
+  String? get historyHint => nothingNew
+      ? 'Keep Apexlytics open, or the profile tracked on ALS, so new games '
+            'are recorded.'
+      : null;
 
   String get statsSummary =>
       statsOk ? 'Stats updated' : "Couldn't update stats";
 
   String get historySummary => switch (history) {
-    RankedSyncOutcome.synced =>
-      newMatches > 0
-          ? '+$newMatches new ${newMatches == 1 ? 'match' : 'matches'}'
-          : 'History up to date',
+    RankedSyncOutcome.synced when newMatches > 0 =>
+      '+$newMatches new ${newMatches == 1 ? 'match' : 'matches'}',
+    RankedSyncOutcome.synced when totalMatches == 0 =>
+      'No games found for this profile yet',
+    RankedSyncOutcome.synced
+        when lastGameAt != null &&
+            DateTime.now().difference(lastGameAt!) > quietPeriod =>
+      'No new games found in the last 14 days',
+    RankedSyncOutcome.synced => 'No new games found',
     RankedSyncOutcome.queued => 'History queued — try again later',
     RankedSyncOutcome.busy => 'Server busy — try again in a minute',
-    RankedSyncOutcome.notTracked => 'Not tracked yet, so no history to fetch',
+    RankedSyncOutcome.notTracked => "The server isn't tracking this profile",
     _ => "Couldn't fetch history",
   };
 }
@@ -143,6 +174,8 @@ Future<RefreshAllReport> refreshProfiles({
 
     RankedSyncOutcome? outcome;
     var added = 0;
+    var total = 0;
+    DateTime? lastGame;
     try {
       final before = await store.count(profile.uid);
       outcome = await syncRankedHistory(
@@ -160,6 +193,10 @@ Future<RefreshAllReport> refreshProfiles({
       added = cleared()
           ? 0
           : (await store.count(profile.uid) - before).clamp(0, 1 << 30);
+      if (!cleared()) {
+        total = await store.count(profile.uid);
+        lastGame = await store.latestEnd(profile.uid);
+      }
     } catch (e) {
       log.w('Refresh all: history failed (${e.runtimeType})');
     }
@@ -170,6 +207,8 @@ Future<RefreshAllReport> refreshProfiles({
         statsOk: statsOk,
         history: outcome,
         newMatches: added,
+        totalMatches: total,
+        lastGameAt: lastGame,
       ),
     );
     onProgress?.call(i + 1, profiles.length);

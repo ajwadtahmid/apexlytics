@@ -3,7 +3,7 @@ import '../../constants/api_constants.dart';
 import '../../providers/refresh_all_provider.dart';
 import '../../utils/theme.dart';
 
-/// Per-profile results of "Refresh all"; opened only when something needs a look.
+/// Per-profile results of "Refresh all", opened after every run.
 Future<void> showRefreshAllSheet(
   BuildContext context,
   RefreshAllReport report,
@@ -86,23 +86,34 @@ class _ResultTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${result.profile.name} · '
-                    '${ApiConstants.labelFor(result.profile.platform)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${result.profile.name} · '
+                          '${ApiConstants.labelFor(result.profile.platform)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      // The server said it isn't tracking this profile.
+                      if (result.serverNotTracking) ...[
+                        const SizedBox(width: AppTheme.xs),
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppTheme.orange,
+                          size: 16,
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    result.historySummary,
-                    style: AppTheme.caption,
-                  ),
-                  Text(
-                    result.statsSummary,
-                    style: AppTheme.caption,
-                  ),
+                  Text(result.historySummary, style: AppTheme.caption),
+                  if (result.historyHint != null)
+                    Text(result.historyHint!, style: AppTheme.caption),
+                  Text(result.statsSummary, style: AppTheme.caption),
                 ],
               ),
             ),

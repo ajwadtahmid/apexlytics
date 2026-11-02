@@ -13,7 +13,6 @@ import '../../utils/error_messages.dart';
 import '../../utils/ranked/ranked_period.dart';
 import '../../utils/tracking/snapshot_state_mixin.dart';
 import '../../utils/storage/storage.dart';
-import '../../utils/notifications.dart';
 import '../../utils/theme.dart';
 import '../../widgets/widgets.dart';
 import '../ranked/ranked_stats_body.dart';
@@ -188,16 +187,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
 
     // Cleared mid-run: nothing to report.
     if (report.aborted) return;
-    if (report.hasProblems) {
-      await showRefreshAllSheet(context, report);
-    } else {
-      final n = report.results.length;
-      context.showMessage(
-        report.newMatches > 0
-            ? 'Refreshed $n profiles · +${report.newMatches} new matches'
-            : 'Refreshed $n profiles',
-      );
-    }
+    await showRefreshAllSheet(context, report);
   }
 
   Future<void> _openOnALS(

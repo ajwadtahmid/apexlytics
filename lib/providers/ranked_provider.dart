@@ -302,6 +302,12 @@ Future<RankedSyncOutcome> _syncRankedHistory({
       // An empty list is a valid answer — tracking is live, nothing recorded
       // yet — so it still counts as a successful sync.
       await store.upsertAll(uid, matches, seasons: seasons, onlyIfEpoch: epoch);
+      // Except that a forced ask which comes back empty for a player with
+      // nothing stored is remembered for a short while only: the answer is
+      // still "synced", but a full cooldown would block a retry for hours.
+      if (force && matches.isEmpty && await store.count(uid) == 0) {
+        return remember(RankedSyncOutcome.synced, _kOfflineRetry);
+      }
   }
   // Re-read from prefs, not [seasons]: other screens call upsertSeason() directly, so a
   // season learned this session wouldn't otherwise show here. Uses [prefs], not a `ref`,

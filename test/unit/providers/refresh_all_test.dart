@@ -220,7 +220,10 @@ void main() {
       final report = await run([a, b]);
 
       expect(report.results[0].history, RankedSyncOutcome.notTracked);
-      expect(report.results[0].historySummary, contains('Not tracked'));
+      expect(report.results[0].serverNotTracking, isTrue);
+      expect(report.results[0].historySummary, contains("isn't tracking"));
+      // A warning beside the name, not an error.
+      expect(report.results[0].hasProblem, isFalse);
       expect(report.results[1].history, RankedSyncOutcome.queued);
       expect(report.results[1].historySummary, contains('queued'));
       expect(report.results.every((r) => r.statsOk), isTrue);
@@ -234,7 +237,10 @@ void main() {
       final second = await run([a]);
 
       expect(second.results.single.newMatches, 0);
-      expect(second.results.single.historySummary, 'History up to date');
+      expect(
+        second.results.single.historySummary,
+        'No new games found in the last 14 days',
+      );
       expect(await store.count(a.uid), 2);
     });
 
@@ -372,6 +378,94 @@ void main() {
 
       expect(await container.read(refreshAllProvider.notifier).run(), isNull);
     });
+  });
+
+  group('what a profile\'s result says about its history', () {
+    ProfileRefreshResult result({
+      int newMatches = 0,
+      int totalMatches = 0,
+      DateTime? lastGameAt,
+      RankedSyncOutcome? history = RankedSyncOutcome.synced,
+    }) => ProfileRefreshResult(
+      profile: a,
+      statsOk: true,
+      history: history,
+      newMatches: newMatches,
+      totalMatches: totalMatches,
+      lastGameAt: lastGameAt,
+    );
+
+    test('counts the new matches', () {
+      final r = result(newMatches: 3, totalMatches: 9);
+
+      expect(r.historySummary, '+3 new matches');
+      expect(r.historyHint, isNull);
+      expect(
+        result(newMatches: 1, totalMatches: 1).historySummary,
+        '+1 new match',
+      );
+    });
+
+    test('says no games were found when nothing is stored', () {
+      final r = result();
+
+      expect(r.historySummary, 'No games found for this profile yet');
+      expect(r.historyHint, contains('ALS'));
+      expect(r.hasProblem, isFalse);
+    });
+
+    test('says so when the newest game is over 14 days old', () {
+      final r = result(
+        totalMatches: 5,
+        lastGameAt: DateTime.now().subtract(const Duration(days: 15)),
+      );
+
+      expect(r.historySummary, 'No new games found in the last 14 days');
+      expect(r.historyHint, isNotNull);
+      expect(r.hasProblem, isFalse);
+    });
+
+    test('is brief when the newest game is recent', () {
+      final r = result(
+        totalMatches: 5,
+        lastGameAt: DateTime.now().subtract(const Duration(days: 2)),
+      );
+
+      expect(r.historySummary, 'No new games found');
+      expect(r.historyHint, contains('Apexlytics'));
+      expect(r.hasProblem, isFalse);
+    });
+
+    test('flags the server not tracking the profile as a warning only', () {
+      final r = result(history: RankedSyncOutcome.notTracked);
+
+      expect(r.serverNotTracking, isTrue);
+      expect(r.hasProblem, isFalse);
+      expect(r.historyHint, isNull);
+    });
+
+    test('still treats a failed fetch or failed stats as problems', () {
+      expect(result(history: null).hasProblem, isTrue);
+      expect(result(history: RankedSyncOutcome.queued).hasProblem, isTrue);
+      expect(
+        const ProfileRefreshResult(
+          profile: PlayerProfile(name: 'x', uid: '1'),
+          statsOk: false,
+          history: RankedSyncOutcome.synced,
+          newMatches: 0,
+        ).hasProblem,
+        isTrue,
+      );
+    });
+  });
+
+  test('a run reports each profile\'s stored total and newest game', () async {
+    await setUpWorld();
+
+    final report = await run([a]);
+
+    expect(report.results.single.totalMatches, 2);
+    expect(report.results.single.lastGameAt, isNotNull);
   });
 }
 

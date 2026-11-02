@@ -25,14 +25,31 @@ Map<String, Object?> playerJson(String name, String uid) => {
   },
 };
 
-FakeHttpAdapter _adapter({Object? games = const <Object?>[]}) =>
-    FakeHttpAdapter({
-      '/player/uid': (RequestOptions o) => playerJson(
-        'P${o.queryParameters['uid']}',
-        '${o.queryParameters['uid']}',
-      ),
-      '/games': games,
-    });
+/// One game for the requested player: a profile whose history is being
+/// recorded, as opposed to one nobody tracks (which comes back empty).
+Object? _oneGame(RequestOptions o) => [
+  {
+    'uid': o.queryParameters['uid'],
+    'name': 'Tester',
+    'legendPlayed': 'Axle',
+    'gameMode': 'BATTLE_ROYALE',
+    'gameLengthSecs': 600,
+    'gameStartTimestamp': 1782090000,
+    'gameEndTimestamp': 1782090600,
+    'gameData': <Object?>[],
+    'BRScoreChange': 10,
+    'BRScore': 1000,
+    'BRRankImg': 'https://x/diamond4.png',
+    'isPartyFull': false,
+    'map': 'olympus_rotation',
+  },
+];
+
+FakeHttpAdapter _adapter({Object? games = _oneGame}) => FakeHttpAdapter({
+  '/player/uid': (RequestOptions o) =>
+      playerJson('P${o.queryParameters['uid']}', '${o.queryParameters['uid']}'),
+  '/games': games,
+});
 
 const _twoProfiles =
     '[{"name":"Alpha","uid":"1000000001","platform":"PC"},'
@@ -187,24 +204,80 @@ void main() {
       await teardown(t);
     });
 
-    testWidgets('a clean run says so in a snackbar', (t) async {
+    testWidgets('a clean run still opens the results, profile by profile', (
+      t,
+    ) async {
       final adapter = _adapter();
       await boot(t, owner: true, profiles: _twoProfiles, adapter: adapter);
 
       await t.tap(find.byTooltip('Refresh all profiles'));
       await t.pump();
-      await pumpUntil(
-        t,
-        () => find.text('Refreshed 2 profiles').evaluate().isNotEmpty,
-      );
+      await pumpUntil(t, () => find.text('Refresh all').evaluate().isNotEmpty);
+      await t.pumpAndSettle();
 
-      expect(find.text('Refreshed 2 profiles'), findsOneWidget);
-      expect(find.text('Refresh all'), findsNothing);
+      expect(find.text('Refresh all'), findsOneWidget); // the sheet's title
+      expect(find.text('+2 new matches across 2 profiles'), findsOneWidget);
+      expect(find.text('+1 new match'), findsNWidgets(2));
+      expect(find.textContaining('Alpha'), findsWidgets);
+      expect(find.textContaining('Bravo'), findsWidgets);
+      expect(find.textContaining('Refreshed 2 profiles'), findsNothing);
       // Both profiles were fetched, not just the one on screen.
       final games = adapter.requests
           .where((r) => r.path == '/games')
           .map((r) => r.queryParameters['uid']);
       expect(games, containsAll(['1000000001', '1000000002']));
+      await teardown(t);
+    });
+
+    testWidgets('a profile with no games says so, without calling it an '
+        'error', (t) async {
+      await boot(
+        t,
+        owner: true,
+        profiles: _twoProfiles,
+        adapter: _adapter(games: const <Object?>[]),
+      );
+
+      await t.tap(find.byTooltip('Refresh all profiles'));
+      await t.pump();
+      await pumpUntil(t, () => find.text('Refresh all').evaluate().isNotEmpty);
+      await t.pumpAndSettle();
+
+      expect(
+        find.text('No games found for this profile yet'),
+        findsNWidgets(2),
+      );
+      expect(find.textContaining('ALS'), findsNWidgets(2));
+      expect(find.byIcon(Icons.error_outline), findsNothing);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      await teardown(t);
+    });
+
+    testWidgets('a profile the server says it is not tracking gets a warning '
+        'beside its name', (t) async {
+      await boot(
+        t,
+        owner: true,
+        profiles: _twoProfiles,
+        adapter: _adapter(
+          games: const FakeReply(202, {
+            'status': 'not_tracked',
+            'retryAfterSeconds': 300,
+          }),
+        ),
+      );
+
+      await t.tap(find.byTooltip('Refresh all profiles'));
+      await t.pump();
+      await pumpUntil(t, () => find.text('Refresh all').evaluate().isNotEmpty);
+      await t.pumpAndSettle();
+
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(2));
+      expect(
+        find.text("The server isn't tracking this profile"),
+        findsNWidgets(2),
+      );
+      expect(find.byIcon(Icons.error_outline), findsNothing);
       await teardown(t);
     });
 

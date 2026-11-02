@@ -1186,6 +1186,17 @@ class RankedHistoryStore {
     return (rows.first['c'] as num?)?.toInt() ?? 0;
   }
 
+  /// When the newest stored game of [uid] ended, or null when none is stored.
+  Future<DateTime?> latestEnd(String uid) async {
+    final db = await _open();
+    final rows = await db.rawQuery(
+      'SELECT MAX(end_ms) AS m FROM $table WHERE uid = ?',
+      [uid],
+    );
+    final ms = (rows.first['m'] as num?)?.toInt();
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
   /// How many matches, across every UID, started after [since] (all of them
   /// when null). Backs the backup reminder.
   Future<int> countStartedSince(DateTime? since) async {

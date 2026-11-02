@@ -296,6 +296,66 @@ void main() {
       );
     });
 
+    group('a forced ask that finds nothing', () {
+      Future<RankedSyncOutcome> forced() => syncRankedHistory(
+        uid: uid,
+        store: store,
+        prefs: container.read(sharedPreferencesProvider),
+        games: () => gamesService,
+        seasons: const {},
+        force: true,
+        forceTracking: true,
+      );
+
+      test(
+        'is remembered only briefly for a player with nothing stored',
+        () async {
+          await setUpWith();
+          when(
+            () => gamesService.getMatches(uid, forceTracking: true),
+          ).thenAnswer((_) async => const GamesMatches([]));
+
+          expect(await forced(), RankedSyncOutcome.synced);
+          // Not the full cooldown, so a retry isn't blocked for hours.
+          final next = container
+              .read(sharedPreferencesProvider)
+              .getInt(PrefsKeys.gamesNextSync(uid))!;
+          expect(
+            next,
+            lessThan(
+              DateTime.now()
+                  .add(const Duration(minutes: 10))
+                  .millisecondsSinceEpoch,
+            ),
+          );
+        },
+      );
+
+      test(
+        'keeps the full cooldown for a player whose history is stored',
+        () async {
+          await setUpWith();
+          await store.upsertAll(uid, [_match(uid, 0)]);
+          when(
+            () => gamesService.getMatches(uid, forceTracking: true),
+          ).thenAnswer((_) async => const GamesMatches([]));
+
+          expect(await forced(), RankedSyncOutcome.synced);
+          final next = container
+              .read(sharedPreferencesProvider)
+              .getInt(PrefsKeys.gamesNextSync(uid))!;
+          expect(
+            next,
+            greaterThan(
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch,
+            ),
+          );
+        },
+      );
+    });
+
     test('GamesMatches persists the matches and returns synced', () async {
       await setUpWith();
       when(
