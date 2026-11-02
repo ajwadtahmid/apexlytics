@@ -1199,13 +1199,18 @@ class RankedHistoryStore {
     return (rows.first['c'] as num?)?.toInt() ?? 0;
   }
 
-  /// How much space the history database takes: its pages, as SQLite counts
-  /// them, so it holds on every platform without finding the file.
+  /// How much space the history database takes: the pages in use, as SQLite
+  /// counts them, so it holds on every platform without finding the file. Free
+  /// pages (left behind by deleted rows) are not counted, since they hold no
+  /// history.
   Future<int> storageBytes() async {
     final db = await _open();
     final pages = Sqflite.firstIntValue(await db.rawQuery('PRAGMA page_count'));
+    final free = Sqflite.firstIntValue(
+      await db.rawQuery('PRAGMA freelist_count'),
+    );
     final size = Sqflite.firstIntValue(await db.rawQuery('PRAGMA page_size'));
-    return (pages ?? 0) * (size ?? 0);
+    return ((pages ?? 0) - (free ?? 0)) * (size ?? 0);
   }
 
   /// When the oldest stored match, across every UID, started; null with none.
@@ -1752,6 +1757,15 @@ class RankedHistoryStore {
     final db = await _open();
     await db.delete(table);
     await db.delete(snapshotTable);
+    // A delete only moves pages to the free list: the file keeps its size and
+    // the old rows stay readable inside it. VACUUM rewrites it without them.
+    // The data is already gone by now, so a failure here (not enough free disk
+    // space, say) only leaves the file larger than it needs to be.
+    try {
+      await db.execute('VACUUM');
+    } catch (e) {
+      log.w('Compacting the history database failed (${e.runtimeType})');
+    }
   }
 
   Future<void> close() async {

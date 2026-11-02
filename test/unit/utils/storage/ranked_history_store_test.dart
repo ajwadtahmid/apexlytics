@@ -152,6 +152,43 @@ void main() {
       expect(await store.storageBytes(), greaterThan(empty));
     });
 
+    test('does not count the space of games that were deleted', () async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+      await store.deleteAll();
+      final empty = await store.storageBytes();
+      await store.upsertAll('1', [
+        for (var i = 0; i < 400; i++) match('1', 1000 + i * 700),
+      ]);
+      expect(await store.storageBytes(), greaterThan(empty));
+
+      await store.deleteAll();
+
+      expect(await store.storageBytes(), empty);
+    });
+
+    test('Clear all data shrinks the file and leaves no old row in it', () async {
+      final dir = Directory.systemTemp.createTempSync('apx_history_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final path = '${dir.path}/ranked_history.db';
+      final store = RankedHistoryStore(overridePath: path);
+      addTearDown(store.close);
+      const marker = 'Markerlegendxyz';
+      await store.upsertAll('1', [
+        for (var i = 0; i < 2000; i++)
+          buildMatch(uid: '1', start: 1782090000 + i * 700, legend: marker),
+      ]);
+      final before = File(path).lengthSync();
+      expect(utf8.decode(File(path).readAsBytesSync(), allowMalformed: true),
+          contains(marker));
+
+      await store.deleteAll();
+
+      expect(File(path).lengthSync(), lessThan(before ~/ 4));
+      expect(utf8.decode(File(path).readAsBytesSync(), allowMalformed: true),
+          isNot(contains(marker)));
+    });
+
     test('finds the oldest game, or none', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
       addTearDown(store.close);
