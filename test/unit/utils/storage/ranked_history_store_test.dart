@@ -1607,6 +1607,70 @@ void main() {
     );
   });
 
+  group('history of players other than those kept', () {
+    Future<RankedHistoryStore> seeded() async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+      await store.deleteAll();
+      for (final uid in ['1', '2', '3']) {
+        await store.upsertAll(uid, [match(uid, 100)]);
+      }
+      // 4 has only RP readings, as a player the server never polls does.
+      await store.appendSnapshotFor(
+        '4',
+        StatSnapshot(timestamp: DateTime(2026, 9, 1), rp: 1200),
+      );
+      await store.appendSnapshotFor(
+        '1',
+        StatSnapshot(timestamp: DateTime(2026, 9, 1), rp: 1500),
+      );
+      // The legacy UID-less bucket belongs to no one in particular.
+      await store.appendSnapshotFor(
+        '',
+        StatSnapshot(timestamp: DateTime(2026, 9, 1), rp: 900),
+      );
+      return store;
+    }
+
+    test('lists them, from matches and from snapshots alone', () async {
+      final store = await seeded();
+
+      expect(await store.uidsWithHistoryExcept({'1'}), {'2', '3', '4'});
+      expect(await store.uidsWithHistoryExcept({'1', '2', '3', '4'}), isEmpty);
+      expect(await store.uidsWithHistoryExcept({}), {'1', '2', '3', '4'});
+    });
+
+    test('deleting keeps those named, and the UID-less bucket', () async {
+      final store = await seeded();
+
+      await store.deleteHistoryExcept({'1', '2'});
+
+      expect(await store.count('1'), 1);
+      expect(await store.count('2'), 1);
+      expect(await store.count('3'), 0);
+      expect(await store.snapshotCount('1'), 1);
+      expect(await store.snapshotCount('4'), 0);
+      expect(await store.snapshotCount(''), 1);
+    });
+
+    test('deleting with no one kept clears every UID', () async {
+      final store = await seeded();
+
+      await store.deleteHistoryExcept({});
+
+      expect(await store.uidsWithHistoryExcept({}), isEmpty);
+    });
+
+    test('deleting counts as a clear for writes already waiting', () async {
+      final store = await seeded();
+      final before = store.dataEpoch;
+
+      await store.deleteHistoryExcept({'1'});
+
+      expect(store.dataEpoch, greaterThan(before));
+    });
+  });
+
   test('deleteAll drops snapshots as well as matches', () async {
     // "Clear all data" promises everything; RP snapshots are the app's other
     // record of the player's history and used to survive it entirely.

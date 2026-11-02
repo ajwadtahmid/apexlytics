@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/utils/error_messages.dart';
+import 'package:apexlytics/utils/storage/former_profile_uids.dart';
 import '../../helpers.dart';
 
 void main() {
@@ -653,6 +654,50 @@ void main() {
           expect(settings.isPlayerSet, isFalse);
         },
       );
+    });
+  });
+
+  group('former profiles', () {
+    const a = '1006838015507';
+    const b = '1006838015508';
+
+    Set<String> former(ProviderContainer c) => loadFormerProfileUids(
+      c.read(sharedPreferencesProvider),
+    );
+
+    test('a saved profile is remembered, and still is once removed', () async {
+      final (container, _) = await prefsContainer();
+      final notifier = container.read(playerSettingsProvider.notifier);
+
+      await notifier.addProfile('A', a, 'PC');
+      expect(former(container), {a});
+
+      await notifier.removeProfile(0);
+      expect(container.read(playerSettingsProvider).profiles, isEmpty);
+      expect(former(container), {a});
+    });
+
+    test('a UID replaced in its slot stays remembered', () async {
+      final (container, _) = await prefsContainer();
+      final notifier = container.read(playerSettingsProvider.notifier);
+      await notifier.addProfile('A', a, 'PC');
+
+      await notifier.updateProfile(0, 'B', b, 'PC');
+
+      expect(former(container), {a, b});
+    });
+
+    test('Clear profiles & favorites keeps the list, Clear all data does not',
+        () async {
+      final (container, prefs) = await prefsContainer();
+      final notifier = container.read(playerSettingsProvider.notifier);
+      await notifier.addProfile('A', a, 'PC');
+
+      await notifier.clearProfilesAndFavorites();
+      expect(prefs.containsKey(PrefsKeys.formerProfileUids), isTrue);
+
+      await notifier.clearAll();
+      expect(prefs.containsKey(PrefsKeys.formerProfileUids), isFalse);
     });
   });
 

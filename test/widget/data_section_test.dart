@@ -12,6 +12,7 @@ import 'package:apexlytics/providers/storage_usage_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/cache_settings_section.dart';
 import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/formatting/format.dart';
+import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/ranked/best_metric.dart';
 import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
@@ -174,16 +175,20 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('lists the three ways to clear, mildest first', (t) async {
+    testWidgets('lists the ways to clear, mildest first', (t) async {
       await pump(t, cached: 3);
       await openSheet(t);
 
       expect(find.byType(BottomSheet), findsOneWidget);
       final cached = t.getTopLeft(find.text('Clear cached responses')).dy;
       final profiles = t.getTopLeft(find.text('Clear profiles & favorites')).dy;
+      final removed = t
+          .getTopLeft(find.text('Clear history of removed players'))
+          .dy;
       final all = t.getTopLeft(find.text('Clear all data')).dy;
       expect(cached, lessThan(profiles));
-      expect(profiles, lessThan(all));
+      expect(profiles, lessThan(removed));
+      expect(removed, lessThan(all));
       expect(find.text('Saved profiles and favorite players'), findsOneWidget);
       expect(find.text('Everything, including match history'), findsOneWidget);
     });
@@ -298,6 +303,72 @@ void main() {
       expect(container.read(entityTrendOverridesProvider), {
         'legend:Axle': 25,
       });
+    });
+
+    testWidgets('Clear history of removed players keeps the saved profile and '
+        'favorites, and clears everyone else', (t) async {
+      await pump(t, games: 2);
+      final notifier = container.read(searchStateProvider.notifier);
+      await notifier.toggleFavorite(
+        const PlayerRef(
+          query: 'Rival',
+          platform: 'PC',
+          uid: '1000000000003',
+          searchedByUid: false,
+        ),
+      );
+      // Players with data on the device: the profile (…01), a favorite (…03),
+      // a removed one with games (…02), one with only RP readings (…04), and
+      // the "1" the screen's two seeded games belong to.
+      await t.runAsync(() async {
+        await store.upsertAll('1000000000001', [
+          buildMatch(uid: '1000000000001', start: 1782090000),
+        ]);
+        await store.upsertAll('1000000000002', [
+          buildMatch(uid: '1000000000002', start: 1782090000),
+        ]);
+        await store.upsertAll('1000000000003', [
+          buildMatch(uid: '1000000000003', start: 1782090000),
+        ]);
+        await store.appendSnapshotFor(
+          '1000000000004',
+          StatSnapshot(timestamp: DateTime(2026, 9, 1), rp: 1200),
+        );
+      });
+      final prefs = container.read(sharedPreferencesProvider);
+      await prefs.setString(PrefsKeys.legendStatsKeyFor('1000000000002'), '{}');
+      await prefs.setString(PrefsKeys.legendStatsKeyFor('1000000000003'), '{}');
+      await openSheet(t);
+
+      await t.tap(find.text('Clear history of removed players'));
+      await letStorageFinish(t);
+      await t.pumpAndSettle();
+      expect(find.text('Clear history of removed players?'), findsOneWidget);
+      expect(find.textContaining('3 players'), findsOneWidget);
+      await t.tap(find.text('Clear'));
+      await t.pump();
+      await letStorageFinish(t);
+
+      final left = await t.runAsync(
+        () => store.uidsWithHistoryExcept(<String>{}),
+      );
+      expect(left, {'1000000000001', '1000000000003'});
+      expect(prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000002')), isFalse);
+      expect(prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000003')), isTrue);
+      expect(container.read(playerSettingsProvider).profiles, isNotEmpty);
+    });
+
+    testWidgets('Clear history of removed players says so when there is none',
+        (t) async {
+      await pump(t);
+      await openSheet(t);
+
+      await t.tap(find.text('Clear history of removed players'));
+      await letStorageFinish(t);
+      await t.pumpAndSettle();
+
+      expect(find.text('No saved history from removed players.'), findsOneWidget);
+      expect(find.text('Clear history of removed players?'), findsNothing);
     });
 
     testWidgets('Clear all data asks twice before it does anything', (

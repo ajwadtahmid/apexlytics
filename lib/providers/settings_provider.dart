@@ -9,6 +9,7 @@ import '../constants/prefs_keys.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_messages.dart';
 import '../utils/formatting/json_utils.dart';
+import '../utils/storage/former_profile_uids.dart';
 
 part 'settings_provider.freezed.dart';
 
@@ -315,6 +316,9 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
       PrefsKeys.profiles,
       jsonEncode(profiles.map((p) => p.toJson()).toList()),
     );
+    // Remembered for good, so removing or replacing a profile later does not
+    // start the trim of its RP history (see pruneSnapshots).
+    await rememberProfileUids(_prefs, [for (final p in profiles) p.uid]);
   }
 
   /// Throws an [AppException] when [uid] already belongs to a profile other

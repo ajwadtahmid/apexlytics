@@ -34,6 +34,12 @@ class PrefsKeys {
   static const defaultTab = 'default_tab';
   static const searchFavorites = 'search_favorites';
 
+  /// Every UID that has been a saved profile, as a JSON list. Kept when a
+  /// profile is removed, so its RP history is not trimmed as a stranger's.
+  /// Backed up (merged with the device's own on restore) and removed by
+  /// "Clear all data", not by "Clear profiles & favorites".
+  static const formerProfileUids = 'former_profile_uids';
+
   /// The last few players looked up, newest first. Device-only: not backed up.
   static const recentSearches = 'recent_searches';
   static const uidSearchWarningShown = 'uid_search_warning_shown';

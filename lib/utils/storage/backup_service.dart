@@ -18,6 +18,7 @@ import '../../constants/prefs_keys.dart';
 import '../app_logger.dart';
 import 'ranked_history_store.dart';
 import 'rp_snapshot_storage.dart';
+import 'former_profile_uids.dart' show mergeRestoredFormerProfileUids;
 import 'season_storage.dart' show mergeRestoredSeasonHistory;
 
 // v1: prefs only. v2 adds `ranked_history`. v3 adds `stat_snapshots` (schema
@@ -74,6 +75,7 @@ const _staticBackupKeys = {
   PrefsKeys.legendVisitStack,
   PrefsKeys.seasonHistory,
   PrefsKeys.statSnapshots,
+  PrefsKeys.formerProfileUids,
 };
 
 const _dynamicBackupPrefixes = [
@@ -119,11 +121,13 @@ Set<String> prefsKeysTouchedByRestore(
 ) {
   final written = prefsData.keys.where(_include);
   // Season windows are learned from the API and can't be re-learned for past
-  // splits, so a backup without them leaves the device's alone.
+  // splits, so a backup without them leaves the device's alone. The same goes
+  // for the former profiles: they protect history already on this device.
   final cleared = prefs.getKeys().where(
     (k) =>
         _staticBackupKeys.contains(k) &&
         k != PrefsKeys.seasonHistory &&
+        k != PrefsKeys.formerProfileUids &&
         !prefsData.containsKey(k),
   );
   return {...written, ...cleared};
@@ -279,6 +283,14 @@ Future<void> restorePrefsData(
         v = mergeRestoredSeasonHistory(
           backupRaw: v as String,
           deviceRaw: prefs.getString(PrefsKeys.seasonHistory),
+        );
+      }
+      // Joined with this device's own, not replaced: the profiles the restore
+      // replaces must stay known, or their history would be trimmed.
+      if (entry.key == PrefsKeys.formerProfileUids) {
+        v = mergeRestoredFormerProfileUids(
+          backupRaw: v as String,
+          deviceRaw: prefs.getString(PrefsKeys.formerProfileUids),
         );
       }
       await _setTyped(prefs, entry.key, v);

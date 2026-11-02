@@ -5,6 +5,7 @@ import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/storage/backup_service.dart';
+import 'package:apexlytics/utils/storage/former_profile_uids.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:share_plus/share_plus.dart';
@@ -46,6 +47,8 @@ void main() {
       PrefsKeys.legendVisitStack: true,
       PrefsKeys.seasonHistory: true,
       PrefsKeys.statSnapshots: true,
+      // Keeps a removed profile's history from being trimmed on a new device.
+      PrefsKeys.formerProfileUids: true,
       // ── Excluded, each for a stated reason ──
       // Device-local first-run state: a restore on a fresh install should
       // still show the tour once.
@@ -136,6 +139,39 @@ void main() {
       expect(backupIncludesKey(PrefsKeys.uidSearchWarningShown), isFalse);
       expect(backupIncludesKey(PrefsKeys.onboardingVersion), isFalse);
       expect(backupIncludesKey('api_cache:whatever'), isFalse);
+    });
+  });
+
+  group('restorePrefsData and the former profile list', () {
+    test('joins the backup\'s list to the device\'s instead of replacing it',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.formerProfileUids: '["1006838015500"]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+
+      await restorePrefsData(prefs, {
+        PrefsKeys.formerProfileUids: '["1006838015501"]',
+      });
+
+      expect(
+        parseFormerProfileUids(prefs.getString(PrefsKeys.formerProfileUids)),
+        {'1006838015500', '1006838015501'},
+      );
+    });
+
+    test('a backup without the list leaves the device\'s alone', () async {
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.formerProfileUids: '["1006838015500"]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+
+      await restorePrefsData(prefs, {PrefsKeys.defaultTab: 1});
+
+      expect(
+        parseFormerProfileUids(prefs.getString(PrefsKeys.formerProfileUids)),
+        {'1006838015500'},
+      );
     });
   });
 

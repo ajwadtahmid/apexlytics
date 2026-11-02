@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -29,6 +31,7 @@ import '../../../utils/formatting/format.dart'
     show formatBytes, formatNumber, plural;
 import '../../../utils/notifications.dart';
 import '../../../utils/share_image.dart' show clearSharedCardCopies;
+import '../../../utils/storage/former_profile_uids.dart';
 import '../../../utils/storage/backup_service.dart';
 import '../../../utils/storage/ranked_history_store.dart';
 import '../../../utils/storage/rp_snapshot_storage.dart';
@@ -98,8 +101,8 @@ class CacheSettingsSection extends ConsumerWidget {
     );
   }
 
-  /// "Clear data": the three ways to clear, mildest first, each asking before
-  /// it does anything.
+  /// "Clear data": the ways to clear, mildest first, each asking before it does
+  /// anything.
   void _openClearSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet<void>(
       context: context,
@@ -166,6 +169,17 @@ class CacheSettingsSection extends ConsumerWidget {
                             _clearProfilesAndFavorites(context, ref),
                       );
                     }),
+                  ),
+                  const Divider(color: AppTheme.surface2, height: 24),
+                  ActionRow(
+                    icon: Icons.history_toggle_off,
+                    label: 'Clear history of removed players',
+                    subtitle:
+                        'Match and RP history of players you no longer save',
+                    color: AppTheme.orange,
+                    onTap: () => choose(
+                      () => unawaited(_askClearRemovedPlayers(context, ref)),
+                    ),
                   ),
                   const Divider(color: AppTheme.surface2, height: 24),
                   ActionRow(
@@ -246,6 +260,74 @@ class CacheSettingsSection extends ConsumerWidget {
           : 'Cleared ${plural(before.entries, 'saved response')} '
                 '(${formatBytes(before.bytes)}).',
     );
+  }
+
+  /// Whose saved data stays through "Clear history of removed players": the
+  /// saved profiles and the favourites.
+  Set<String> _keptUids(WidgetRef ref) => {
+    for (final p in ref.read(playerSettingsProvider).profiles)
+      if (p.uid.isNotEmpty) p.uid,
+    for (final f in ref.read(searchStateProvider).favorites)
+      if (f.hasUid) f.uid!,
+  };
+
+  /// The players, other than those kept, that still have match history, RP
+  /// history or other saved data on the device.
+  Future<Set<String>> _removedPlayersWithData(WidgetRef ref) async {
+    final keep = _keptUids(ref);
+    final prefs = ref.read(sharedPreferencesProvider);
+    final inDatabase = await ref
+        .read(rankedHistoryStoreProvider)
+        .uidsWithHistoryExcept(keep);
+    return {
+      ...inDatabase,
+      for (final key in scopedKeysExcept(prefs, keep)) uidOfScopedKey(key)!,
+    };
+  }
+
+  Future<void> _askClearRemovedPlayers(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final players = await _removedPlayersWithData(ref);
+    if (!context.mounted) return;
+    if (players.isEmpty) {
+      context.showMessage('No saved history from removed players.');
+      return;
+    }
+    await _confirm(
+      context,
+      title: 'Clear history of removed players?',
+      body:
+          'Removes the saved match history, RP history and stats of '
+          '${plural(players.length, 'player')} who ${players.length == 1 ? 'is' : 'are'} '
+          'no longer a saved profile or favorite. Your profiles and '
+          'favorites keep theirs. This cannot be undone.',
+      confirmLabel: 'Clear',
+      confirmColor: AppTheme.orange,
+      onConfirm: () => _clearRemovedPlayers(context, ref, players.length),
+    );
+  }
+
+  Future<void> _clearRemovedPlayers(
+    BuildContext context,
+    WidgetRef ref,
+    int count,
+  ) async {
+    final keep = _keptUids(ref);
+    final prefs = ref.read(sharedPreferencesProvider);
+    await ref.read(rankedHistoryStoreProvider).deleteHistoryExcept(keep);
+    for (final key in scopedKeysExcept(prefs, keep)) {
+      await prefs.remove(key);
+    }
+    await retainProfileUids(prefs, keep);
+    // These read through caches that the deletes above do not reset.
+    resetSnapshotCache();
+    invalidatePlayerDerivedProviders(ref);
+    ref.invalidate(storageUsageProvider);
+    if (context.mounted) {
+      context.showMessage('Cleared the history of ${plural(count, 'player')}.');
+    }
   }
 
   /// Drops saved profiles, favourites and recent searches, keeping everything

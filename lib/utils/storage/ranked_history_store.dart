@@ -1325,8 +1325,10 @@ class RankedHistoryStore {
     await batch.commit(noResult: true);
   }
 
-  /// Trims RP snapshots, returning how many rows went. Never trimmed: [profileUids], any UID
-  /// with stored match history (e.g. a removed profile) and the legacy UID-less bucket.
+  /// Trims RP snapshots, returning how many rows went. Never trimmed: [profileUids] (the
+  /// current profiles and every UID that has been one, so a removed profile keeps its history
+  /// for when it is added back), any UID with stored match history and the legacy UID-less
+  /// bucket.
   /// [favoriteUids] keep [favoriteSnapshotMaxAge]; everyone else [otherSnapshotMaxAge].
   Future<int> pruneSnapshots({
     required Set<String> profileUids,
@@ -1757,10 +1759,49 @@ class RankedHistoryStore {
     final db = await _open();
     await db.delete(table);
     await db.delete(snapshotTable);
-    // A delete only moves pages to the free list: the file keeps its size and
-    // the old rows stay readable inside it. VACUUM rewrites it without them.
-    // The data is already gone by now, so a failure here (not enough free disk
-    // space, say) only leaves the file larger than it needs to be.
+    await _compact(db);
+  }
+
+  /// The UIDs, other than [keepUids] and the legacy UID-less bucket, that have
+  /// matches or RP snapshots stored.
+  Future<Set<String>> uidsWithHistoryExcept(Set<String> keepUids) async {
+    final db = await _open();
+    final marks = List.filled(keepUids.length, '?').join(', ');
+    final rows = await db.rawQuery(
+      '''
+      SELECT DISTINCT uid FROM $table WHERE uid NOT IN ($marks)
+      UNION
+      SELECT DISTINCT uid FROM $snapshotTable
+      WHERE uid != '' AND uid NOT IN ($marks)
+      ''',
+      [...keepUids, ...keepUids],
+    );
+    return {for (final r in rows) r['uid'] as String};
+  }
+
+  /// Deletes the matches and RP snapshots of every UID except [keepUids] (and
+  /// the legacy UID-less snapshot bucket), then compacts the file.
+  Future<void> deleteHistoryExcept(Set<String> keepUids) async {
+    // Bumped before the first await, like [deleteAll].
+    _dataEpoch++;
+    final db = await _open();
+    final marks = List.filled(keepUids.length, '?').join(', ');
+    await db.transaction((txn) async {
+      await txn.delete(table, where: 'uid NOT IN ($marks)', whereArgs: [...keepUids]);
+      await txn.delete(
+        snapshotTable,
+        where: "uid != '' AND uid NOT IN ($marks)",
+        whereArgs: [...keepUids],
+      );
+    });
+    await _compact(db);
+  }
+
+  /// A delete only moves pages to the free list: the file keeps its size and
+  /// the old rows stay readable inside it. VACUUM rewrites it without them.
+  /// The data is already gone by now, so a failure here (not enough free disk
+  /// space, say) only leaves the file larger than it needs to be.
+  Future<void> _compact(Database db) async {
     try {
       await db.execute('VACUUM');
     } catch (e) {

@@ -23,6 +23,7 @@ import 'screens/settings/settings_screen.dart';
 import 'services/notification_service.dart';
 import 'utils/app_logger.dart';
 import 'utils/onboarding.dart';
+import 'utils/storage/former_profile_uids.dart';
 import 'utils/storage/ranked_history_store.dart';
 import 'utils/storage/rp_snapshot_storage.dart';
 import 'utils/theme.dart';
@@ -206,11 +207,14 @@ class _AppShellState extends ConsumerState<_AppShell>
   /// Applies snapshot retention; a failure just leaves extra rows until next launch.
   Future<void> _pruneSnapshots(RankedHistoryStore store) async {
     try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final current = {
+        for (final p in ref.read(playerSettingsProvider).profiles)
+          if (p.uid.isNotEmpty) p.uid,
+      };
+      // Everyone who has been a profile is kept like one.
       final removed = await store.pruneSnapshots(
-        profileUids: {
-          for (final p in ref.read(playerSettingsProvider).profiles)
-            if (p.uid.isNotEmpty) p.uid,
-        },
+        profileUids: await profileUidsToProtect(prefs, current),
         favoriteUids: {
           for (final f in ref.read(searchStateProvider).favorites)
             if (f.hasUid) f.uid!,
