@@ -7,7 +7,8 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_edit_sheet.dart';
-import 'package:apexlytics/utils/ranked/ranked_period.dart' show kUnknownSplitId;
+import 'package:apexlytics/utils/ranked/ranked_period.dart'
+    show kUnknownSplitId;
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import '../helpers.dart';
 
@@ -189,37 +190,36 @@ void main() {
     },
   );
 
-  testWidgets(
-    '"Save anyway" on the 0-RP warning persists the correction',
-    (tester) async {
-      final m = match();
-      final store = _FakeStore([m]);
-      RankedMatch? result;
+  testWidgets('"Save anyway" on the 0-RP warning persists the correction', (
+    tester,
+  ) async {
+    final m = match();
+    final store = _FakeStore([m]);
+    RankedMatch? result;
 
-      await tester.pumpWidget(
-        app(
-          match: m,
-          store: store,
-          prefs: await emptyPrefs(),
-          onResult: (r) => result = r,
-        ),
-      );
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      app(
+        match: m,
+        store: store,
+        prefs: await emptyPrefs(),
+        onResult: (r) => result = r,
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, '0');
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '0');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Save anyway'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Save anyway'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Correct this match'), findsNothing);
-      expect(result, isNotNull);
-      expect(result!.rpChange, 0);
-      expect(store.rows[m.dedupKey]!.rpChange, 0);
-    },
-  );
+    expect(find.text('Correct this match'), findsNothing);
+    expect(result, isNotNull);
+    expect(result!.rpChange, 0);
+    expect(store.rows[m.dedupKey]!.rpChange, 0);
+  });
 
   testWidgets('the exclude toggle is locked for an auto-excluded match', (
     tester,
@@ -296,71 +296,65 @@ void main() {
     expect(store.rows[m.dedupKey]!.rpChange, m.rpChange);
   });
 
-  testWidgets(
-    'a match no longer in the store reports the failure instead of a '
-    'false success',
-    (tester) async {
-      // Deliberately not seeded - editMatch will find no row for this id.
-      final store = _FakeStore(const []);
-      final m = match();
-      RankedMatch? result;
+  testWidgets('a match no longer in the store reports the failure instead of a '
+      'false success', (tester) async {
+    // Deliberately not seeded - editMatch will find no row for this id.
+    final store = _FakeStore(const []);
+    final m = match();
+    RankedMatch? result;
 
-      await tester.pumpWidget(
-        app(
-          match: m,
-          store: store,
-          prefs: await emptyPrefs(),
-          onResult: (r) => result = r,
-        ),
-      );
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      app(
+        match: m,
+        store: store,
+        prefs: await emptyPrefs(),
+        onResult: (r) => result = r,
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField).last, '55');
-      await tester.tap(find.text('Save'));
-      await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '55');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
 
-      expect(
-        find.text('That match is no longer in your history.'),
-        findsOneWidget,
-      );
-      expect(result, isNull);
-    },
-  );
+    expect(
+      find.text('That match is no longer in your history.'),
+      findsOneWidget,
+    );
+    expect(result, isNull);
+  });
 
-  testWidgets(
-    '"Reset to synced" only appears for an already-edited match, and '
-    'clears the flag on tap',
-    (tester) async {
-      final edited = match(rp: 55, editedFields: {'rp_change'});
-      final store = _FakeStore([edited]);
-      RankedMatch? result;
+  testWidgets('"Reset to synced" only appears for an already-edited match, and '
+      'clears the flag on tap', (tester) async {
+    final edited = match(rp: 55, editedFields: {'rp_change'});
+    final store = _FakeStore([edited]);
+    RankedMatch? result;
 
-      await tester.pumpWidget(
-        app(
-          match: edited,
-          store: store,
-          prefs: await emptyPrefs(),
-          onResult: (r) => result = r,
-        ),
-      );
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      app(
+        match: edited,
+        store: store,
+        prefs: await emptyPrefs(),
+        onResult: (r) => result = r,
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Reset to synced'), findsOneWidget);
+    expect(find.text('Reset to synced'), findsOneWidget);
 
-      await tester.tap(find.text('Reset to synced'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset to synced'));
+    await tester.pumpAndSettle();
 
-      expect(result, isNotNull);
-      expect(result!.editedFields, isEmpty);
-      final stored = store.rows[edited.dedupKey]!;
-      expect(stored.editedFields, isEmpty);
-      // clearEdits only resets the flag - the corrected value itself is left
-      // as-is until the next sync overwrites it.
-      expect(stored.rpChange, 55);
-    },
-  );
+    expect(result, isNotNull);
+    expect(result!.editedFields, isEmpty);
+    final stored = store.rows[edited.dedupKey]!;
+    expect(stored.editedFields, isEmpty);
+    // clearEdits only resets the flag - the corrected value itself is left
+    // as-is until the next sync overwrites it.
+    expect(stored.rpChange, 55);
+  });
 
   testWidgets('no edited fields yet: "Reset to synced" is absent', (
     tester,
@@ -378,7 +372,7 @@ void main() {
   });
 
   testWidgets(
-    'saving invalidates the providers the rest of the breakdown reads from',
+    'saving invalidates the providers the rest of the Stats page reads from',
     (tester) async {
       final m = match();
       final store = _FakeStore([m]);

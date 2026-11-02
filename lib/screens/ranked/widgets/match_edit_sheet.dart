@@ -261,7 +261,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
         }
         return;
       }
-      _refreshBreakdown();
+      _refreshStats();
       var updated = widget.match;
       if (changes.isNotEmpty) updated = updated.withEdits(changes);
       if (excludedChanged) updated = updated.withExcluded(_excluded);
@@ -282,7 +282,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
     setState(() => _saving = true);
     try {
       await ref.read(rankedHistoryStoreProvider).clearEdits(widget.match.id);
-      _refreshBreakdown();
+      _refreshStats();
       if (mounted) Navigator.pop(context, widget.match.withEditsCleared());
     } catch (e, st) {
       log.w('Match edit reset failed', error: e, stackTrace: st);
@@ -297,7 +297,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
 
   /// Rebuilds every view fed by stored match rows. The sync provider is left
   /// alone, so saving an edit never spends a `/games` request.
-  void _refreshBreakdown() => invalidateMatchDerivedProviders(ref);
+  void _refreshStats() => invalidateMatchDerivedProviders(ref);
 
   @override
   Widget build(BuildContext context) {

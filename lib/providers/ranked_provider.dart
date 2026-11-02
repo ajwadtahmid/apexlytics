@@ -54,7 +54,7 @@ class RankedPeriodNotifier extends Notifier<RankedPeriod> {
       state = RankedPeriod(splitId: state.splitId, weekIndex: index);
 }
 
-/// Why the ranked view is showing what it's showing — the breakdown is always
+/// Why the ranked view is showing what it's showing — the ranked stats are always
 /// served from the local store, and this explains how current that store is.
 enum RankedSyncOutcome {
   /// Fresh match data was merged from `/games`.

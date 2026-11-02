@@ -7,7 +7,7 @@ import '../../widgets/graph_card.dart';
 import '../../widgets/player_stats_tabs.dart';
 import '../../widgets/surface_card.dart';
 
-/// Reached from Ranked's empty states while match history hasn't arrived
+/// Reached from the Stats page's empty states while match history hasn't arrived
 /// yet. Shows the snapshot-based RP graph (device-local RP samples) and All
 /// Trackers (career-lifetime legend/weapon stats from the live player-stats
 /// API) — neither depends on the match history the Ranked section of Stats is waiting on.

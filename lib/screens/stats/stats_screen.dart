@@ -135,7 +135,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
     });
   }
 
-  /// Combined manual refresh: both Stats (`/player`) and Ranked's match
+  /// Combined manual refresh: both Stats (`/player`) and the ranked match
   /// history are independent syncs with their own cooldowns, but there's only
   /// one refresh control in the AppBar, so a tap fires both.
   Future<void> _sync() async {

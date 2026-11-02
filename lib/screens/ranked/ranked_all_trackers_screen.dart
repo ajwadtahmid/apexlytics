@@ -24,19 +24,19 @@ class RankedAllTrackersEntry extends StatelessWidget {
       icon: Icons.bar_chart_outlined,
       title: 'All Trackers',
       onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => RankedAllTrackersScreen(
-              legendStats: legendStats,
-              legendStack: legendStack,
-            ),
+        MaterialPageRoute(
+          builder: (_) => RankedAllTrackersScreen(
+            legendStats: legendStats,
+            legendStack: legendStack,
           ),
         ),
+      ),
     );
   }
 }
 
-/// Full-screen Legends/Guns tracker breakdown — the same [PlayerStatsTabs] My
-/// Stats used to show inline, now reached from Ranked's Overview instead.
+/// Full-screen Legends/Guns tracker breakdown — the same [PlayerStatsTabs] the
+/// Stats page used to show inline, now reached from the Overview tab instead.
 class RankedAllTrackersScreen extends StatelessWidget {
   final List<LegendStat> legendStats;
   final List<String> legendStack;

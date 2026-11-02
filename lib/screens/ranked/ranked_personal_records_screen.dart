@@ -43,7 +43,7 @@ class RankedPersonalRecordsEntry extends StatelessWidget {
   /// False for a past week or split, whose last streak ended then.
   final bool live;
 
-  /// Refreshes the breakdown, for the pages a record opens.
+  /// Refreshes the ranked stats, for the pages a record opens.
   final Future<void> Function() onRefresh;
 
   /// The split (and week) on screen, for the title of the card of all records.

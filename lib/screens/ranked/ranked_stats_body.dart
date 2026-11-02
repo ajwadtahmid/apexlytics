@@ -382,7 +382,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
     );
   }
 
-  /// The breakdown opt-in: sets 5-minute polling (the floor for reliable match
+  /// The ranked stats opt-in: sets 5-minute polling (the floor for reliable match
   /// capture) and Keep screen on (the poll timer only fires in the foreground).
   Future<void> _startRecording() async {
     final settings = ref.read(playerSettingsProvider.notifier);
@@ -825,7 +825,7 @@ enum _StepStatus {
   tip,
 }
 
-/// The 3-step path from an empty breakdown to a populated one, shared across
+/// The 3-step path from empty ranked stats to populated ones, shared across
 /// every empty-state title/message so "what's actually happening" reads the
 /// same regardless of why the wait is happening.
 class _TrackingSteps extends StatelessWidget {

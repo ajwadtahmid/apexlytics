@@ -44,8 +44,8 @@ void showRankedInfoSheet(BuildContext context) {
             'Match history is only recorded while you\'re actively playing '
                 'ranked with Apexlytics (or a browser tab of your profile on '
                 'apexlegendsstatus.com) is open for that account. A brand '
-                'new profile has nothing recorded yet, so the breakdown '
-                'starts blank.',
+                'new profile has nothing recorded yet, so your ranked stats '
+                'start blank.',
           ]),
           Padding(
             padding: const EdgeInsets.only(top: AppTheme.sm),
