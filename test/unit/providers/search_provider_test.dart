@@ -525,6 +525,80 @@ void main() {
     });
   });
 
+  group('favorite updates that overlap', () {
+    late ProviderContainer container;
+    late SearchNotifier notifier;
+
+    setUp(() {
+      container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      notifier = container.read(searchStateProvider.notifier);
+    });
+
+    List<PlayerRef> saved() =>
+        (jsonDecode(prefs.getString(PrefsKeys.searchFavorites)!) as List)
+            .map((e) => PlayerRef.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    test('a name update and a snapshot update both stay', () async {
+      // Saved by name, as before it had a UID.
+      await notifier.toggleFavorite(
+        const PlayerRef(query: 'Alpha', platform: 'PC'),
+      );
+
+      // Both fire from the same result, neither waiting for the other.
+      final named = notifier.syncDisplayName('1', 'Alpha');
+      final snapshot = notifier.updateSnapshot(
+        'PC',
+        buildStats(name: 'Alpha', uid: '1'),
+      );
+      await Future.wait([named, snapshot]);
+
+      for (final favorite in [
+        container.read(searchStateProvider).favorites.single,
+        saved().single,
+      ]) {
+        expect(favorite.uid, '1');
+        expect(favorite.snapshot, isNotNull);
+      }
+    });
+
+    test('a favorite removed meanwhile stays removed', () async {
+      const alpha = PlayerRef(query: 'Alpha', platform: 'PC', uid: '1');
+      await notifier.toggleFavorite(alpha);
+
+      final update = notifier.updateSnapshot(
+        'PC',
+        buildStats(name: 'Alpha', uid: '1'),
+      );
+      final removal = notifier.removeFavorite(alpha);
+      await Future.wait([update, removal]);
+
+      expect(container.read(searchStateProvider).favorites, isEmpty);
+      expect(saved(), isEmpty);
+    });
+
+    test('adding one while a snapshot is saved keeps both', () async {
+      const alpha = PlayerRef(query: 'Alpha', platform: 'PC', uid: '1');
+      const bravo = PlayerRef(query: 'Bravo', platform: 'PC', uid: '2');
+      await notifier.toggleFavorite(alpha);
+
+      final update = notifier.updateSnapshot(
+        'PC',
+        buildStats(name: 'Alpha', uid: '1'),
+      );
+      final add = notifier.toggleFavorite(bravo);
+      await Future.wait([update, add]);
+
+      final favorites = container.read(searchStateProvider).favorites;
+      expect(favorites.map((f) => f.uid), unorderedEquals(['1', '2']));
+      expect(favorites.firstWhere((f) => f.uid == '1').snapshot, isNotNull);
+      expect(saved().map((f) => f.uid), unorderedEquals(['1', '2']));
+    });
+  });
+
   group('a damaged entry in a saved list', () {
     ProviderContainer open() {
       final container = ProviderContainer(

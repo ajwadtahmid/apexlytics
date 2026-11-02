@@ -304,8 +304,10 @@ class SearchNotifier extends Notifier<SearchState> {
       }
     }
     if (!changed) return;
-    await _save(PrefsKeys.searchFavorites, favorites);
+    // The list changes before the save finishes, so a second update starts from
+    // this one and not from the list as it was.
     state = state.copyWith(favorites: favorites);
+    await _save(PrefsKeys.searchFavorites, favorites);
   }
 
   /// Records [stats], fetched at [at] (now when omitted), as what is known of
@@ -328,8 +330,9 @@ class SearchNotifier extends Notifier<SearchState> {
     final kept = favorites[idx].snapshot;
     if (kept != null && !snapshot.savedAt.isAfter(kept.savedAt)) return;
     favorites[idx] = favorites[idx].withSnapshot(snapshot);
-    await _save(PrefsKeys.searchFavorites, favorites);
+    // Changed before the save finishes, as in [syncDisplayName].
     state = state.copyWith(favorites: favorites);
+    await _save(PrefsKeys.searchFavorites, favorites);
   }
 
   static int _favoriteIndex(List<PlayerRef> favorites, PlayerRef playerRef) =>
@@ -385,8 +388,9 @@ class SearchNotifier extends Notifier<SearchState> {
       }
       favorites.insert(0, playerRef);
     }
-    await _save(PrefsKeys.searchFavorites, favorites);
+    // Changed before the save finishes, as in [syncDisplayName].
     state = state.copyWith(favorites: favorites);
+    await _save(PrefsKeys.searchFavorites, favorites);
   }
 }
 
