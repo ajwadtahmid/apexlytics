@@ -1,6 +1,6 @@
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
-import 'package:apexlytics/screens/ranked/ranked_entity_history_screen.dart';
+import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_personal_records_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
@@ -100,7 +100,7 @@ void main() {
       await tester.tap(find.text('4 games'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(RankedEntityHistoryScreen), findsOneWidget);
+      expect(find.byType(RankedEntityGamesScreen), findsOneWidget);
       expect(find.text('4 games · +70 RP'), findsOneWidget);
     });
 
@@ -274,7 +274,7 @@ void main() {
       await tester.tap(find.text('+110 RP'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(RankedEntityHistoryScreen), findsOneWidget);
+      expect(find.byType(RankedEntityGamesScreen), findsOneWidget);
       expect(find.text('$day · 4 games · +110 RP'), findsOneWidget);
     });
 

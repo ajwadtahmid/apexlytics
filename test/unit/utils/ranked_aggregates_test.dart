@@ -203,45 +203,48 @@ void main() {
     expect(r.bestKillsGame?.kills, 1, reason: 'its kills are left out too');
   });
 
-  test('a reset game (implausible RP) is left out of games and win rate alike', () {
-    final withResets = rankedOnly([
-      match(
-        legend: 'Axle',
-        mapKey: 'olympus_rotation',
-        rpChange: 40,
-        cumulativeRp: 40,
-        kills: 1,
-        damage: 100,
-        startOffset: 0,
-      ),
-      match(
-        legend: 'Axle',
-        mapKey: 'olympus_rotation',
-        rpChange: -20,
-        cumulativeRp: 20,
-        kills: 1,
-        damage: 100,
-        startOffset: 60,
-      ),
-      // End-of-split reset artifact: |rp| >= 1000 is excluded automatically, so
-      // rankedOnly drops it and it counts toward neither games nor win rate.
-      match(
-        legend: 'Axle',
-        mapKey: 'olympus_rotation',
-        rpChange: -1500,
-        cumulativeRp: 0,
-        kills: 0,
-        damage: 0,
-        startOffset: 120,
-      ),
-    ]);
-    final s = summarize(withResets);
-    expect(s.games, 2);
-    expect(s.wins, 1);
-    expect(s.losses, 1);
-    expect(s.decidedGames, s.games, reason: 'every counted game is decided');
-    expect(s.winRate, closeTo(0.5, 0.001));
-  });
+  test(
+    'a reset game (implausible RP) is left out of games and win rate alike',
+    () {
+      final withResets = rankedOnly([
+        match(
+          legend: 'Axle',
+          mapKey: 'olympus_rotation',
+          rpChange: 40,
+          cumulativeRp: 40,
+          kills: 1,
+          damage: 100,
+          startOffset: 0,
+        ),
+        match(
+          legend: 'Axle',
+          mapKey: 'olympus_rotation',
+          rpChange: -20,
+          cumulativeRp: 20,
+          kills: 1,
+          damage: 100,
+          startOffset: 60,
+        ),
+        // End-of-split reset artifact: |rp| >= 1000 is excluded automatically, so
+        // rankedOnly drops it and it counts toward neither games nor win rate.
+        match(
+          legend: 'Axle',
+          mapKey: 'olympus_rotation',
+          rpChange: -1500,
+          cumulativeRp: 0,
+          kills: 0,
+          damage: 0,
+          startOffset: 120,
+        ),
+      ]);
+      final s = summarize(withResets);
+      expect(s.games, 2);
+      expect(s.wins, 1);
+      expect(s.losses, 1);
+      expect(s.decidedGames, s.games, reason: 'every counted game is decided');
+      expect(s.winRate, closeTo(0.5, 0.001));
+    },
+  );
 
   test('winRate is 0 when there are no decided games', () {
     expect(summarize(const []).winRate, 0);
@@ -1018,7 +1021,7 @@ void main() {
       expect(trends.damage, isNull);
     });
   });
-  test('History and Sessions draw the same session boundaries', () {
+  test('Games and Sessions draw the same session boundaries', () {
     // Gaps of 30 min, exactly the limit, and one second over it.
     const t = 1782090000;
     final gapSecs = kSessionGap.inSeconds;

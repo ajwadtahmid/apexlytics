@@ -13,7 +13,8 @@ import '../../../utils/formatting/format.dart'
         formatDuration,
         formatSigned,
         formatSignedInt,
-        formatTotalOrNone, plural;
+        formatTotalOrNone,
+        plural;
 import '../../../utils/ranked/entity_trend_window.dart';
 import '../../../utils/ranked/ranked_aggregates.dart';
 import '../../../utils/storage/legend_stats_storage.dart';
@@ -24,7 +25,7 @@ import '../../../widgets/stat_display.dart';
 import '../../../widgets/trend_lines.dart';
 import '../../../widgets/trend_window_picker.dart';
 import '../../../widgets/win_loss_stat.dart';
-import '../ranked_entity_history_screen.dart';
+import '../ranked_entity_games_screen.dart';
 import 'match_history_items.dart' show MatchGrouping;
 
 /// Opens the shared legend detail sheet — used by both the Overview
@@ -51,7 +52,7 @@ Future<void> showLegendDetailSheet(
 
 /// Opens a legend's [games] (newest first) as a history page, with a toggle to
 /// group them by map.
-void openLegendHistory(
+void openLegendGames(
   BuildContext context,
   LegendBreakdown breakdown,
   List<RankedMatch> games,
@@ -60,7 +61,7 @@ void openLegendHistory(
 }) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => RankedEntityHistoryScreen(
+      builder: (_) => RankedEntityGamesScreen(
         title: breakdown.legend,
         subtitle:
             '${plural(breakdown.games, 'ranked game')} · '
@@ -77,7 +78,7 @@ void openLegendHistory(
 
 /// Detail sheet for a legend: the full stat set the Legends tab shows per
 /// row, plus a "View all history" button that resolves this legend's matches
-/// and pushes the same [RankedEntityHistoryScreen] drill-down the Legends tab
+/// and pushes the same [RankedEntityGamesScreen] drill-down the Legends tab
 /// uses. "All Trackers" resolves the persisted career [LegendStat] for this
 /// legend — a pure read of what [mergeLegendStats] already wrote during the
 /// normal Stats flow, so opening this never re-triggers that merge — and
@@ -116,12 +117,12 @@ class _LegendDetailSheetState extends ConsumerState<_LegendDetailSheet> {
     breakdown.legend,
   );
 
-  Future<void> _viewHistory(BuildContext context) async {
+  Future<void> _viewGames(BuildContext context) async {
     // Copy: keep the loaded list in the order the trends used.
     final games = [...await _loaded]
       ..sort((a, b) => b.endTime.compareTo(a.endTime));
     if (!context.mounted) return;
-    openLegendHistory(
+    openLegendGames(
       context,
       breakdown,
       games,
@@ -260,12 +261,12 @@ class _LegendDetailSheetState extends ConsumerState<_LegendDetailSheet> {
                 ],
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () => _viewHistory(context),
+                    onPressed: () => _viewGames(context),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.accent,
                     ),
                     icon: const Icon(Icons.history, size: 18),
-                    label: const Text('History'),
+                    label: const Text('Games'),
                   ),
                 ),
               ],

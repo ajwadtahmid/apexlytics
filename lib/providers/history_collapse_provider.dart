@@ -14,14 +14,11 @@ class CollapsedHistorySessions extends Notifier<Set<String>> {
   Set<String> build() => const {};
 
   void toggle(String key) {
-    state = state.contains(key)
-        ? ({...state}..remove(key))
-        : {...state, key};
+    state = state.contains(key) ? ({...state}..remove(key)) : {...state, key};
   }
 }
 
-/// Key for the session named [sessionId] within [scope] (the History tab, or
+/// Key for the session named [sessionId] within [scope] (the Games tab, or
 /// one legend/map page), so collapsing a session in one list doesn't collapse
 /// it in another.
-String historySessionKey(String scope, String sessionId) =>
-    '$scope|$sessionId';
+String historySessionKey(String scope, String sessionId) => '$scope|$sessionId';

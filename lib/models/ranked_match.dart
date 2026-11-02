@@ -293,7 +293,7 @@ class RankedMatch {
   bool get countsTowardStats => !excluded && !isAutoExcluded;
 
   /// [rpChange], or 0 when the match doesn't [countsTowardStats]. Used in the
-  /// History tab's day/group RP rollups, which still list an excluded match's
+  /// Games tab's day/group RP rollups, which still list an excluded match's
   /// row but not its RP. The raw [rpChange] is only shown on the match's own
   /// row and the RP progression graph.
   int get effectiveRpChange => countsTowardStats ? rpChange : 0;

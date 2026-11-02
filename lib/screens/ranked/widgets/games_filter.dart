@@ -6,21 +6,21 @@ import '../../../utils/formatting/format.dart'
     show formatShortDate, formatSignedInt;
 import '../../../utils/theme.dart';
 
-enum HistoryMode { all, ranked, casual }
+enum GamesMode { all, ranked, casual }
 
-enum HistoryResult { any, wins, losses }
+enum GamesResult { any, wins, losses }
 
 /// The ends of the RP-change slider. A handle left on an end means "no limit"
 /// on that side, so a range is never silently capped at these values.
 const int kFilterRpFloor = -100;
 const int kFilterRpCeiling = 200;
 
-/// What the History tab shows. Defaults to ranked games only — the headline
+/// What the Games tab shows. Defaults to ranked games only — the headline
 /// view — so "default" and "no filter" are different things; [activeCount]
 /// counts what departs from the default.
-class HistoryFilter {
-  final HistoryMode mode;
-  final HistoryResult result;
+class GamesFilter {
+  final GamesMode mode;
+  final GamesResult result;
   final Set<String> legends;
   final Set<String> mapKeys;
 
@@ -32,9 +32,9 @@ class HistoryFilter {
   final int? minRp;
   final int? maxRp;
 
-  const HistoryFilter({
-    this.mode = HistoryMode.ranked,
-    this.result = HistoryResult.any,
+  const GamesFilter({
+    this.mode = GamesMode.ranked,
+    this.result = GamesResult.any,
     this.legends = const {},
     this.mapKeys = const {},
     this.dates,
@@ -42,9 +42,9 @@ class HistoryFilter {
     this.maxRp,
   });
 
-  HistoryFilter copyWith({
-    HistoryMode? mode,
-    HistoryResult? result,
+  GamesFilter copyWith({
+    GamesMode? mode,
+    GamesResult? result,
     Set<String>? legends,
     Set<String>? mapKeys,
     DateTimeRange? dates,
@@ -52,7 +52,7 @@ class HistoryFilter {
     int? minRp,
     int? maxRp,
     bool clearRp = false,
-  }) => HistoryFilter(
+  }) => GamesFilter(
     mode: mode ?? this.mode,
     result: result ?? this.result,
     legends: legends ?? this.legends,
@@ -66,8 +66,8 @@ class HistoryFilter {
   bool get hasRpRange => minRp != null || maxRp != null;
 
   int get activeCount =>
-      (mode != HistoryMode.ranked ? 1 : 0) +
-      (result != HistoryResult.any ? 1 : 0) +
+      (mode != GamesMode.ranked ? 1 : 0) +
+      (result != GamesResult.any ? 1 : 0) +
       (legends.isNotEmpty ? 1 : 0) +
       (mapKeys.isNotEmpty ? 1 : 0) +
       (dates != null ? 1 : 0) +
@@ -75,21 +75,21 @@ class HistoryFilter {
 
   bool matches(RankedMatch m) {
     switch (mode) {
-      case HistoryMode.all:
+      case GamesMode.all:
         break;
-      case HistoryMode.ranked:
+      case GamesMode.ranked:
         if (!m.isRanked) return false;
-      case HistoryMode.casual:
+      case GamesMode.casual:
         if (m.isRanked) return false;
     }
     // Same definition as the day header and the win-rate chip: positive /
     // negative effective RP, so excluded games are neither.
     switch (result) {
-      case HistoryResult.any:
+      case GamesResult.any:
         break;
-      case HistoryResult.wins:
+      case GamesResult.wins:
         if (m.effectiveRpChange <= 0) return false;
-      case HistoryResult.losses:
+      case GamesResult.losses:
         if (m.effectiveRpChange >= 0) return false;
     }
     if (legends.isNotEmpty && !selectsLegend(m.legend)) return false;
@@ -128,13 +128,13 @@ class HistoryFilter {
   List<RankedMatch> apply(List<RankedMatch> all) => all.where(matches).toList();
 }
 
-/// Bottom sheet for editing a [HistoryFilter]. Changes apply live through
+/// Bottom sheet for editing a [GamesFilter]. Changes apply live through
 /// [onChanged]; [pool] supplies the legends and maps worth offering.
-Future<void> showHistoryFilterSheet(
+Future<void> showGamesFilterSheet(
   BuildContext context, {
-  required HistoryFilter filter,
+  required GamesFilter filter,
   required List<RankedMatch> pool,
-  required ValueChanged<HistoryFilter> onChanged,
+  required ValueChanged<GamesFilter> onChanged,
 }) {
   // One chip per canonical legend and map.
   final legends = {for (final m in pool) canonicalLegendName(m.legend)}.toList()
@@ -162,10 +162,10 @@ Future<void> showHistoryFilterSheet(
 }
 
 class _FilterSheet extends StatefulWidget {
-  final HistoryFilter initial;
+  final GamesFilter initial;
   final List<String> legends;
   final List<String> mapKeys;
-  final ValueChanged<HistoryFilter> onChanged;
+  final ValueChanged<GamesFilter> onChanged;
   const _FilterSheet({
     required this.initial,
     required this.legends,
@@ -178,9 +178,9 @@ class _FilterSheet extends StatefulWidget {
 }
 
 class _FilterSheetState extends State<_FilterSheet> {
-  late HistoryFilter _filter = widget.initial;
+  late GamesFilter _filter = widget.initial;
 
-  void _set(HistoryFilter f) {
+  void _set(GamesFilter f) {
     setState(() => _filter = f);
     widget.onChanged(f);
   }
@@ -311,29 +311,29 @@ class _FilterSheetState extends State<_FilterSheet> {
                       TextButton(
                         onPressed: _filter.activeCount == 0
                             ? null
-                            : () => _set(const HistoryFilter()),
+                            : () => _set(const GamesFilter()),
                         child: const Text('Reset'),
                       ),
                     ],
                   ),
                   const _Label('Mode'),
-                  _Chips<HistoryMode>(
-                    values: HistoryMode.values,
+                  _Chips<GamesMode>(
+                    values: GamesMode.values,
                     label: (v) => switch (v) {
-                      HistoryMode.all => 'All',
-                      HistoryMode.ranked => 'Ranked',
-                      HistoryMode.casual => 'Casual',
+                      GamesMode.all => 'All',
+                      GamesMode.ranked => 'Ranked',
+                      GamesMode.casual => 'Casual',
                     },
                     selected: (v) => _filter.mode == v,
                     onTap: (v) => _set(_filter.copyWith(mode: v)),
                   ),
                   const _Label('Result (ranked games)'),
-                  _Chips<HistoryResult>(
-                    values: HistoryResult.values,
+                  _Chips<GamesResult>(
+                    values: GamesResult.values,
                     label: (v) => switch (v) {
-                      HistoryResult.any => 'Any',
-                      HistoryResult.wins => 'Wins',
-                      HistoryResult.losses => 'Losses',
+                      GamesResult.any => 'Any',
+                      GamesResult.wins => 'Wins',
+                      GamesResult.losses => 'Losses',
                     },
                     selected: (v) => _filter.result == v,
                     onTap: (v) => _set(_filter.copyWith(result: v)),
@@ -411,7 +411,7 @@ enum _DatePreset { any, today, week, month, custom }
 /// A two-handle slider for the RP change of a ranked game. A handle at an end
 /// of the track means no limit on that side.
 class _RpRange extends StatelessWidget {
-  final HistoryFilter filter;
+  final GamesFilter filter;
   final void Function(int? min, int? max) onChanged;
   const _RpRange({required this.filter, required this.onChanged});
 

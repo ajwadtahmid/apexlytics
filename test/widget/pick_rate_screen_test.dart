@@ -1,7 +1,7 @@
 import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/screens/ranked/ranked_entity_history_screen.dart';
+import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_pick_rate_screen.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -165,7 +165,7 @@ void main() {
 
       // Once for the card's map lines, again for the history it opens.
       expect(asked, ['Alter', 'Alter']);
-      expect(find.byType(RankedEntityHistoryScreen), findsOneWidget);
+      expect(find.byType(RankedEntityGamesScreen), findsOneWidget);
       expect(find.text('Alter'), findsWidgets);
     });
 
@@ -177,7 +177,7 @@ void main() {
       expect(find.byIcon(Icons.chevron_right), findsNothing);
       await tester.tap(find.text('Pick rate'));
       await tester.pumpAndSettle();
-      expect(find.byType(RankedEntityHistoryScreen), findsNothing);
+      expect(find.byType(RankedEntityGamesScreen), findsNothing);
     });
 
     testWidgets('shows a chevron on the card when it opens something', (

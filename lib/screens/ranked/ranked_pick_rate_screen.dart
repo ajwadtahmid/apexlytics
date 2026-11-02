@@ -27,7 +27,7 @@ import '../../utils/formatting/format.dart'
 import '../../widgets/nav_entry_card.dart';
 import '../../widgets/segmented_capsule.dart';
 import '../../widgets/info_sheet.dart';
-import 'widgets/ranked_legend_detail_sheet.dart' show openLegendHistory;
+import 'widgets/ranked_legend_detail_sheet.dart' show openLegendGames;
 
 /// Self-contained entry point for the Pick Rate chart: a single tappable row
 /// that pushes the full-screen scatter plot. The only thing a caller needs to
@@ -204,7 +204,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     final games = [...await widget.matchesFor!(legend.legend)]
       ..sort((a, b) => b.endTime.compareTo(a.endTime));
     if (!mounted) return;
-    openLegendHistory(
+    openLegendGames(
       context,
       legend,
       games,

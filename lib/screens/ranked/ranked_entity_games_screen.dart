@@ -5,15 +5,15 @@ import 'widgets/match_history_items.dart';
 import 'widgets/match_history_list.dart';
 import '../../widgets/control_pill.dart';
 
-/// Full-screen ranked history for a single legend or map, reached by tapping a
+/// Full-screen ranked games for a single legend or map, reached by tapping a
 /// card in the Legends/Maps tabs. Shows the same session-grouped rows as the
-/// History tab, but pre-filtered to one entity (ranked games only, matching the
+/// Games tab, but pre-filtered to one entity (ranked games only, matching the
 /// breakdown it was opened from).
 ///
 /// A sort toggle switches between session grouping (default) and grouping by a
 /// secondary entity — maps within a legend, or legends within a map — turning
 /// the page into a focused mini-breakdown.
-class RankedEntityHistoryScreen extends StatefulWidget {
+class RankedEntityGamesScreen extends StatefulWidget {
   final String title;
   final String subtitle;
   final List<RankedMatch> matches; // pre-filtered, newest first
@@ -35,7 +35,7 @@ class RankedEntityHistoryScreen extends StatefulWidget {
   /// its own figures in step.
   final ValueChanged<RankedMatch>? onMatchUpdated;
 
-  const RankedEntityHistoryScreen({
+  const RankedEntityGamesScreen({
     super.key,
     required this.title,
     required this.subtitle,
@@ -48,11 +48,11 @@ class RankedEntityHistoryScreen extends StatefulWidget {
   });
 
   @override
-  State<RankedEntityHistoryScreen> createState() =>
-      _RankedEntityHistoryScreenState();
+  State<RankedEntityGamesScreen> createState() =>
+      _RankedEntityGamesScreenState();
 }
 
-class _RankedEntityHistoryScreenState extends State<RankedEntityHistoryScreen> {
+class _RankedEntityGamesScreenState extends State<RankedEntityGamesScreen> {
   bool _grouped = false;
 
   // This screen is pushed with a one-time snapshot of matches (the caller has
@@ -87,10 +87,7 @@ class _RankedEntityHistoryScreenState extends State<RankedEntityHistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(widget.title, style: const TextStyle(fontSize: 17)),
-            Text(
-              widget.subtitle,
-              style: AppTheme.caption,
-            ),
+            Text(widget.subtitle, style: AppTheme.caption),
           ],
         ),
       ),
@@ -150,12 +147,7 @@ class _SortToggle extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          ControlPill(
-            prefix: 'Sort:',
-            icon: icon,
-            label: label,
-            onTap: onTap,
-          ),
+          ControlPill(prefix: 'Sort:', icon: icon, label: label, onTap: onTap),
         ],
       ),
     );

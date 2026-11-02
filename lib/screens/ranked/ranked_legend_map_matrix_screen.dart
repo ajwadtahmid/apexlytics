@@ -13,7 +13,7 @@ import '../../widgets/legend_icon.dart';
 import '../../widgets/nav_entry_card.dart';
 import '../../widgets/segmented_capsule.dart';
 import '../../widgets/info_sheet.dart';
-import 'ranked_entity_history_screen.dart';
+import 'ranked_entity_games_screen.dart';
 import 'widgets/ranked_best_legend_per_map.dart';
 
 /// Self-contained entry point for the Legend × Map matrix: a single tappable
@@ -82,7 +82,7 @@ class RankedLegendMapMatrixScreen extends ConsumerWidget {
     }).toList()..sort((a, b) => b.endTime.compareTo(a.endTime));
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RankedEntityHistoryScreen(
+        builder: (_) => RankedEntityGamesScreen(
           title:
               '${anyLegend ? 'All legends' : cell.legend} · '
               '${anyMap ? 'All maps' : cell.mapName}',

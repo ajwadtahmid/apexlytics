@@ -5,8 +5,8 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart'
     show kSessionGap;
-import 'package:apexlytics/screens/ranked/ranked_entity_history_screen.dart';
-import 'package:apexlytics/screens/ranked/widgets/history_filter.dart';
+import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_filter.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_tags.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_items.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
@@ -163,7 +163,7 @@ void main() {
     });
   });
 
-  group('HistoryFilter', () {
+  group('GamesFilter', () {
     final pool = [
       game(dayOffset: 0, slot: 4, rp: 20),
       game(dayOffset: 0, slot: 3, rp: -10, legend: 'Wraith'),
@@ -172,33 +172,30 @@ void main() {
     ];
 
     test('defaults to ranked games only', () {
-      const f = HistoryFilter();
+      const f = GamesFilter();
       expect(f.activeCount, 0);
       expect(f.apply(pool), hasLength(3));
     });
 
     test('an auto-excluded game is neither a win nor a loss', () {
       final reset = [game(dayOffset: 0, slot: 1, rp: -1500)];
+      expect(const GamesFilter(result: GamesResult.wins).apply(reset), isEmpty);
       expect(
-        const HistoryFilter(result: HistoryResult.wins).apply(reset),
-        isEmpty,
-      );
-      expect(
-        const HistoryFilter(result: HistoryResult.losses).apply(reset),
+        const GamesFilter(result: GamesResult.losses).apply(reset),
         isEmpty,
       );
     });
 
     test('combines mode, result, legend and map', () {
       expect(
-        const HistoryFilter(mode: HistoryMode.casual).apply(pool),
+        const GamesFilter(mode: GamesMode.casual).apply(pool),
         hasLength(1),
       );
       expect(
-        const HistoryFilter(result: HistoryResult.losses).apply(pool),
+        const GamesFilter(result: GamesResult.losses).apply(pool),
         hasLength(1),
       );
-      final f = const HistoryFilter().copyWith(
+      final f = const GamesFilter().copyWith(
         legends: {'Axle'},
         mapKeys: {'kings_canyon'},
       );
@@ -211,13 +208,13 @@ void main() {
       final synced = game(dayOffset: 0, slot: 1, map: 'olympus_rotation');
       final corrected = game(dayOffset: 0, slot: 2, map: 'olympus');
       final other = game(dayOffset: 0, slot: 3, map: 'kings_canyon');
-      final f = const HistoryFilter(mapKeys: {'olympus'});
+      final f = const GamesFilter(mapKeys: {'olympus'});
       expect(f.apply([synced, corrected, other]), [synced, corrected]);
 
       final proper = game(dayOffset: 0, slot: 1, legend: 'Axle');
       final lower = game(dayOffset: 0, slot: 2, legend: 'axle');
       final wraith = game(dayOffset: 0, slot: 3, legend: 'Wraith');
-      final byLegend = const HistoryFilter(legends: {'Axle'});
+      final byLegend = const GamesFilter(legends: {'Axle'});
       expect(byLegend.apply([proper, lower, wraith]), [proper, lower]);
     });
 
@@ -231,7 +228,7 @@ void main() {
         game(dayOffset: 2, slot: 1),
         game(dayOffset: 5, slot: 1),
       ];
-      final f = HistoryFilter(
+      final f = GamesFilter(
         dates: DateTimeRange(start: day(2), end: day(1)),
       );
 
@@ -246,7 +243,7 @@ void main() {
         game(dayOffset: 0, slot: 3, rp: -10),
         game(dayOffset: 0, slot: 2, rp: 0), // casual
       ];
-      const all = HistoryFilter(mode: HistoryMode.all);
+      const all = GamesFilter(mode: GamesMode.all);
 
       expect(all.copyWith(minRp: 20).apply(games), [games[0], games[1]]);
       expect(all.copyWith(maxRp: 0).apply(games), [games[2]]);
@@ -258,7 +255,7 @@ void main() {
     });
 
     test('clearRp drops both bounds before applying new ones', () {
-      final f = const HistoryFilter().copyWith(minRp: 10, maxRp: 40);
+      final f = const GamesFilter().copyWith(minRp: 10, maxRp: 40);
       expect(f.copyWith(clearRp: true).hasRpRange, isFalse);
       final moved = f.copyWith(clearRp: true, minRp: 30);
       expect(moved.minRp, 30);
@@ -268,13 +265,13 @@ void main() {
     testWidgets('the sheet shows the RP range and a date preset', (
       tester,
     ) async {
-      var filter = const HistoryFilter();
+      var filter = const GamesFilter();
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => showHistoryFilterSheet(
+                onPressed: () => showGamesFilterSheet(
                   context,
                   filter: filter,
                   pool: [game(dayOffset: 0, slot: 1)],
@@ -309,13 +306,13 @@ void main() {
         game(dayOffset: 0, slot: 2, map: 'olympus'),
         game(dayOffset: 0, slot: 3, legend: 'axle', map: 'kings_canyon'),
       ];
-      var filter = const HistoryFilter();
+      var filter = const GamesFilter();
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => showHistoryFilterSheet(
+                onPressed: () => showGamesFilterSheet(
                   context,
                   filter: filter,
                   pool: pool,
@@ -357,9 +354,9 @@ void main() {
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => showHistoryFilterSheet(
+                onPressed: () => showGamesFilterSheet(
                   context,
-                  filter: const HistoryFilter(),
+                  filter: const GamesFilter(),
                   pool: pool,
                   onChanged: (_) {},
                 ),
@@ -942,7 +939,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: RankedEntityHistoryScreen(
+            home: RankedEntityGamesScreen(
               title: 'Axle',
               subtitle: '2 ranked games',
               matches: axle,

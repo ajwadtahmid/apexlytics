@@ -207,7 +207,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
   /// non-ranked game (see [RankedMatch.isRanked]) and silently drops the
   /// match from every ranked aggregate — summary, legends, maps, sessions,
   /// trends — even though the game genuinely happened and still shows in
-  /// History. A real ranked game can rarely net exactly 0 RP, so this isn't
+  /// the Games tab. A real ranked game can rarely net exactly 0 RP, so this isn't
   /// rejected outright; the user is warned and can still choose to save it.
   Future<bool> _confirmZeroRpChange() async {
     return showConfirmDialog(
@@ -216,7 +216,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
       body:
           'A match with 0 RP change will be left out of your ranked '
           'summary, legends, maps, sessions, and trends. '
-          "It'll still show up in History.",
+          "It'll still show up in the Games tab.",
       confirmLabel: 'Save anyway',
       confirmColor: AppTheme.accent,
     );
@@ -554,7 +554,7 @@ class _ExcludeRow extends StatelessWidget {
                     ? 'Excluded automatically: its RP change is outside the '
                           'normal range. Correct the RP above to include it.'
                     : 'Removed from every stat, breakdown, and trend. Still '
-                          'shows here in History.',
+                          'shows here in the Games tab.',
                 style: AppTheme.caption,
               ),
             ],

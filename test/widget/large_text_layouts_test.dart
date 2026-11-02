@@ -22,7 +22,7 @@ import 'package:apexlytics/screens/ranked/ranked_share_screens.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_share_cards.dart';
 import 'package:apexlytics/utils/ranked/split_recap.dart';
 import 'package:apexlytics/widgets/share_card.dart';
-import 'package:apexlytics/screens/ranked/widgets/history_filter.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_filter.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_entity_compare.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_best_legend_per_map.dart';
@@ -286,7 +286,7 @@ void main() {
     expectNoOverflow();
   });
 
-  testWidgets('the History selection bar', (tester) async {
+  testWidgets('the Games selection bar', (tester) async {
     final games = [buildMatch(), buildMatch(start: 1782091000)];
     await pump(
       tester,
@@ -306,14 +306,14 @@ void main() {
     expectNoOverflow();
   });
 
-  testWidgets('the History filter sheet', (tester) async {
+  testWidgets('the Games filter sheet', (tester) async {
     await pump(
       tester,
       Builder(
         builder: (context) => TextButton(
-          onPressed: () => showHistoryFilterSheet(
+          onPressed: () => showGamesFilterSheet(
             context,
-            filter: const HistoryFilter(),
+            filter: const GamesFilter(),
             pool: [buildMatch()],
             onChanged: (_) {},
           ),

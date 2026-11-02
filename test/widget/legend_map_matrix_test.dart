@@ -2,7 +2,7 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/map_rotation.dart';
 import 'package:apexlytics/providers/map_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/screens/ranked/ranked_entity_history_screen.dart';
+import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_legend_map_matrix_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_best_legend_per_map.dart';
 import 'package:apexlytics/services/api_service.dart';
@@ -483,7 +483,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('cell|Bangalore|Olympus')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(RankedEntityHistoryScreen), findsOneWidget);
+      expect(find.byType(RankedEntityGamesScreen), findsOneWidget);
       expect(find.text('Bangalore · Olympus'), findsOneWidget);
       expect(find.text('4 ranked games · +30.0 RP/game'), findsOneWidget);
       // One legend on one map has nothing to group by.

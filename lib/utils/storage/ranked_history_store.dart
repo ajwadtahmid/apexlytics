@@ -828,7 +828,7 @@ class RankedHistoryStore {
   /// one split at a time.
   ///
   /// Deliberately counts hand-excluded and auto-excluded games too, unlike the
-  /// aggregates: the History tab (the only place to un-exclude a match) lives
+  /// aggregates: the Games tab (the only place to un-exclude a match) lives
   /// inside a split, so a split whose every game is excluded must stay
   /// reachable. Its aggregates just read as empty.
   Future<Map<String, int>> rankedSeasonCounts(String uid) async {
@@ -857,7 +857,7 @@ class RankedHistoryStore {
     return rows.map(RankedMatch.fromStoredMap).toList();
   }
 
-  /// Matches for a single split, newest first (pubs included — the History tab
+  /// Matches for a single split, newest first (pubs included — the Games tab
   /// needs them; callers filter to ranked for aggregates). The [kUnknownSeasonId]
   /// bucket also picks up rows whose [season_id] is still NULL (never classified),
   /// matching how [rankedSeasonCounts] folds NULL into Unknown.

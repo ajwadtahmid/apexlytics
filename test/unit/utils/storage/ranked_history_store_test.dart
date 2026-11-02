@@ -454,7 +454,7 @@ void main() {
   );
 
   test('rankedSeasonCounts keeps a split whose games are all excluded, so the '
-      'History tab can still reach and restore them', () async {
+      'Games tab can still reach and restore them', () async {
     final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
     addTearDown(store.close);
 

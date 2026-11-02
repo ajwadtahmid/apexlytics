@@ -24,7 +24,7 @@ import 'match_history_items.dart';
 import 'match_tags.dart';
 
 /// Session-grouped match list with tap-through detail sheets.
-/// Reused by the History tab (with a filter bar header) and the legend/map
+/// Reused by the Games tab (with a filter bar header) and the legend/map
 /// drill-down screens (no header, pre-filtered list).
 ///
 /// Each session (or entity section) has a header that pins to the top while its
@@ -54,7 +54,7 @@ class MatchHistoryList extends ConsumerStatefulWidget {
   final MatchGrouping? grouping;
 
   /// Called when a row's detail sheet saves or clears a correction. Callers
-  /// backed by a reactive provider (the History tab) can leave this unset —
+  /// backed by a reactive provider (the Games tab) can leave this unset —
   /// invalidation already refreshes [matches]. Callers holding a static list
   /// (e.g. a legend/map drill-down screen) should use it to patch their own
   /// copy so the edit is visible without leaving the page.
@@ -97,7 +97,7 @@ class MatchHistoryList extends ConsumerStatefulWidget {
     this.grouping,
     this.onMatchUpdated,
     this.averagePool,
-    this.collapseScope = 'history',
+    this.collapseScope = 'games',
     this.sessionPool,
     this.showBreaks = true,
     this.selectable = false,

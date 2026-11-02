@@ -25,7 +25,7 @@ import '../../utils/theme.dart';
 import '../../widgets/surface_card.dart';
 import '../../widgets/nav_entry_card.dart';
 import '../../widgets/share_card.dart';
-import 'ranked_entity_history_screen.dart';
+import 'ranked_entity_games_screen.dart';
 import 'ranked_session_detail_screen.dart';
 import 'widgets/match_detail_sheet.dart';
 import 'widgets/ranked_share_cards.dart';
@@ -152,7 +152,7 @@ class _RankedPersonalRecordsScreenState
     final rp = games.fold<int>(0, (a, m) => a + m.effectiveRpChange);
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RankedEntityHistoryScreen(
+        builder: (_) => RankedEntityGamesScreen(
           title: 'Best Win Streak',
           subtitle:
               '${plural(games.length, 'game')} · ${formatSignedInt(rp)} RP',
@@ -168,7 +168,7 @@ class _RankedPersonalRecordsScreenState
   void _openDay(DayRecord day) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RankedEntityHistoryScreen(
+        builder: (_) => RankedEntityGamesScreen(
           title: 'Best Day',
           subtitle:
               '${_dayLabel(day.day)} · ${plural(day.matches.length, 'game')} · '

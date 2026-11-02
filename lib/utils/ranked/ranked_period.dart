@@ -132,7 +132,10 @@ List<RankedSplitBucket> buildSplitBuckets(
 
 /// The known season covering [now], or null if none does. Picks the
 /// latest-starting one if ranges somehow overlap.
-SeasonMeta? _currentSeasonByDate(Map<String, SeasonMeta> seasons, DateTime now) {
+SeasonMeta? _currentSeasonByDate(
+  Map<String, SeasonMeta> seasons,
+  DateTime now,
+) {
   SeasonMeta? best;
   for (final season in seasons.values) {
     if (!season.start.isAfter(now) && season.end.isAfter(now)) {
@@ -177,7 +180,7 @@ class RankedView {
   final List<WeekRange> weeks;
   final int weekIndex; // -1 = All weeks
   final List<RankedMatch> filtered; // ranked only — drives the aggregates
-  final List<RankedMatch> history; // all matches in the period — History tab
+  final List<RankedMatch> history; // all matches in the period — Games tab
 
   const RankedView({
     required this.splits,

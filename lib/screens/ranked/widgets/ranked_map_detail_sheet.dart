@@ -12,7 +12,8 @@ import '../../../utils/formatting/format.dart'
         formatDuration,
         formatSigned,
         formatSignedInt,
-        formatTotalOrNone, plural;
+        formatTotalOrNone,
+        plural;
 import '../../../utils/ranked/entity_trend_window.dart';
 import '../../../utils/ranked/ranked_aggregates.dart';
 import '../../../utils/theme.dart';
@@ -21,7 +22,7 @@ import '../../../widgets/stat_display.dart';
 import '../../../widgets/trend_lines.dart';
 import '../../../widgets/trend_window_picker.dart';
 import '../../../widgets/win_loss_stat.dart';
-import '../ranked_entity_history_screen.dart';
+import '../ranked_entity_games_screen.dart';
 import 'match_history_items.dart' show MatchGrouping;
 
 /// Opens the shared map detail sheet — used by both the Overview
@@ -48,7 +49,7 @@ Future<void> showMapDetailSheet(
 
 /// Detail sheet for a map: the full stat set the Maps tab shows per row, plus
 /// a "View all history" button that resolves this map's matches and pushes
-/// the same [RankedEntityHistoryScreen] drill-down the Maps tab uses.
+/// the same [RankedEntityGamesScreen] drill-down the Maps tab uses.
 class _MapDetailSheet extends ConsumerStatefulWidget {
   final MapBreakdown map;
   final Future<List<RankedMatch>> Function(String mapKey) matchesFor;
@@ -78,14 +79,14 @@ class _MapDetailSheetState extends ConsumerState<_MapDetailSheet> {
 
   late final Future<List<RankedMatch>> _loaded = widget.matchesFor(map.mapKey);
 
-  Future<void> _viewHistory(BuildContext context) async {
+  Future<void> _viewGames(BuildContext context) async {
     // Copy: keep the loaded list in the order the trends used.
     final games = [...await _loaded]
       ..sort((a, b) => b.endTime.compareTo(a.endTime));
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RankedEntityHistoryScreen(
+        builder: (_) => RankedEntityGamesScreen(
           title: map.displayName,
           subtitle:
               '${plural(map.games, 'ranked game')} · ${formatSigned(map.avgRpPerGame)} RP/game',
@@ -146,10 +147,7 @@ class _MapDetailSheetState extends ConsumerState<_MapDetailSheet> {
                 StatGrid(
                   rows: [
                     [
-                      WinLossStat(
-                        wins: map.wins,
-                        losses: map.losses,
-                      ),
+                      WinLossStat(wins: map.wins, losses: map.losses),
                       StatDisplay(
                         label: 'Games',
                         centered: true,
@@ -222,10 +220,10 @@ class _MapDetailSheetState extends ConsumerState<_MapDetailSheet> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () => _viewHistory(context),
+                onPressed: () => _viewGames(context),
                 style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
                 icon: const Icon(Icons.history, size: 18),
-                label: const Text('History'),
+                label: const Text('Games'),
               ),
             ),
           ],

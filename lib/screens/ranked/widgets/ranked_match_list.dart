@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/theme.dart';
-import 'history_filter.dart';
+import 'games_filter.dart';
 import 'match_history_items.dart';
 import 'match_history_list.dart';
 import '../../../widgets/control_pill.dart';
 
-/// History tab: every match in the selected period (ranked + casual), grouped by
+/// Games tab: every match in the selected period (ranked + casual), grouped by
 /// play session with day dividers. A mode filter scopes the list; tap a row for the
 /// full match detail.
 class RankedMatchList extends StatefulWidget {
@@ -25,15 +25,15 @@ class RankedMatchList extends StatefulWidget {
 
 class _RankedMatchListState extends State<RankedMatchList> {
   // Defaults to Ranked — it's the headline view; the rest is in the sheet.
-  HistoryFilter _filter = const HistoryFilter();
-  _HistorySort _sort = _HistorySort.date;
+  GamesFilter _filter = const GamesFilter();
+  _GamesSort _sort = _GamesSort.date;
 
   List<RankedMatch> get _visible => _filter.apply(widget.matches);
 
   MatchGrouping? get _grouping => switch (_sort) {
-    _HistorySort.date => null,
-    _HistorySort.legend => MatchGrouping.byLegend,
-    _HistorySort.map => MatchGrouping.byMap,
+    _GamesSort.date => null,
+    _GamesSort.legend => MatchGrouping.byLegend,
+    _GamesSort.map => MatchGrouping.byMap,
   };
 
   @override
@@ -50,10 +50,10 @@ class _RankedMatchListState extends State<RankedMatchList> {
       // Sessions come from every game played, so the filter hides games
       // without reshaping them.
       sessionPool: widget.matches,
-      header: _HistoryControls(
+      header: _GamesControls(
         filter: _filter,
         sort: _sort,
-        onFilterTap: () => showHistoryFilterSheet(
+        onFilterTap: () => showGamesFilterSheet(
           context,
           filter: _filter,
           pool: widget.matches,
@@ -67,35 +67,35 @@ class _RankedMatchListState extends State<RankedMatchList> {
 
 // ── Filter bar ──────────────────────────────────────────────────────────────
 
-enum _HistorySort { date, legend, map }
+enum _GamesSort { date, legend, map }
 
 const _sortLabels = {
-  _HistorySort.date: 'Date',
-  _HistorySort.legend: 'Legend',
-  _HistorySort.map: 'Map',
+  _GamesSort.date: 'Date',
+  _GamesSort.legend: 'Legend',
+  _GamesSort.map: 'Map',
 };
 
 const _sortIcons = {
-  _HistorySort.date: Icons.calendar_today,
-  _HistorySort.legend: Icons.person_outline,
-  _HistorySort.map: Icons.map_outlined,
+  _GamesSort.date: Icons.calendar_today,
+  _GamesSort.legend: Icons.person_outline,
+  _GamesSort.map: Icons.map_outlined,
 };
 
-_HistorySort _nextSort(_HistorySort s) => switch (s) {
-  _HistorySort.date => _HistorySort.legend,
-  _HistorySort.legend => _HistorySort.map,
-  _HistorySort.map => _HistorySort.date,
+_GamesSort _nextSort(_GamesSort s) => switch (s) {
+  _GamesSort.date => _GamesSort.legend,
+  _GamesSort.legend => _GamesSort.map,
+  _GamesSort.map => _GamesSort.date,
 };
 
-/// History control strip: filter pill pinned left, sort pill pinned right.
+/// Games control strip: filter pill pinned left, sort pill pinned right.
 /// Both cycle on tap, mirroring the Legends/Maps sort control's pill styling.
-class _HistoryControls extends StatelessWidget {
-  final HistoryFilter filter;
-  final _HistorySort sort;
+class _GamesControls extends StatelessWidget {
+  final GamesFilter filter;
+  final _GamesSort sort;
   final VoidCallback onFilterTap;
   final VoidCallback onSortTap;
 
-  const _HistoryControls({
+  const _GamesControls({
     required this.filter,
     required this.sort,
     required this.onFilterTap,

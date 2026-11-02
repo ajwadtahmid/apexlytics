@@ -18,7 +18,7 @@ import 'ranked_map_detail_sheet.dart';
 
 /// Overview highlight reel: best & worst legends (one per line, tappable for a
 /// detail sheet) and the worst & best maps (image banners, also tappable). Each
-/// sheet's "View all history" button reuses [RankedEntityHistoryScreen] — the
+/// sheet's "Games" button reuses [RankedEntityGamesScreen] — the
 /// same drill-down the Legends/Maps tabs push to. "Unknown" maps are excluded.
 /// Takes precomputed breakdowns so it works off either the in-memory split
 /// aggregates or the SQL lifetime aggregates; [legendMatchesFor]/
