@@ -130,6 +130,20 @@ void main() {
     expect(r.bestSession!.games, 3);
   });
 
+  test('a tie on net RP goes to the session with more games, as on the '
+      'Sessions page', () {
+    // Both net +30: an older session of three games, a newer one of one.
+    final r = splitRecap([
+      buildMatch(start: t0, rp: 10, cumulativeRp: 1010),
+      buildMatch(start: t0 + 1000, rp: 10, cumulativeRp: 1020),
+      buildMatch(start: t0 + 2000, rp: 10, cumulativeRp: 1030),
+      buildMatch(start: t0 + 86400, rp: 30, cumulativeRp: 1060),
+    ], metric: BestMetric.totalRp);
+
+    expect(r.bestSession!.netRp, 30);
+    expect(r.bestSession!.games, 3);
+  });
+
   test('excluded and casual games are left out', () {
     final r = splitRecap([
       ...games,

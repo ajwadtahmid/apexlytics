@@ -575,9 +575,62 @@ List<int> sessionNumbers(List<RankedMatch> newestFirst) {
   return numbers;
 }
 
+/// One session built from [chronological] matches, oldest first. They are the
+/// games the session counts; see [sessionize].
+RankedSession _buildSession(List<RankedMatch> chronological) {
+  var rp = 0, kills = 0, damage = 0, killsGames = 0, damageGames = 0;
+  var wins = 0, losses = 0, lengthSecs = 0;
+  for (final m in chronological) {
+    rp += m.effectiveRpChange;
+    if (m.effectiveRpChange > 0) wins++;
+    if (m.effectiveRpChange < 0) losses++;
+    lengthSecs += m.lengthSecs;
+    final k = m.kills, d = m.damage;
+    if (k != null) {
+      kills += k;
+      killsGames++;
+    }
+    if (d != null) {
+      damage += d;
+      damageGames++;
+    }
+  }
+  return RankedSession(
+    start: chronological.first.startTime,
+    // The list is sorted by *start* time, so the last match isn't necessarily
+    // the one that ends last — upstream reconstructs timestamps from polling
+    // gaps, so an out-of-order end is reachable.
+    end: chronological
+        .map((m) => m.endTime)
+        .reduce((a, b) => a.isAfter(b) ? a : b),
+    games: chronological.length,
+    netRp: rp,
+    totalKills: kills,
+    totalDamage: damage,
+    killsGames: killsGames,
+    damageGames: damageGames,
+    wins: wins,
+    losses: losses,
+    totalLengthSecs: lengthSecs,
+    // Exposed newest-first for the drill-down list.
+    matches: chronological.reversed.toList(),
+  );
+}
+
+/// The one session made of the games in [games] that count (ranked, and not
+/// excluded), or null when none do. For a page that already knows which games
+/// make up a session and only needs its figures to follow a correction.
+RankedSession? sessionFromGames(List<RankedMatch> games) {
+  final counted = [
+    for (final m in games)
+      if (m.isRanked && m.countsTowardStats) m,
+  ]..sort((a, b) => a.startTime.compareTo(b.startTime));
+  return counted.isEmpty ? null : _buildSession(counted);
+}
+
 /// Groups ranked matches into sessions separated by gaps larger than [kSessionGap].
 /// Returned newest session first. Assumes [ranked] is already ranked-only
-/// filtered.
+/// filtered: pubs and excluded games take no part in where a session ends.
 List<RankedSession> sessionize(List<RankedMatch> ranked) {
   final newestFirst = ranked.toList()
     ..sort((a, b) => b.startTime.compareTo(a.startTime));
@@ -587,57 +640,14 @@ List<RankedSession> sessionize(List<RankedMatch> ranked) {
   final sessions = <RankedSession>[];
   var bucket = <RankedMatch>[];
 
-  void flush() {
-    bucket = bucket.reversed.toList(); // chronological
-    var rp = 0, kills = 0, damage = 0, killsGames = 0, damageGames = 0;
-    var wins = 0, losses = 0, lengthSecs = 0;
-    for (final m in bucket) {
-      rp += m.effectiveRpChange;
-      if (m.effectiveRpChange > 0) wins++;
-      if (m.effectiveRpChange < 0) losses++;
-      lengthSecs += m.lengthSecs;
-      final k = m.kills, d = m.damage;
-      if (k != null) {
-        kills += k;
-        killsGames++;
-      }
-      if (d != null) {
-        damage += d;
-        damageGames++;
-      }
-    }
-    sessions.add(
-      RankedSession(
-        start: bucket.first.startTime,
-        // bucket is sorted by *start* time, so the start-sorted last match
-        // isn't necessarily the one that ends last — upstream reconstructs
-        // timestamps from polling gaps, so an out-of-order end is reachable.
-        end: bucket
-            .map((m) => m.endTime)
-            .reduce((a, b) => a.isAfter(b) ? a : b),
-        games: bucket.length,
-        netRp: rp,
-        totalKills: kills,
-        totalDamage: damage,
-        killsGames: killsGames,
-        damageGames: damageGames,
-        wins: wins,
-        losses: losses,
-        totalLengthSecs: lengthSecs,
-        // bucket is chronological; expose newest-first for the drill-down list.
-        matches: bucket.reversed.toList(),
-      ),
-    );
-  }
-
   for (var i = 0; i < newestFirst.length; i++) {
     if (i > 0 && numbers[i] != numbers[i - 1]) {
-      flush();
+      sessions.add(_buildSession(bucket.reversed.toList()));
       bucket = [];
     }
     bucket.add(newestFirst[i]);
   }
-  flush();
+  sessions.add(_buildSession(bucket.reversed.toList()));
 
   return sessions;
 }

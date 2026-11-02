@@ -482,11 +482,25 @@ void main() {
       expect(buildSessionItems(games).whereType<DayDividerItem>(), isEmpty);
     });
 
-    test('a filtered list keeps the sessions of the whole history', () {
+    test('a pubs game between two ranked games does not join them', () {
       final a = at(DateTime(2025, 3, 10, 10));
       final casual = at(DateTime(2025, 3, 10, 11, 30), ranked: false);
       final b = at(DateTime(2025, 3, 10, 13));
       final pool = newestFirst([a, casual, b]);
+      final filtered = newestFirst([a, b]);
+
+      expect(headers(buildSessionItems(filtered)), hasLength(2));
+      // With the pubs game in the pool, the ranked games are still two sessions.
+      final withPool = headers(buildSessionItems(filtered, sessionPool: pool));
+      expect(withPool, hasLength(2));
+    });
+
+    test('a filtered list keeps the sessions of the whole history', () {
+      // The game between them is ranked too (another legend), so it does join.
+      final a = at(DateTime(2025, 3, 10, 10));
+      final other = at(DateTime(2025, 3, 10, 11, 30));
+      final b = at(DateTime(2025, 3, 10, 13));
+      final pool = newestFirst([a, other, b]);
       final filtered = newestFirst([a, b]);
 
       expect(headers(buildSessionItems(filtered)), hasLength(2));

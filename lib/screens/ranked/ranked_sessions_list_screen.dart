@@ -50,7 +50,7 @@ class RankedSessionsEntry extends StatelessWidget {
 /// its cards as they scroll into view, so there is nothing to tap to load more.
 /// Pass an empty [sessions] list at Lifetime scope, where sessions were never
 /// offered (too heavy at that scale, and RP resets each split anyway).
-class RankedSessionsListScreen extends StatelessWidget {
+class RankedSessionsListScreen extends StatefulWidget {
   final List<RankedSession> sessions;
   final Future<void> Function() onRefresh;
 
@@ -66,7 +66,49 @@ class RankedSessionsListScreen extends StatelessWidget {
   });
 
   @override
+  State<RankedSessionsListScreen> createState() =>
+      _RankedSessionsListScreenState();
+}
+
+class _RankedSessionsListScreenState extends State<RankedSessionsListScreen> {
+  // Held here so a game corrected on a session's page moves the overview, the
+  // bars and the badges on this one at once.
+  late List<RankedSession> _sessions = widget.sessions;
+
+  @override
+  void didUpdateWidget(RankedSessionsListScreen old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.sessions, widget.sessions)) {
+      _sessions = widget.sessions;
+    }
+  }
+
+  void _open(RankedSession session) {
+    // The session as it stands, which a correction on its page replaces.
+    var current = session;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RankedSessionDetailScreen(
+          session: session,
+          onRefresh: widget.onRefresh,
+          onSessionChanged: (updated) => setState(() {
+            _sessions = [
+              for (final s in _sessions)
+                if (!identical(s, current))
+                  s
+                else if (updated.games > 0)
+                  updated,
+            ];
+            current = updated;
+          }),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final sessions = _sessions;
     final overview = sessionOverview(sessions);
     // With one session, "best" and "worst" would both be it.
     SessionBadge? badgeOf(RankedSession s) {
@@ -76,16 +118,12 @@ class RankedSessionsListScreen extends StatelessWidget {
       return null;
     }
 
-    void open(RankedSession s) => Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) =>
-            RankedSessionDetailScreen(session: s, onRefresh: onRefresh),
-      ),
-    );
-
     // Headings and sessions in one run, so the list builds either lazily.
     final rows = <Object>[
-      for (final g in groupSessions(sessions, now: now)) ...[g, ...g.sessions],
+      for (final g in groupSessions(sessions, now: widget.now)) ...[
+        g,
+        ...g.sessions,
+      ],
     ];
 
     return Scaffold(
@@ -97,7 +135,7 @@ class RankedSessionsListScreen extends StatelessWidget {
               SliverPadding(
                 padding: const EdgeInsets.all(AppTheme.md),
                 sliver: SliverToBoxAdapter(
-                  child: SessionsOverview(sessions: sessions, onOpen: open),
+                  child: SessionsOverview(sessions: sessions, onOpen: _open),
                 ),
               ),
               SliverPadding(
@@ -120,7 +158,7 @@ class RankedSessionsListScreen extends StatelessWidget {
                       child: SessionCard(
                         session: s,
                         badge: badgeOf(s),
-                        onTap: () => open(s),
+                        onTap: () => _open(s),
                       ),
                     );
                   },

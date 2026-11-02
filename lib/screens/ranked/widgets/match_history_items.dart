@@ -1,7 +1,8 @@
 import '../../../constants/legend_constants.dart';
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
-import '../../../utils/ranked/ranked_aggregates.dart' show kSessionGap, sessionNumbers;
+import '../../../utils/ranked/ranked_aggregates.dart'
+    show kSessionGap, sessionNumbers;
 
 /// How to bucket matches when not grouping by session. [keyOf] decides which
 /// section a match belongs to; [nameOf] is that section's display title.
@@ -123,6 +124,12 @@ class MatchItem extends HistoryItem {
 const int kHistoryPageSize = 50;
 
 /// Which session each match belongs to, found over [pool] (newest first).
+///
+/// Only the ranked games that count decide where a session ends, as on the
+/// Sessions page: a stretch of pubs between two ranked games does not join
+/// them. Any other game (pubs, or one left out of the stats) is listed with the
+/// nearest session it falls within or runs on from, within [kSessionGap] of it,
+/// and on its own block otherwise.
 class _Sessions {
   final Map<String, int> indexOf = {};
 
@@ -131,14 +138,44 @@ class _Sessions {
   final List<String> keys = [];
 
   _Sessions(List<RankedMatch> pool) {
-    final numbers = sessionNumbers(pool);
-    for (var i = 0; i < pool.length; i++) {
+    final ranked = [
+      for (final m in pool)
+        if (m.isRanked && m.countsTowardStats) m,
+    ];
+    final numbers = sessionNumbers(ranked);
+    final spans = <({DateTime start, DateTime end})>[];
+    for (var i = 0; i < ranked.length; i++) {
+      final m = ranked[i];
       if (numbers[i] == keys.length) {
-        keys.add(pool[i].id);
+        keys.add(m.id);
+        spans.add((start: m.startTime, end: m.endTime));
       } else {
-        keys[numbers[i]] = pool[i].id;
+        keys[numbers[i]] = m.id;
+        final span = spans[numbers[i]];
+        spans[numbers[i]] = (
+          start: m.startTime.isBefore(span.start) ? m.startTime : span.start,
+          end: m.endTime.isAfter(span.end) ? m.endTime : span.end,
+        );
       }
-      indexOf[pool[i].id] = numbers[i];
+      indexOf[m.id] = numbers[i];
+    }
+    for (final m in pool) {
+      if (indexOf.containsKey(m.id)) continue;
+      int? nearest;
+      var nearestGap = kSessionGap;
+      for (var n = 0; n < spans.length; n++) {
+        final span = spans[n];
+        final gap = m.startTime.isAfter(span.end)
+            ? m.startTime.difference(span.end)
+            : m.endTime.isBefore(span.start)
+            ? span.start.difference(m.endTime)
+            : Duration.zero;
+        if (gap <= nearestGap) {
+          nearest = n;
+          nearestGap = gap;
+        }
+      }
+      if (nearest != null) indexOf[m.id] = nearest;
     }
   }
 

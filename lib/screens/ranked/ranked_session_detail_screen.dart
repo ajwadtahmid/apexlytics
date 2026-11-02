@@ -26,11 +26,17 @@ class RankedSessionDetailScreen extends StatefulWidget {
   /// its own figures in step.
   final ValueChanged<RankedMatch>? onMatchUpdated;
 
+  /// Told of the session as it now stands after a correction (its figures
+  /// recounted, and empty when no game of it counts any more), for a list of
+  /// sessions to keep its own in step.
+  final ValueChanged<RankedSession>? onSessionChanged;
+
   const RankedSessionDetailScreen({
     super.key,
     required this.session,
     required this.onRefresh,
     this.onMatchUpdated,
+    this.onSessionChanged,
   });
 
   @override
@@ -50,11 +56,24 @@ class _RankedSessionDetailScreenState extends State<RankedSessionDetailScreen> {
         for (final m in _matches)
           if (m.id == updated.id) updated else m,
       ];
-      // The same games, so still one session; its totals follow the correction.
-      final rebuilt = sessionize(_matches);
-      if (rebuilt.length == 1) _session = rebuilt.single;
+      // The same games, so still one session; its figures follow the
+      // correction, and a game now left out of the stats leaves them too.
+      _session =
+          sessionFromGames(_matches) ??
+          RankedSession(
+            start: _session.start,
+            end: _session.end,
+            games: 0,
+            netRp: 0,
+            totalKills: 0,
+            totalDamage: 0,
+            killsGames: 0,
+            damageGames: 0,
+            matches: const [],
+          );
     });
     widget.onMatchUpdated?.call(updated);
+    widget.onSessionChanged?.call(_session);
   }
 
   @override

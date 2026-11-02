@@ -1,5 +1,7 @@
+import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/rp_pill.dart';
@@ -63,6 +65,71 @@ void main() {
     expect(find.text('3–2', findRichText: true), findsOneWidget);
     expect(find.text('10'), findsOneWidget); // kills: 2 a game
     expect(find.text('2,500'), findsOneWidget); // damage
+  });
+
+  group('a game excluded on the page', () {
+    final first = buildMatch(
+      rp: 10,
+      kills: 7,
+      damage: 700,
+      start: 1782090000,
+    );
+    final second = buildMatch(
+      rp: 20,
+      kills: 1,
+      damage: 100,
+      start: 1782090000 + 1500,
+    );
+
+    void correct(WidgetTester tester, RankedMatch updated) => tester
+        .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+        .onMatchUpdated!(updated);
+
+    testWidgets('leaves the games, RP, kills and damage of the session', (
+      tester,
+    ) async {
+      await pump(tester, sessionize([first, second]).single);
+      expect(find.text('+30 RP'), findsOneWidget);
+      expect(find.text('800'), findsOneWidget);
+      expect(find.text('GAMES · 2'), findsOneWidget);
+
+      correct(tester, first.withExcluded(true));
+      await tester.pump();
+
+      expect(find.text('+30 RP'), findsNothing);
+      // The session's net RP, and the remaining game's own row.
+      expect(find.text('+20 RP'), findsNWidgets(2));
+      expect(find.text('100'), findsOneWidget, reason: 'damage');
+      expect(find.text('800'), findsNothing);
+      expect(find.text('GAMES · 1'), findsOneWidget);
+    });
+
+    testWidgets('can be put back', (tester) async {
+      await pump(tester, sessionize([first, second]).single);
+      correct(tester, first.withExcluded(true));
+      await tester.pump();
+
+      correct(tester, first.withExcluded(false));
+      await tester.pump();
+
+      expect(find.text('+30 RP'), findsOneWidget);
+      expect(find.text('GAMES · 2'), findsOneWidget);
+    });
+
+    testWidgets('with every game excluded the page still shows, empty', (
+      tester,
+    ) async {
+      await pump(tester, sessionize([first, second]).single);
+
+      correct(tester, first.withExcluded(true));
+      await tester.pump();
+      correct(tester, second.withExcluded(true));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('GAMES · 0'), findsOneWidget);
+      expect(find.text('+0 RP'), findsOneWidget);
+    });
   });
 
   testWidgets('shows the RP through the games and marks the worst fall', (

@@ -1045,4 +1045,120 @@ void main() {
       expect(headers[i].start, sessions[i].start);
     }
   });
+
+  group('pubs and excluded games do not decide where a session ends', () {
+    const t = 1782090000;
+    // Ranked, a stretch of pubs, then ranked again. The pubs games are each
+    // within two hours of the next game, but the ranked games are not.
+    final rankedA = buildMatch(start: t, rp: 20, cumulativeRp: 1020);
+    final pubsB = buildMatch(start: t + 5400, rp: 0);
+    final pubsC = buildMatch(start: t + 10800, rp: 0);
+    final rankedD = buildMatch(start: t + 16200, rp: -10, cumulativeRp: 1010);
+    final all = [rankedD, pubsC, pubsB, rankedA];
+
+    List<SessionHeaderItem> rankedHeaders(List<RankedMatch> games) =>
+        buildSessionItems(games)
+            .whereType<SessionHeaderItem>()
+            // Those holding a ranked game that counts: a block of only pubs, or
+            // of a game left out, is listed but is not a session.
+            .where((h) => h.avgRp != null)
+            .toList();
+
+    test('the Sessions page cuts two sessions', () {
+      expect(sessionize(rankedOnly(all)).map((s) => s.games), [1, 1]);
+    });
+
+    test('the Games tab cuts the same two, each with the pubs nearest to it', () {
+      final headers = rankedHeaders(all);
+
+      expect(headers.length, 2);
+      // The newest session also lists the pubs game before it, the older the one
+      // after it: neither brings the two ranked games together.
+      expect(headers.map((h) => h.games), [2, 2]);
+      expect(headers.map((h) => h.netRp), [-10, 20]);
+    });
+
+    test('a break is not bridged by an excluded ranked game either', () {
+      final excluded = buildMatch(
+        start: t + 6000,
+        rp: 50,
+        cumulativeRp: 1070,
+        excluded: true,
+      );
+      final nearD = buildMatch(start: t + 11400, rp: -10, cumulativeRp: 1010);
+      final games = [nearD, excluded, rankedA];
+
+      expect(sessionize(rankedOnly(games)).length, 2);
+      expect(rankedHeaders(games).length, 2);
+      // Listed with the nearer session, not counted in either.
+      expect(rankedHeaders(games).first.games, 2);
+      expect(rankedHeaders(games).first.netRp, -10);
+    });
+
+    test('a pubs game inside a ranked session is listed in that session', () {
+      final first = buildMatch(start: t, rp: 20, cumulativeRp: 1020);
+      final pubs = buildMatch(start: t + 800, rp: 0);
+      final second = buildMatch(start: t + 1500, rp: 10, cumulativeRp: 1030);
+      final games = [second, pubs, first];
+
+      final headers = buildSessionItems(games).whereType<SessionHeaderItem>();
+
+      expect(headers.length, 1);
+      expect(headers.single.games, 3);
+      // Its RP still counts nothing: it moved none.
+      expect(headers.single.netRp, 30);
+      expect(sessionize(rankedOnly(games)).single.games, 2);
+    });
+
+    test('the Sessions page and the Games tab agree on a longer evening', () {
+      final games = <RankedMatch>[];
+      var start = t;
+      // Ranked and pubs interleaved, with two real breaks.
+      for (final (gap, ranked) in [
+        (0, true),
+        (1800, false),
+        (1800, true),
+        (9000, false), // a pubs game does not bridge this
+        (9000, true),
+        (1200, true),
+        (30000, true),
+      ]) {
+        start += 600 + gap;
+        games.add(
+          buildMatch(
+            start: start,
+            rp: ranked ? 10 : 0,
+            cumulativeRp: 1000 + start % 7,
+          ),
+        );
+      }
+      final newestFirst = games.reversed.toList();
+
+      final sessions = sessionize(rankedOnly(newestFirst));
+      final headers = rankedHeaders(newestFirst);
+
+      expect(headers.length, sessions.length);
+      for (var i = 0; i < sessions.length; i++) {
+        expect(headers[i].netRp, sessions[i].netRp);
+      }
+    });
+  });
+
+  test('sessionFromGames counts only the games that count', () {
+    final counted = buildMatch(start: 1782090000, rp: 20, kills: 4);
+    final out = buildMatch(
+      start: 1782090000 + 1500,
+      rp: 30,
+      kills: 9,
+      excluded: true,
+    );
+    final casual = buildMatch(start: 1782090000 + 3000, rp: 0, kills: 2);
+
+    final session = sessionFromGames([casual, out, counted])!;
+
+    expect(session.games, 1);
+    expect(session.netRp, 20);
+    expect(session.totalKills, 4);
+    expect(sessionFromGames([out, casual]), isNull);
+  });
 }

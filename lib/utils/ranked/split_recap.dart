@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import '../../models/ranked_match.dart';
 import 'best_metric.dart';
 import 'ranked_aggregates.dart';
+import 'session_overview.dart' show sessionOverview;
 
 /// The headline numbers of a period of ranked play, for the recap screen and
 /// its shareable card. Built only from games that count toward the stats.
@@ -74,8 +75,7 @@ SplitRecap splitRecap(List<RankedMatch> matches, {required BestMetric metric}) {
   final ranked = rankedOnly(matches);
   final summary = summarize(ranked);
 
-  final sessions = sessionize(ranked)
-    ..sort((a, b) => b.netRp.compareTo(a.netRp));
+  final sessions = sessionize(ranked);
 
   return SplitRecap(
     games: summary.games,
@@ -98,7 +98,8 @@ SplitRecap splitRecap(List<RankedMatch> matches, {required BestMetric metric}) {
       nameOf: (m) => m.displayName,
     ).firstOrNull,
     metric: metric,
-    bestSession: sessions.firstOrNull,
+    // The same pick as the Sessions page makes, ties included.
+    bestSession: sessionOverview(sessions)?.best,
     totalKills: summary.totalKills,
     killsGames: summary.killsGames,
     totalDamage: summary.totalDamage,

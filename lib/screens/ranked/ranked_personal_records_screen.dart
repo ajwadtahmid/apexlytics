@@ -20,6 +20,7 @@ import '../../utils/formatting/format.dart'
 import '../../utils/ranked/best_metric.dart';
 import '../../utils/ranked/extra_records.dart';
 import '../../utils/ranked/ranked_aggregates.dart';
+import '../../utils/ranked/session_overview.dart' show sessionOverview;
 import '../../utils/share_image.dart' show canShareFiles;
 import '../../utils/theme.dart';
 import '../../widgets/surface_card.dart';
@@ -191,9 +192,8 @@ class _RankedPersonalRecordsScreenState
         .watch(rankedAllTimeBestProvider(widget.stats.uid))
         .asData
         ?.value;
-    final bestSession = ([
-      ..._sessions,
-    ]..sort((a, b) => b.netRp.compareTo(a.netRp))).firstOrNull;
+    // The same pick as the Sessions page makes, ties included.
+    final bestSession = sessionOverview(_sessions)?.best;
     final bestDayRecord = bestDay(counted);
     // A day that is just the best session would repeat it.
     final day =

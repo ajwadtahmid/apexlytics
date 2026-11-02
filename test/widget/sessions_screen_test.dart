@@ -2,6 +2,7 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -61,6 +62,48 @@ void main() {
   ]);
 
   Finder rich(String text) => find.textContaining(text, findRichText: true);
+
+  group('after a game is corrected on a session\'s page', () {
+    testWidgets('the list follows it: the session\'s net RP and the overview', (
+      tester,
+    ) async {
+      await pump(tester, three);
+      expect(rich('+30'), findsWidgets);
+
+      // The oldest session (+30 over two games): open it, leave the +20 game out.
+      await tester.tap(find.byType(SessionCard).last);
+      await tester.pumpAndSettle();
+      final twenty = three.last.matches.firstWhere((m) => m.rpChange == 20);
+      tester
+          .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+          .onMatchUpdated!(twenty.withExcluded(true));
+      await tester.pump();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(rich('+30'), findsNothing);
+      expect(rich('+10'), findsWidgets);
+    });
+
+    testWidgets('a session left with no counted game leaves the list', (
+      tester,
+    ) async {
+      await pump(tester, three);
+      expect(find.byType(SessionCard), findsNWidgets(3));
+
+      await tester.tap(find.byType(SessionCard).first); // the lone +5 game
+      await tester.pumpAndSettle();
+      final only = three.first.matches.single;
+      tester
+          .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+          .onMatchUpdated!(only.withExcluded(true));
+      await tester.pump();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionCard), findsNWidgets(2));
+    });
+  });
 
   group('the overview', () {
     testWidgets('adds the sessions up', (tester) async {
