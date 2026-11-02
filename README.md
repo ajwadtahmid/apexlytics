@@ -193,6 +193,8 @@ The note in Settings stays.
 | iOS: Xcode | 15+ |
 | Linux: GTK | `libgtk-3-dev` |
 
+On Linux, if the first `flutter build linux` fails while configuring (a missing `libgtk-3-dev`, or no network), delete the `build/linux` folder before running it again. Otherwise the retry installs to `/usr/local/apexlytics` and fails on permissions.
+
 ### Quick Start
 
 ```bash
