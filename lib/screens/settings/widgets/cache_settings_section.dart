@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../providers/alert_mute_provider.dart';
 import '../../../providers/api_provider.dart';
+import '../../../providers/auto_backup_provider.dart';
 import '../../../providers/backup_status_provider.dart';
 import '../../../providers/best_metric_provider.dart';
 import '../../../providers/entity_trend_overrides_provider.dart';
@@ -35,11 +36,13 @@ import '../../../utils/notifications.dart';
 import '../../../utils/share_image.dart' show clearSharedCardCopies;
 import '../../../utils/storage/checked_prefs.dart' show removeAllChecked;
 import '../../../utils/storage/former_profile_uids.dart';
+import '../../../utils/storage/auto_backup.dart';
 import '../../../utils/storage/backup_service.dart';
 import '../../../utils/storage/ranked_history_store.dart';
 import '../../../utils/storage/rp_snapshot_storage.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
+import 'auto_backup_tile.dart';
 
 class CacheSettingsSection extends ConsumerWidget {
   const CacheSettingsSection({super.key});
@@ -91,6 +94,13 @@ class CacheSettingsSection extends ConsumerWidget {
                 label: 'Import data',
                 onTap: () => _importData(context, ref),
               ),
+              if (autoBackupSupported) ...[
+                const Divider(color: AppTheme.surface2, height: 24),
+                AutoBackupTile(
+                  onRestore: (copy) => _restoreAutoBackup(context, ref, copy),
+                  onExport: () => exportData(context, ref),
+                ),
+              ],
               const Divider(color: AppTheme.surface2, height: 24),
               ActionRow(
                 icon: Icons.delete_sweep_outlined,
@@ -198,7 +208,8 @@ class CacheSettingsSection extends ConsumerWidget {
                         title: 'Clear all data?',
                         body:
                             'Everything will be removed: your profiles, favorites, '
-                            'settings, RP history and recorded match history.',
+                            'settings, RP history and recorded match history'
+                            '${autoBackupSupported ? ', and the automatic backup copies' : ''}.',
                         confirmLabel: 'Continue',
                         onConfirm: () async {
                           if (!context.mounted) return;
@@ -443,6 +454,12 @@ class CacheSettingsSection extends ConsumerWidget {
       () => ref.read(apiServiceProvider).clearCache(),
     );
     await step('shared card copies', clearSharedCardCopies);
+    if (autoBackupSupported) {
+      await step(
+        'automatic backups',
+        () async => deleteAutoBackups(await autoBackupDirectory()),
+      );
+    }
     // clearAll() wipes every notification pref, but nothing else tears down
     // alerts already scheduled with the OS or resets the background-fetch
     // cadence — without this, up to a dozen map-rotation alerts per enabled
@@ -459,6 +476,8 @@ class CacheSettingsSection extends ConsumerWidget {
     invalidatePlayerDerivedProviders(ref);
     _resetViewChoices(ref);
     ref.invalidate(lastBackupProvider);
+    ref.invalidate(autoBackupEnabledProvider);
+    ref.invalidate(autoBackupListProvider);
     if (!context.mounted) return;
     if (failed.isEmpty) {
       context.showMessage('All data cleared.');
@@ -489,12 +508,51 @@ class CacheSettingsSection extends ConsumerWidget {
     }
   }
 
+  /// Previews one of the app's own copies and restores it after the same
+  /// confirmation as a file. A fresh copy of the current data is made first, so
+  /// the restore can itself be undone.
+  Future<void> _restoreAutoBackup(
+    BuildContext context,
+    WidgetRef ref,
+    AutoBackupFile copy,
+  ) async {
+    final rankedStore = ref.read(rankedHistoryStoreProvider);
+    final previewResult = await previewBackupFile(
+      copy.file,
+      rankedStore: rankedStore,
+    );
+    if (!context.mounted) return;
+
+    switch (previewResult) {
+      case PreviewCancelled():
+        return;
+      case PreviewError(:final message):
+        context.showError(message);
+      case PreviewReady(:final preview):
+        await _confirmAndCommit(
+          context,
+          ref,
+          preview,
+          rankedStore,
+          beforeCommit: () async {
+            await runAutoBackup(
+              ref.read(sharedPreferencesProvider),
+              rankedStore,
+              force: true,
+            );
+            ref.invalidate(autoBackupListProvider);
+          },
+        );
+    }
+  }
+
   Future<void> _confirmAndCommit(
     BuildContext context,
     WidgetRef ref,
     BackupPreview preview,
-    RankedHistoryStore rankedStore,
-  ) async {
+    RankedHistoryStore rankedStore, {
+    Future<void> Function()? beforeCommit,
+  }) async {
     final replaced = preview.profilesReplacedBy(
       ref.read(sharedPreferencesProvider),
     );
@@ -507,6 +565,7 @@ class CacheSettingsSection extends ConsumerWidget {
     );
     if (!confirmed || !context.mounted) return;
 
+    await beforeCommit?.call();
     final prefs = ref.read(sharedPreferencesProvider);
     final importResult = await commitBackupImport(
       preview,
@@ -518,6 +577,7 @@ class CacheSettingsSection extends ConsumerWidget {
     switch (importResult) {
       case ImportSuccess(:final skippedRows):
         ref.invalidate(playerSettingsProvider);
+        ref.invalidate(autoBackupEnabledProvider);
         ref.invalidate(searchStateProvider);
         // Same UID as before restore, so these families' cached values would
         // otherwise survive and the Ranked section of Stats would show stale data.

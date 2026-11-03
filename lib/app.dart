@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'providers/auto_backup_provider.dart';
 import 'providers/map_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/notification_provider.dart';
@@ -23,6 +24,7 @@ import 'screens/settings/settings_screen.dart';
 import 'services/map_notification_service.dart';
 import 'services/notification_service.dart';
 import 'utils/app_logger.dart';
+import 'utils/storage/auto_backup.dart' show autoBackupSupported;
 import 'utils/onboarding.dart';
 import 'utils/storage/former_profile_uids.dart';
 import 'utils/storage/ranked_history_store.dart';
@@ -53,6 +55,10 @@ class _AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<_AppShell>
     with WidgetsBindingObserver {
   static const _kPhase2Delay = Duration(milliseconds: 150);
+
+  // Long enough for the first screens to have the disk and the network to
+  // themselves.
+  static const _kAutoBackupDelay = Duration(seconds: 20);
 
   // Past this many misses, the process's AssetManager state is broken, not
   // slow — stop retrying on every resume (some OEM ROMs crash on repeated
@@ -148,6 +154,7 @@ class _AppShellState extends ConsumerState<_AppShell>
       // system settings while the app was backgrounded.
       ref.invalidate(notificationsEnabledProvider);
       unawaited(_retryNotificationInit());
+      unawaited(runAutoBackupIfDue(ref));
     }
   }
 
@@ -202,6 +209,14 @@ class _AppShellState extends ConsumerState<_AppShell>
     await Future.delayed(_kPhase2Delay);
     unawaited(_prefetch(ref.read(predatorProvider.future)));
     unawaited(_prefetch(ref.read(serverStatusProvider.future)));
+    unawaited(_autoBackupSoon());
+  }
+
+  /// Brings the device's own backup copies up to date, once the app has settled.
+  Future<void> _autoBackupSoon() async {
+    if (!autoBackupSupported) return;
+    await Future.delayed(_kAutoBackupDelay);
+    if (mounted) await runAutoBackupIfDue(ref);
   }
 
   /// Drains legacy prefs snapshots into SQLite, trims old ones, then warms the

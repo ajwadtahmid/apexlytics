@@ -49,6 +49,8 @@ const _excludedKeys = {
   // About this device's last export; a restored copy would claim a backup the
   // new device never made.
   PrefsKeys.lastBackupAt,
+  // Likewise about this device's own copies, which a restore does not bring.
+  PrefsKeys.autoBackupLastAt,
   // A mute lasts hours and ends by itself; restoring one would silence alerts
   // on a device that never asked for it.
   PrefsKeys.alertMuteUntil,
@@ -74,6 +76,7 @@ const _staticBackupKeys = {
   PrefsKeys.alertQuietEnabled,
   PrefsKeys.alertQuietStartMinute,
   PrefsKeys.alertQuietEndMinute,
+  PrefsKeys.autoBackupEnabled,
   PrefsKeys.favoriteRankedMapNames,
   PrefsKeys.favoritePubsMapNames,
   PrefsKeys.defaultTab,
@@ -155,6 +158,7 @@ const _intKeys = {
 const _boolKeys = {
   PrefsKeys.keepScreenOn,
   PrefsKeys.lowPowerWarning,
+  PrefsKeys.autoBackupEnabled,
   PrefsKeys.notifyPubsMapRotation,
   PrefsKeys.notifyRankedMapRotation,
   PrefsKeys.notifyMixtapeMapRotation,
@@ -421,6 +425,32 @@ Future<bool> shareBackupFile(
   }
 }
 
+/// The backup as gzipped bytes, built the way [exportBackup] builds it, for
+/// callers that keep the file themselves. [matchCount] is the match rows in it.
+Future<({List<int> bytes, int matchCount})> buildBackup(
+  SharedPreferences prefs, {
+  RankedHistoryStore? rankedStore,
+}) => buildBackupBytes(
+  prefs: _collect(prefs),
+  matchPages: rankedStore?.exportRowPages() ?? const Stream.empty(),
+  snapshotPages: rankedStore?.exportSnapshotRowPages() ?? const Stream.empty(),
+);
+
+/// Reads [bytes] back as a restore would and returns how many match rows they
+/// carry. Throws when they would not restore. Meant for [Isolate.run]: a large
+/// history is tens of MB of JSON.
+int verifyBackupBytes(Uint8List bytes) {
+  final (:envelope, sizeBytes: _) = _decodeBackupEnvelope(bytes);
+  final version = envelope['version'];
+  if (version is! int || version < 1 || version > _kBackupVersion) {
+    throw const FormatException('Unsupported backup version');
+  }
+  if (envelope['prefs'] is! Map<String, dynamic>) {
+    throw const FormatException('Invalid prefs structure');
+  }
+  return _rowCount(envelope['ranked_history']);
+}
+
 /// Writes the backup. Android opens the system "Save as" screen; iOS the share
 /// sheet ([backupGoesThroughShareSheet]); desktop writes to a folder the user
 /// picks. Returns the saved file's name (never its location), or null if
@@ -682,7 +712,7 @@ Future<PreviewResult> previewBackup({RankedHistoryStore? rankedStore}) async {
 
   if (pickedFile == null) return PreviewCancelled();
 
-  try {
+  return _previewFrom(() async {
     // A file past the cap is refused without being loaded. A real export is
     // far smaller, compressed or not. Its picker copy is removed either way.
     final tooLarge = await pickedFile.length() > _kMaxDecompressedBackupBytes;
@@ -694,6 +724,29 @@ Future<PreviewResult> previewBackup({RankedHistoryStore? rankedStore}) async {
         alsoWithin: Directory.systemTemp,
       );
     }
+    return rawBytes;
+  }, rankedStore);
+}
+
+/// Parses and summarizes a backup file that is already on the device (one of
+/// the app's own automatic copies), without writing anything. Gives the same
+/// result as [previewBackup], so the confirmation and the restore are the same.
+Future<PreviewResult> previewBackupFile(
+  File file, {
+  RankedHistoryStore? rankedStore,
+}) => _previewFrom(() async {
+  if (await file.length() > _kMaxDecompressedBackupBytes) return null;
+  return file.readAsBytes();
+}, rankedStore);
+
+/// The shared body of [previewBackup] and [previewBackupFile]. [read] returns
+/// the file's bytes, or null when it is past the size cap.
+Future<PreviewResult> _previewFrom(
+  Future<Uint8List?> Function() read,
+  RankedHistoryStore? rankedStore,
+) async {
+  try {
+    final rawBytes = await read();
     if (rawBytes == null) throw const BackupTooLargeException();
     // Off the UI isolate: a large backup is tens of MB of JSON.
     final (:envelope, :sizeBytes) = await Isolate.run(

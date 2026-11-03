@@ -45,6 +45,9 @@ void main() {
       PrefsKeys.alertQuietEndMinute: true,
       // A mute lasts hours and is set from a notification, not by the player.
       PrefsKeys.alertMuteUntil: false,
+      PrefsKeys.autoBackupEnabled: true,
+      // About this device's own copies, which a restore does not bring.
+      PrefsKeys.autoBackupLastAt: false,
       PrefsKeys.favoriteRankedMapNames: true,
       PrefsKeys.favoritePubsMapNames: true,
       PrefsKeys.defaultTab: true,

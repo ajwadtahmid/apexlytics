@@ -142,6 +142,14 @@ class PrefsKeys {
   /// Outcome of the most recent background fetch; device-local, not backed up.
   static const bgFetchLastResult = 'bg_fetch_last_result';
 
+  /// Whether the app keeps its own copies of your data on this device; absent
+  /// means on. Backed up like the other settings.
+  static const autoBackupEnabled = 'auto_backup_enabled';
+
+  /// When the last of those copies was made (epoch ms); about this device's
+  /// files, so not backed up.
+  static const autoBackupLastAt = 'auto_backup_last_at';
+
   /// Prefix for the UID-scoped ranked goal. Named so backup and clear can
   /// match it by prefix - a bare literal here is how the goal escaped both.
   static const rankGoalPrefix = 'rank_goal_';
