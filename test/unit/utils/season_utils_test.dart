@@ -490,4 +490,74 @@ void main() {
       );
     });
   });
+
+  group('computeWeeks', () {
+    SeasonMeta season(DateTime start, DateTime end) => SeasonMeta(
+      id: 'br_ranked_s99_s1',
+      displayName: 'S99',
+      start: start,
+      end: end,
+    );
+
+    test('whole weeks stay as they are', () {
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final weeks = computeWeeks(
+        season(start, start.add(const Duration(days: 49))),
+      );
+      expect(weeks, hasLength(7));
+      expect(weeks.last.end, start.add(const Duration(days: 49)));
+    });
+
+    test('a short last week is kept', () {
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final weeks = computeWeeks(
+        season(start, start.add(const Duration(days: 52))),
+      );
+      expect(weeks, hasLength(8));
+      expect(weeks.last.end.difference(weeks.last.start).inDays, 3);
+    });
+
+    test('the hour a clock change adds is not a week of its own', () {
+      // Tuesday 10 AM Pacific to Tuesday 10 AM Pacific, across the November
+      // change: 17:00 UTC to 18:00 UTC, so 49 days and an hour.
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final end = DateTime.utc(2026, 11, 3, 18);
+      final weeks = computeWeeks(season(start, end));
+
+      expect(weeks, hasLength(7));
+      expect(weeks.last.end, end);
+      expect(weeks.last.start, start.add(const Duration(days: 42)));
+    });
+
+    test('anything under a day folds in, a day or more does not', () {
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final folded = computeWeeks(
+        season(start, start.add(const Duration(days: 49, hours: 23))),
+      );
+      final kept = computeWeeks(
+        season(start, start.add(const Duration(days: 50))),
+      );
+      expect(folded, hasLength(7));
+      expect(kept, hasLength(8));
+    });
+
+    test('a single short week is left alone', () {
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final weeks = computeWeeks(
+        season(start, start.add(const Duration(hours: 5))),
+      );
+      expect(weeks, hasLength(1));
+    });
+
+    test('the weeks still cover the split without a gap', () {
+      final start = DateTime.utc(2026, 9, 15, 17);
+      final end = DateTime.utc(2026, 11, 3, 18);
+      final weeks = computeWeeks(season(start, end));
+      expect(weeks.first.start, start);
+      for (var i = 1; i < weeks.length; i++) {
+        expect(weeks[i].start, weeks[i - 1].end);
+      }
+      expect(weeks.last.end, end);
+    });
+  });
 }

@@ -49,6 +49,11 @@ String seasonIdForEndTime(DateTime endTime, Iterable<SeasonMeta> seasons) {
 /// Divides a season into 7-day week windows. The final window may be shorter
 /// if the season length is not a multiple of 7 days — no hardcoding needed.
 /// Capped at [kMaxWeeksPerSplit].
+///
+/// A final window under a day long is folded into the week before it. Weeks run
+/// Tuesday to Tuesday in the game's own clock, so a split that crosses a clock
+/// change is an hour longer or shorter than whole weeks in absolute time, and
+/// adding 7 days at a time would leave that hour as a "week" of its own.
 List<WeekRange> computeWeeks(SeasonMeta season) {
   final weeks = <WeekRange>[];
   var cursor = season.start;
@@ -61,6 +66,12 @@ List<WeekRange> computeWeeks(SeasonMeta season) {
       ),
     );
     cursor = next;
+  }
+  if (weeks.length > 1 &&
+      weeks.last.end.difference(weeks.last.start) < const Duration(days: 1)) {
+    final sliver = weeks.removeLast();
+    final previous = weeks.removeLast();
+    weeks.add(WeekRange(start: previous.start, end: sliver.end));
   }
   if (weeks.length == kMaxWeeksPerSplit && cursor.isBefore(season.end)) {
     log.w(
