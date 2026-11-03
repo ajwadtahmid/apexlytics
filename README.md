@@ -108,7 +108,7 @@ Track your ranked grind and visualize your RP gains with interactive graphs. Get
 - **RP Progression Graph**: Interactive chart of RP gained per match, built from your match history, with session filtering and split/week navigation. A snapshot-based RP graph is also available.
 - **Stats** (the Stats tab): a full ranked deep-dive built from the matches Apexlytics records for you, with a split and week picker. Its four tabs:
   - **Overview**: your account, the chosen split or week (summary, RP chart and stats), highlights such as your best and worst legends and maps, ranked by a measure you choose (total or average RP, win rate, kills or damage), and a "Dig deeper" grid that opens the pages below. A first-run preview shows what it will look like while you wait for a first game.
-  - **Legends** and **Maps**: per-legend and per-map breakdown tables, sortable by RP, games, win rate, kills or damage. Open a row for its trends, which compare your recent games with your average over a window you choose, for everything or for one legend or map.
+  - **Legends** and **Maps**: per-legend and per-map lists, sortable by RP, games, win rate, kills or damage. Open a row for its trends, which compare your recent games with your average over a window you choose, for everything or for one legend or map.
   - **Games**: your match history, with per-match corrections. Filter it by legend, map, date and RP change; long-press a game to select several and exclude or include them from every calculation at once.
 - **Dig deeper pages**:
   - **All Trackers**: every legend's trackers, with filter and sort.
@@ -120,13 +120,13 @@ Track your ranked grind and visualize your RP gains with interactive graphs. Get
   - **Recap**: a recap of the period with a journey chart, and a shareable image card with a tile picker and an optional footer note.
   - **Personal Records**: best RP, kills and damage games, win streaks and an all-time best; open any record to see the game.
   - Shareable cards never include your player ID.
-- **Ranked tracking**: Refreshes automatically while the app is open; the interval is a setting, and it shortens to 5 minutes while a match is being recorded. See the [Ranked Tracking Guide](#ranked-tracking-guide) for how tracking starts.
+- **Ranked tracking**: Refreshes automatically while the app is open; the interval is a setting, and "Start recording" on the Stats tab sets it to 5 minutes and keeps the screen on. See the [Ranked Tracking Guide](#ranked-tracking-guide) for how tracking starts.
 - **Legend Stats**: Kill counts and tracker values per legend, merged across sessions and sorted by most-played. The All Trackers page filters and sorts every legend's trackers.
 - **Gun Stats**: Detailed weapon performance including kills, damage, and damage per kill.
 - **Map Rotations**: Live countdown for Ranked, Pubs, Mixtape, and Wildcard. Shows current map, time remaining, and what loads next. Switches automatically when the rotation changes.
 - **Predator Cutoff**: Current minimum RP to reach Apex Predator on PC, PlayStation, Xbox, and Switch. Your saved player's platform is highlighted, and the Home tile shows its cutoff.
 - **Server Status**: Health of Origin Login, EA Accounts, Nova Fusion, and Apex Crossplay. Drill down to see per-region latency in milliseconds, color-coded green/orange/red. An "Apexlytics Servers" card shows whether the app's own primary and backup servers are up, with their response times.
-- **Latest News**: Links to the official Apex news page.
+- **News & ALGS**: Recent Apex news articles, plus links to the official ALGS website, ALGS statistics and the competitive Apex subreddit.
 - **Player Compare**: Side-by-side comparison of ranked stats or per-legend trackers with any searched player.
 - **Search & Favorites**: Look up any player by name or numeric UID, on any platform, from the Search tab. Star players to keep them as favorite cards, and see your recent searches. Swipe or long-press a favorite to remove it (with Undo) or open it on apexlegendsstatus.com. If a name isn't found, retry it on another platform in one tap.
 - **Multiple Player Profiles**: Manage and quickly switch between different player profiles. Perfect for tracking friends, alternate accounts, or monitoring competition.
@@ -200,7 +200,7 @@ On Linux, if the first `flutter build linux` fails while configuring (a missing 
 ```bash
 # 1. Clone
 git clone https://github.com/ajwadtahmid/apexlytics.git
-cd Apexlytics
+cd apexlytics
 
 # 2. Install dependencies
 flutter pub get
