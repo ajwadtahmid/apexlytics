@@ -6,6 +6,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../constants/prefs_keys.dart';
+import '../utils/alert_silence.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_messages.dart';
 import '../utils/formatting/json_utils.dart';
@@ -124,10 +125,22 @@ abstract class PlayerSettings with _$PlayerSettings {
     @Default(0) int pubsNotifyMinutesBefore,
     @Default(0) int mixtapeNotifyMinutesBefore,
     @Default(0) int wildcardNotifyMinutesBefore,
+
+    /// Quiet hours for map alerts: off until switched on. The window is minutes
+    /// after local midnight.
+    @Default(false) bool alertQuietEnabled,
+    @Default(kDefaultQuietStartMinute) int alertQuietStartMinute,
+    @Default(kDefaultQuietEndMinute) int alertQuietEndMinute,
     @Default(0) int defaultTab, // 0=Home 1=Stats 2=Search 3=Settings
     @Default([]) List<String> favoriteRankedMapNames,
     @Default([]) List<String> favoritePubsMapNames,
   }) = _PlayerSettings;
+
+  QuietHours get quietHours => QuietHours(
+    enabled: alertQuietEnabled,
+    startMinute: alertQuietStartMinute,
+    endMinute: alertQuietEndMinute,
+  );
 
   PlayerProfile? get activeProfile =>
       activeProfileIndex >= 0 && activeProfileIndex < profiles.length
@@ -170,6 +183,10 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
     final v = _prefs.get(key);
     return v is int ? v : null;
   }
+
+  /// A stored minute of the day; anything else (wrong type, out of range) reads
+  /// as absent.
+  int? _minutePref(String key) => validMinuteOfDay(_prefs.get(key));
 
   bool? _boolPref(String key) {
     final v = _prefs.get(key);
@@ -310,6 +327,12 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
           _intPref(PrefsKeys.mixtapeNotifyMinutes) ?? legacyMinutes,
       wildcardNotifyMinutesBefore:
           _intPref(PrefsKeys.wildcardNotifyMinutes) ?? 0,
+      alertQuietEnabled: _boolPref(PrefsKeys.alertQuietEnabled) ?? false,
+      alertQuietStartMinute:
+          _minutePref(PrefsKeys.alertQuietStartMinute) ??
+          kDefaultQuietStartMinute,
+      alertQuietEndMinute:
+          _minutePref(PrefsKeys.alertQuietEndMinute) ?? kDefaultQuietEndMinute,
       defaultTab: _intPref(PrefsKeys.defaultTab) ?? 0,
       favoriteRankedMapNames: parseStringList(
         _stringPref(PrefsKeys.favoriteRankedMapNames),
@@ -505,6 +528,24 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
     PrefsKeys.mixtapeNotifyMinutes,
     v,
     (s) => s.copyWith(mixtapeNotifyMinutesBefore: v),
+  );
+
+  Future<void> setAlertQuietEnabled(bool v) => _setBool(
+    PrefsKeys.alertQuietEnabled,
+    v,
+    (s) => s.copyWith(alertQuietEnabled: v),
+  );
+
+  Future<void> setAlertQuietStartMinute(int v) => _setInt(
+    PrefsKeys.alertQuietStartMinute,
+    v,
+    (s) => s.copyWith(alertQuietStartMinute: v),
+  );
+
+  Future<void> setAlertQuietEndMinute(int v) => _setInt(
+    PrefsKeys.alertQuietEndMinute,
+    v,
+    (s) => s.copyWith(alertQuietEndMinute: v),
   );
 
   Future<void> setNotifyPubsMapRotation(bool v) => _setBool(

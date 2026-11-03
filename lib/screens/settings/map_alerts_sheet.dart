@@ -17,6 +17,7 @@ import '../../widgets/error_card.dart';
 import '../../widgets/setting_row.dart';
 import 'widgets/map_mode_list.dart';
 import 'widgets/notification_health_banners.dart';
+import 'widgets/quiet_hours_tile.dart';
 import '../../widgets/sheet_handle.dart';
 
 void showMapAlertsSheet(BuildContext context) {
@@ -581,6 +582,8 @@ class _MapAlertsSheetContentState
                       onTap: () => _pickTiming(context, MapAlertMode.mixtape),
                     ),
                   ],
+                  const Divider(color: AppTheme.surface2, height: 24),
+                  const QuietHoursTile(),
                 ],
               ),
             ),

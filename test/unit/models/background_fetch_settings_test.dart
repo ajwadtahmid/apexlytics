@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/models/background_fetch_settings.dart';
+import 'package:apexlytics/utils/alert_silence.dart';
 
 /// The pure decision logic behind background fetch: whether to schedule
 /// anything at all, and at what interval. This is the headless isolate's
@@ -133,5 +134,56 @@ void main() {
       final settings = BackgroundFetchSettings.fromPrefs(prefs)!;
       expect(settings.minActiveMinutes, 20);
     });
+  });
+
+  group('quiet hours and mutes', () {
+    final base = {
+      PrefsKeys.notifyRankedMapRotation: true,
+      PrefsKeys.rankedNotifyMinutes: 10,
+    };
+
+    test('are off and empty when nothing was stored', () async {
+      final s = BackgroundFetchSettings.fromPrefs(await prefsWith(base))!;
+      expect(s.quietHours.enabled, isFalse);
+      expect(s.quietHours.startMinute, 23 * 60);
+      expect(s.quietHours.endMinute, 7 * 60);
+      expect(s.mutedUntil, isEmpty);
+    });
+
+    test('are read from prefs', () async {
+      final end = DateTime.now().add(const Duration(hours: 2));
+      final s = BackgroundFetchSettings.fromPrefs(
+        await prefsWith({
+          ...base,
+          PrefsKeys.alertQuietEnabled: true,
+          PrefsKeys.alertQuietStartMinute: 22 * 60,
+          PrefsKeys.alertQuietEndMinute: 6 * 60 + 30,
+          PrefsKeys.alertMuteUntil: encodeMutes({'ranked': end})!,
+        }),
+      )!;
+      expect(s.quietHours.enabled, isTrue);
+      expect(s.quietHours.startMinute, 22 * 60);
+      expect(s.quietHours.endMinute, 6 * 60 + 30);
+      expect(s.mutedUntil.keys, ['ranked']);
+    });
+
+    test(
+      'a wrongly-typed or out-of-range value reads as the default',
+      () async {
+        final s = BackgroundFetchSettings.fromPrefs(
+          await prefsWith({
+            ...base,
+            PrefsKeys.alertQuietEnabled: 'yes',
+            PrefsKeys.alertQuietStartMinute: 9999,
+            PrefsKeys.alertQuietEndMinute: '420',
+            PrefsKeys.alertMuteUntil: 5,
+          }),
+        )!;
+        expect(s.quietHours.enabled, isFalse);
+        expect(s.quietHours.startMinute, 23 * 60);
+        expect(s.quietHours.endMinute, 7 * 60);
+        expect(s.mutedUntil, isEmpty);
+      },
+    );
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:apexlytics/models/map_rotation.dart';
 import 'package:apexlytics/services/notification_service.dart';
+import 'package:apexlytics/utils/alert_silence.dart';
 
 /// Deterministic pure-function tests for the notification scheduling math.
 /// [NotificationService.projectModeSeries] takes an injected [now] and returns
@@ -279,7 +280,9 @@ void main() {
   });
   group('test alerts', () {
     test('each takes a different id from the one before, within 1 to 9', () {
-      final ids = [for (var i = 0; i < 30; i++) NotificationService.nextTestAlertId()];
+      final ids = [
+        for (var i = 0; i < 30; i++) NotificationService.nextTestAlertId(),
+      ];
 
       for (final id in ids) {
         expect(id, inInclusiveRange(1, 9));
@@ -287,6 +290,101 @@ void main() {
       for (var i = 1; i < ids.length; i++) {
         expect(ids[i], isNot(ids[i - 1]));
       }
+    });
+  });
+
+  group('quiet hours and mutes', () {
+    // The alerts of a 60-minute cadence, 5 minutes before, from `now`.
+    List<PlannedAlert> plan({
+      QuietHours quiet = QuietHours.off,
+      DateTime? mutedUntil,
+    }) => NotificationService.projectModeSeries(
+      100,
+      'Ranked',
+      mode('WE'),
+      600,
+      5,
+      56,
+      quietHours: quiet,
+      mutedUntil: mutedUntil,
+      now: now,
+    );
+
+    /// A window of ten minutes around the local clock time of [alert].
+    QuietHours around(PlannedAlert alert) {
+      final local = DateTime.fromMillisecondsSinceEpoch(
+        alert.notifyAt.millisecondsSinceEpoch,
+      );
+      final minute = local.hour * 60 + local.minute;
+      return QuietHours(
+        enabled: true,
+        startMinute: (minute - 5) % 1440,
+        endMinute: (minute + 5) % 1440,
+      );
+    }
+
+    test('with neither, nothing changes', () {
+      expect(plan().length, 12);
+    });
+
+    test('an alert due inside quiet hours is left out, the rest stay', () {
+      final all = plan();
+      final quiet = plan(quiet: around(all.first));
+      expect(quiet.length, 11);
+      expect(quiet.map((a) => a.id), isNot(contains(all.first.id)));
+      expect(quiet.first.id, all[1].id);
+    });
+
+    test('a quiet alert does not use up the budget', () {
+      final all = plan();
+      final limited = NotificationService.projectModeSeries(
+        100,
+        'Ranked',
+        mode('WE'),
+        600,
+        5,
+        3,
+        quietHours: around(all.first),
+        now: now,
+      );
+      expect(limited.length, 3);
+    });
+
+    test('a mute leaves out the alerts due before it ends', () {
+      final all = plan();
+      final muted = plan(
+        mutedUntil: all[1].notifyAt.add(const Duration(minutes: 1)),
+      );
+      expect(muted.first.id, all[2].id);
+      expect(muted.length, 10);
+    });
+
+    test('a mute that has run out changes nothing', () {
+      final all = plan();
+      expect(plan(mutedUntil: all.first.notifyAt).length, 12);
+      expect(
+        plan(mutedUntil: now.subtract(const Duration(hours: 1))).length,
+        12,
+      );
+    });
+
+    test('a mute long enough covers every alert', () {
+      expect(plan(mutedUntil: now.add(const Duration(days: 2))), isEmpty);
+    });
+
+    test('each alert carries its mode and its own fire time', () {
+      final first = plan().first;
+      expect(first.payload, 'ranked|${first.notifyAt.millisecondsSinceEpoch}');
+      final pubs = NotificationService.projectModeSeries(
+        NotificationService.pubsIdBase,
+        'Pubs',
+        mode('WE'),
+        600,
+        5,
+        56,
+        now: now,
+      );
+      expect(pubs.first.payload, startsWith('pubs|'));
     });
   });
 }

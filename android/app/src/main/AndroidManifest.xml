@@ -49,6 +49,9 @@
             android:resource="@drawable/ic_notification_fallback" />
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <!-- Delivers an alert's mute button, which runs without opening the app. -->
+        <receiver android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         <!-- Re-arms alerts after an update only. After a reboot the plugin re-fires
              every alert that fell due while the phone was off. -->
         <receiver android:exported="false"

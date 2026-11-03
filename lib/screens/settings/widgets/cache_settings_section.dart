@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../providers/alert_mute_provider.dart';
 import '../../../providers/api_provider.dart';
 import '../../../providers/backup_status_provider.dart';
 import '../../../providers/best_metric_provider.dart';
@@ -382,6 +383,7 @@ class CacheSettingsSection extends ConsumerWidget {
   /// memory: left alone, the old choice would go on showing, and the next
   /// change would save the old ones again with it.
   void _resetViewChoices(WidgetRef ref) {
+    ref.invalidate(alertMuteProvider);
     ref.invalidate(bestMetricProvider);
     ref.invalidate(entityTrendWindowProvider);
     ref.invalidate(entityTrendOverridesProvider);

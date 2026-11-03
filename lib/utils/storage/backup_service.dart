@@ -49,6 +49,9 @@ const _excludedKeys = {
   // About this device's last export; a restored copy would claim a backup the
   // new device never made.
   PrefsKeys.lastBackupAt,
+  // A mute lasts hours and ends by itself; restoring one would silence alerts
+  // on a device that never asked for it.
+  PrefsKeys.alertMuteUntil,
 };
 
 const _staticBackupKeys = {
@@ -68,6 +71,9 @@ const _staticBackupKeys = {
   PrefsKeys.pubsNotifyMinutes,
   PrefsKeys.mixtapeNotifyMinutes,
   PrefsKeys.wildcardNotifyMinutes,
+  PrefsKeys.alertQuietEnabled,
+  PrefsKeys.alertQuietStartMinute,
+  PrefsKeys.alertQuietEndMinute,
   PrefsKeys.favoriteRankedMapNames,
   PrefsKeys.favoritePubsMapNames,
   PrefsKeys.defaultTab,

@@ -40,6 +40,11 @@ void main() {
       PrefsKeys.pubsNotifyMinutes: true,
       PrefsKeys.mixtapeNotifyMinutes: true,
       PrefsKeys.wildcardNotifyMinutes: true,
+      PrefsKeys.alertQuietEnabled: true,
+      PrefsKeys.alertQuietStartMinute: true,
+      PrefsKeys.alertQuietEndMinute: true,
+      // A mute lasts hours and is set from a notification, not by the player.
+      PrefsKeys.alertMuteUntil: false,
       PrefsKeys.favoriteRankedMapNames: true,
       PrefsKeys.favoritePubsMapNames: true,
       PrefsKeys.defaultTab: true,
@@ -177,54 +182,58 @@ void main() {
       expect(prefs.getInt(PrefsKeys.defaultTab), 1);
     });
 
-    test('is an import error, and the history it was restoring is not kept',
-        () async {
-      const uid = '1006838015507';
-      final (prefs, store) = await failingPrefs({PrefsKeys.defaultTab: 1});
-      store.failKeys.add(PrefsKeys.defaultTab);
-      final history = RankedHistoryStore(overridePath: inMemoryDatabasePath);
-      addTearDown(history.close);
-      await history.deleteAll();
-      final envelope = {
-        'version': 3,
-        'exported_at': DateTime.now().toIso8601String(),
-        'prefs': {PrefsKeys.defaultTab: 2},
-        'ranked_history': [buildMatch(uid: uid, start: 1000).toStoredMap()],
-        'stat_snapshots': <Map<String, dynamic>>[],
-      };
+    test(
+      'is an import error, and the history it was restoring is not kept',
+      () async {
+        const uid = '1006838015507';
+        final (prefs, store) = await failingPrefs({PrefsKeys.defaultTab: 1});
+        store.failKeys.add(PrefsKeys.defaultTab);
+        final history = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(history.close);
+        await history.deleteAll();
+        final envelope = {
+          'version': 3,
+          'exported_at': DateTime.now().toIso8601String(),
+          'prefs': {PrefsKeys.defaultTab: 2},
+          'ranked_history': [buildMatch(uid: uid, start: 1000).toStoredMap()],
+          'stat_snapshots': <Map<String, dynamic>>[],
+        };
 
-      final result = await commitBackupImport(
-        BackupPreview.forTesting(
-          version: 3,
-          envelope: jsonDecode(jsonEncode(envelope)) as Map<String, dynamic>,
-        ),
-        prefs,
-        rankedStore: history,
-      );
+        final result = await commitBackupImport(
+          BackupPreview.forTesting(
+            version: 3,
+            envelope: jsonDecode(jsonEncode(envelope)) as Map<String, dynamic>,
+          ),
+          prefs,
+          rankedStore: history,
+        );
 
-      expect(result, isA<ImportError>());
-      expect(await history.count(uid), 0);
-      expect(prefs.getInt(PrefsKeys.defaultTab), 1);
-    });
+        expect(result, isA<ImportError>());
+        expect(await history.count(uid), 0);
+        expect(prefs.getInt(PrefsKeys.defaultTab), 1);
+      },
+    );
   });
 
   group('restorePrefsData and the former profile list', () {
-    test('joins the backup\'s list to the device\'s instead of replacing it',
-        () async {
-      SharedPreferences.setMockInitialValues({
-        PrefsKeys.formerProfileUids: '["1006838015500"]',
-      });
-      final prefs = await SharedPreferences.getInstance();
+    test(
+      'joins the backup\'s list to the device\'s instead of replacing it',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          PrefsKeys.formerProfileUids: '["1006838015500"]',
+        });
+        final prefs = await SharedPreferences.getInstance();
 
-      await restorePrefsData(prefs, {
-        PrefsKeys.formerProfileUids: '["1006838015501"]',
-      });
+        await restorePrefsData(prefs, {
+          PrefsKeys.formerProfileUids: '["1006838015501"]',
+        });
 
-      expect(
-        parseFormerProfileUids(prefs.getString(PrefsKeys.formerProfileUids)),
-        {'1006838015500', '1006838015501'},
-      );
-    });
+        expect(
+          parseFormerProfileUids(prefs.getString(PrefsKeys.formerProfileUids)),
+          {'1006838015500', '1006838015501'},
+        );
+      },
+    );
 
     test('a backup without the list leaves the device\'s alone', () async {
       SharedPreferences.setMockInitialValues({
@@ -283,30 +292,36 @@ void main() {
       expect(coerceRestoredPref(PrefsKeys.legendStatsKeyFor('1'), '{}'), '{}');
     });
 
-    test('a backup with no season history leaves the device\'s windows alone',
-        () async {
-      const day = 86400000;
-      final device = jsonEncode([
-        {'id': 'br_ranked_s29_s2', 'start': 100 * day, 'end': 150 * day},
-      ]);
-      SharedPreferences.setMockInitialValues({
-        PrefsKeys.seasonHistory: device,
-        PrefsKeys.keepScreenOn: true,
-      });
-      final prefs = await SharedPreferences.getInstance();
+    test(
+      'a backup with no season history leaves the device\'s windows alone',
+      () async {
+        const day = 86400000;
+        final device = jsonEncode([
+          {'id': 'br_ranked_s29_s2', 'start': 100 * day, 'end': 150 * day},
+        ]);
+        SharedPreferences.setMockInitialValues({
+          PrefsKeys.seasonHistory: device,
+          PrefsKeys.keepScreenOn: true,
+        });
+        final prefs = await SharedPreferences.getInstance();
 
-      await restorePrefsData(prefs, {PrefsKeys.statsRefreshMinutes: 5});
+        await restorePrefsData(prefs, {PrefsKeys.statsRefreshMinutes: 5});
 
-      expect(prefs.getString(PrefsKeys.seasonHistory), device);
-      // Other absent keys are still cleared: a restore replaces the settings.
-      expect(prefs.containsKey(PrefsKeys.keepScreenOn), isFalse);
-    });
+        expect(prefs.getString(PrefsKeys.seasonHistory), device);
+        // Other absent keys are still cleared: a restore replaces the settings.
+        expect(prefs.containsKey(PrefsKeys.keepScreenOn), isFalse);
+      },
+    );
 
     test('a restored season history is validated and merged with the device\'s '
         'own seasons', () async {
       const day = 86400000;
       final good = {'id': 'br_ranked_s30_s1', 'start': 0, 'end': 60 * day};
-      final device = {'id': 'br_ranked_s29_s2', 'start': 100 * day, 'end': 150 * day};
+      final device = {
+        'id': 'br_ranked_s29_s2',
+        'start': 100 * day,
+        'end': 150 * day,
+      };
       // Same split as `good`, but the device's window must win.
       final deviceSame = {'id': 'br_ranked_s30_s1', 'start': 1, 'end': 2 * day};
 
@@ -327,12 +342,13 @@ void main() {
         ]),
       });
 
-      final stored = (jsonDecode(prefs.getString(PrefsKeys.seasonHistory)!) as List)
-          .cast<Map<String, dynamic>>();
-      expect({for (final s in stored) s['id']}, {
-        'br_ranked_s30_s1',
-        'br_ranked_s29_s2',
-      });
+      final stored =
+          (jsonDecode(prefs.getString(PrefsKeys.seasonHistory)!) as List)
+              .cast<Map<String, dynamic>>();
+      expect(
+        {for (final s in stored) s['id']},
+        {'br_ranked_s30_s1', 'br_ranked_s29_s2'},
+      );
       final s30 = stored.firstWhere((s) => s['id'] == 'br_ranked_s30_s1');
       expect(s30['end'], 2 * day, reason: "the device's own window wins");
     });
@@ -365,60 +381,54 @@ void main() {
       expect(prefs.getString('api_cache:whatever'), isNull);
     });
 
-    test(
-      'clears a static setting the backup does not mention, instead of '
-      'leaving the on-device value in place',
-      () async {
-        // A favourite map set on this device (e.g. after the backup being
-        // restored was taken) must not survive a restore that says nothing
-        // about favourites — "restore" means "match the backup", not "layer
-        // the backup on top of whatever's here".
-        SharedPreferences.setMockInitialValues({
-          PrefsKeys.favoriteRankedMapNames: '["Olympus"]',
-          PrefsKeys.keepScreenOn: true,
-        });
-        final prefs = await SharedPreferences.getInstance();
+    test('clears a static setting the backup does not mention, instead of '
+        'leaving the on-device value in place', () async {
+      // A favourite map set on this device (e.g. after the backup being
+      // restored was taken) must not survive a restore that says nothing
+      // about favourites — "restore" means "match the backup", not "layer
+      // the backup on top of whatever's here".
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.favoriteRankedMapNames: '["Olympus"]',
+        PrefsKeys.keepScreenOn: true,
+      });
+      final prefs = await SharedPreferences.getInstance();
 
-        await restorePrefsData(prefs, {
-          // Mentions keepScreenOn but not favoriteRankedMapNames.
-          PrefsKeys.keepScreenOn: false,
-        });
+      await restorePrefsData(prefs, {
+        // Mentions keepScreenOn but not favoriteRankedMapNames.
+        PrefsKeys.keepScreenOn: false,
+      });
 
-        expect(prefs.getBool(PrefsKeys.keepScreenOn), isFalse);
-        expect(prefs.getString(PrefsKeys.favoriteRankedMapNames), isNull);
-      },
-    );
+      expect(prefs.getBool(PrefsKeys.keepScreenOn), isFalse);
+      expect(prefs.getString(PrefsKeys.favoriteRankedMapNames), isNull);
+    });
 
-    test(
-      "a dynamic per-UID key belonging to a profile the backup doesn't "
-      'mention survives the restore',
-      () async {
-        // Regression guard: the full-replace fix above must be scoped to
-        // _staticBackupKeys only — sweeping "not in this backup" for a
-        // dynamic key would delete a different profile's stats just because
-        // this backup never mentioned that UID.
-        const otherUid = '1007849632032';
-        SharedPreferences.setMockInitialValues({
-          PrefsKeys.legendStatsKeyFor(otherUid): '{"Wraith":{}}',
-          PrefsKeys.rankGoalKeyFor(otherUid): 42,
-        });
-        final prefs = await SharedPreferences.getInstance();
+    test("a dynamic per-UID key belonging to a profile the backup doesn't "
+        'mention survives the restore', () async {
+      // Regression guard: the full-replace fix above must be scoped to
+      // _staticBackupKeys only — sweeping "not in this backup" for a
+      // dynamic key would delete a different profile's stats just because
+      // this backup never mentioned that UID.
+      const otherUid = '1007849632032';
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.legendStatsKeyFor(otherUid): '{"Wraith":{}}',
+        PrefsKeys.rankGoalKeyFor(otherUid): 42,
+      });
+      final prefs = await SharedPreferences.getInstance();
 
-        // A backup for a *different* UID that never references otherUid at
-        // all — the realistic shape of restoring someone else's export, or
-        // an older export of this same device from before otherUid was added.
-        const restoredUid = '1012039108394';
-        await restorePrefsData(prefs, {
-          PrefsKeys.legendStatsKeyFor(restoredUid): '{"Bangalore":{}}',
-        });
+      // A backup for a *different* UID that never references otherUid at
+      // all — the realistic shape of restoring someone else's export, or
+      // an older export of this same device from before otherUid was added.
+      const restoredUid = '1012039108394';
+      await restorePrefsData(prefs, {
+        PrefsKeys.legendStatsKeyFor(restoredUid): '{"Bangalore":{}}',
+      });
 
-        expect(
-          prefs.getString(PrefsKeys.legendStatsKeyFor(otherUid)),
-          '{"Wraith":{}}',
-        );
-        expect(prefs.getInt(PrefsKeys.rankGoalKeyFor(otherUid)), 42);
-      },
-    );
+      expect(
+        prefs.getString(PrefsKeys.legendStatsKeyFor(otherUid)),
+        '{"Wraith":{}}',
+      );
+      expect(prefs.getInt(PrefsKeys.rankGoalKeyFor(otherUid)), 42);
+    });
   });
 
   group('exportBackup → previewBackup → commitBackupImport round trip', () {
@@ -532,7 +542,9 @@ void main() {
       const uid = '1006838015507';
       final source = RankedHistoryStore(overridePath: inMemoryDatabasePath);
       addTearDown(source.close);
-      await source.upsertAll(uid, [for (var i = 1; i <= 7; i++) game(uid, i * 1000)]);
+      await source.upsertAll(uid, [
+        for (var i = 1; i <= 7; i++) game(uid, i * 1000),
+      ]);
       // Two UIDs, 5 readings: pages of 2 cross both a page seam and a UID seam.
       for (final owner in [uid, '1000000000002']) {
         await source.appendSnapshotsFor(owner, [
@@ -560,10 +572,9 @@ void main() {
       final snapshots = (envelope['stat_snapshots'] as List)
           .cast<Map<String, dynamic>>();
       expect(snapshots, hasLength(5), reason: 'every reading, once');
-      expect(
-        {for (final s in snapshots) '${s['uid']}:${s['ts_ms']}'},
-        hasLength(5),
-      );
+      expect({
+        for (final s in snapshots) '${s['uid']}:${s['ts_ms']}',
+      }, hasLength(5));
 
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -647,22 +658,22 @@ void main() {
 
     test('a completed share counts as exported', () async {
       expect(
-        await shareBackupFile(
-          file,
-          [1, 2, 3],
-          share: answering(ShareResultStatus.success),
-        ),
+        await shareBackupFile(file, [
+          1,
+          2,
+          3,
+        ], share: answering(ShareResultStatus.success)),
         isTrue,
       );
     });
 
     test('a dismissed share sheet is not an export', () async {
       expect(
-        await shareBackupFile(
-          file,
-          [1, 2, 3],
-          share: answering(ShareResultStatus.dismissed),
-        ),
+        await shareBackupFile(file, [
+          1,
+          2,
+          3,
+        ], share: answering(ShareResultStatus.dismissed)),
         isFalse,
       );
     });
@@ -670,11 +681,11 @@ void main() {
     test('a share the platform cannot confirm is not reported as an export, '
         'so a cancel never shows "saved"', () async {
       expect(
-        await shareBackupFile(
-          file,
-          [1, 2, 3],
-          share: answering(ShareResultStatus.unavailable),
-        ),
+        await shareBackupFile(file, [
+          1,
+          2,
+          3,
+        ], share: answering(ShareResultStatus.unavailable)),
         isFalse,
       );
     });
@@ -686,36 +697,45 @@ void main() {
         await shareBackupFile(
           file,
           [1, 2, 3],
-          share: answering(status, onShare: () => existedDuringShare = file.existsSync()),
+          share: answering(
+            status,
+            onShare: () => existedDuringShare = file.existsSync(),
+          ),
         );
         expect(existedDuringShare, isTrue, reason: '$status');
         expect(file.existsSync(), isFalse, reason: '$status');
       }
     });
 
-    test('a write that fails partway leaves no partial file and rethrows', () async {
-      var shared = false;
+    test(
+      'a write that fails partway leaves no partial file and rethrows',
+      () async {
+        var shared = false;
 
-      await expectLater(
-        shareBackupFile(
-          _PartialWriteFile(file),
-          [1, 2, 3],
-          share: answering(ShareResultStatus.success, onShare: () => shared = true),
-        ),
-        throwsA(isA<FileSystemException>()),
-      );
+        await expectLater(
+          shareBackupFile(
+            _PartialWriteFile(file),
+            [1, 2, 3],
+            share: answering(
+              ShareResultStatus.success,
+              onShare: () => shared = true,
+            ),
+          ),
+          throwsA(isA<FileSystemException>()),
+        );
 
-      expect(shared, isFalse);
-      expect(file.existsSync(), isFalse);
-    });
+        expect(shared, isFalse);
+        expect(file.existsSync(), isFalse);
+      },
+    );
 
     test('a failing share still removes the file and rethrows', () async {
       await expectLater(
-        shareBackupFile(
-          file,
-          [1, 2, 3],
-          share: (_) async => throw StateError('share failed'),
-        ),
+        shareBackupFile(file, [
+          1,
+          2,
+          3,
+        ], share: (_) async => throw StateError('share failed')),
         throwsStateError,
       );
       expect(file.existsSync(), isFalse);
@@ -774,21 +794,18 @@ void main() {
       );
     });
 
-    test(
-      'throws BackupCorruptedException for a truncated/malformed gzip '
-      'stream, instead of silently returning partial garbage',
-      () {
-        // The gzip magic number, but nothing resembling a real gzip stream
-        // after it — mirrors a truncated download from cloud storage, which
-        // starts correctly but cuts off partway through.
-        final malformed = [0x1F, 0x8B, 1, 2, 3, 4, 5];
+    test('throws BackupCorruptedException for a truncated/malformed gzip '
+        'stream, instead of silently returning partial garbage', () {
+      // The gzip magic number, but nothing resembling a real gzip stream
+      // after it — mirrors a truncated download from cloud storage, which
+      // starts correctly but cuts off partway through.
+      final malformed = [0x1F, 0x8B, 1, 2, 3, 4, 5];
 
-        expect(
-          () => decompressIfGzipped(malformed),
-          throwsA(isA<BackupCorruptedException>()),
-        );
-      },
-    );
+      expect(
+        () => decompressIfGzipped(malformed),
+        throwsA(isA<BackupCorruptedException>()),
+      );
+    });
 
     test('compression actually shrinks a realistic repetitive payload', () {
       // Mirrors what a real export looks like: the same column names
@@ -811,43 +828,40 @@ void main() {
   });
 
   group('commitBackupImport outer rollback', () {
-    test(
-      "a failure after restorePrefsData already succeeded (e.g. the "
-      "database transaction's own commit failing afterward) still rolls "
-      'prefs back',
-      () async {
-        // Regression guard for commitBackupImport's outer _PrefsSnapshot:
-        // restorePrefsData runs as the transaction's last step, so it can
-        // finish writing successfully and only then have the commit fail.
-        // This fake reproduces that ordering without breaking real SQLite.
-        SharedPreferences.setMockInitialValues({
-          PrefsKeys.playerName: 'OriginalName',
-        });
-        final prefs = await SharedPreferences.getInstance();
+    test("a failure after restorePrefsData already succeeded (e.g. the "
+        "database transaction's own commit failing afterward) still rolls "
+        'prefs back', () async {
+      // Regression guard for commitBackupImport's outer _PrefsSnapshot:
+      // restorePrefsData runs as the transaction's last step, so it can
+      // finish writing successfully and only then have the commit fail.
+      // This fake reproduces that ordering without breaking real SQLite.
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.playerName: 'OriginalName',
+      });
+      final prefs = await SharedPreferences.getInstance();
 
-        final preview = BackupPreview.forTesting(
-          version: 3,
-          envelope: {
-            'version': 3,
-            'prefs': {PrefsKeys.playerName: 'RestoredName'},
-            'ranked_history': const <Map<String, Object?>>[],
-            'stat_snapshots': const <Map<String, Object?>>[],
-          },
-        );
+      final preview = BackupPreview.forTesting(
+        version: 3,
+        envelope: {
+          'version': 3,
+          'prefs': {PrefsKeys.playerName: 'RestoredName'},
+          'ranked_history': const <Map<String, Object?>>[],
+          'stat_snapshots': const <Map<String, Object?>>[],
+        },
+      );
 
-        final result = await commitBackupImport(
-          preview,
-          prefs,
-          rankedStore: _CommitFailsAfterPrefsRestore(),
-        );
+      final result = await commitBackupImport(
+        preview,
+        prefs,
+        rankedStore: _CommitFailsAfterPrefsRestore(),
+      );
 
-        expect(result, isA<ImportError>());
-        // The point: restorePrefsData's own write DID land (unlike an
-        // ordinary mid-write failure, which it already rolls back itself),
-        // but commitBackupImport's outer snapshot undoes it anyway.
-        expect(prefs.getString(PrefsKeys.playerName), 'OriginalName');
-      },
-    );
+      expect(result, isA<ImportError>());
+      // The point: restorePrefsData's own write DID land (unlike an
+      // ordinary mid-write failure, which it already rolls back itself),
+      // but commitBackupImport's outer snapshot undoes it anyway.
+      expect(prefs.getString(PrefsKeys.playerName), 'OriginalName');
+    });
   });
 
   group('commitBackupImport when the legacy snapshot drain fails', () {
@@ -884,7 +898,11 @@ void main() {
         },
       );
 
-      final result = await commitBackupImport(preview, prefs, rankedStore: store);
+      final result = await commitBackupImport(
+        preview,
+        prefs,
+        rankedStore: store,
+      );
 
       expect(result, isA<ImportSuccess>());
       expect(prefs.getString(PrefsKeys.playerName), 'RestoredName');
@@ -899,7 +917,8 @@ void main() {
 
   group('profilesReplacedBy', () {
     String profiles(List<(String, String)> ps) => jsonEncode([
-      for (final (name, uid) in ps) {'name': name, 'uid': uid, 'platform': 'PC'},
+      for (final (name, uid) in ps)
+        {'name': name, 'uid': uid, 'platform': 'PC'},
     ]);
 
     BackupPreview previewWith(List<(String, String)> ps) =>
@@ -925,7 +944,10 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
 
-      expect(previewWith([('Kept', '1'), ('New', '3')]).profilesReplacedBy(prefs), isEmpty);
+      expect(
+        previewWith([('Kept', '1'), ('New', '3')]).profilesReplacedBy(prefs),
+        isEmpty,
+      );
     });
   });
 }

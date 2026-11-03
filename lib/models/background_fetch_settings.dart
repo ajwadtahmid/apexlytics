@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/prefs_keys.dart';
+import '../utils/alert_silence.dart';
 import '../utils/formatting/json_utils.dart';
 import '../utils/formatting/map_alerts_utils.dart';
 
@@ -15,6 +16,11 @@ class BackgroundFetchSettings {
   final List<String> favoriteRankedMapNames;
   final List<String> favoritePubsMapNames;
 
+  /// Quiet hours and the modes muted from an alert's button, as they are in
+  /// prefs now.
+  final QuietHours quietHours;
+  final Map<String, DateTime> mutedUntil;
+
   const BackgroundFetchSettings({
     required this.notifyPubs,
     required this.notifyRanked,
@@ -26,6 +32,8 @@ class BackgroundFetchSettings {
     required this.wildcardMinutesBefore,
     required this.favoriteRankedMapNames,
     required this.favoritePubsMapNames,
+    this.quietHours = QuietHours.off,
+    this.mutedUntil = const {},
   });
 
   // A wrong-typed value reads as absent: the typed getters throw, which would
@@ -85,6 +93,19 @@ class BackgroundFetchSettings {
       ),
       favoritePubsMapNames: parseStringList(
         _string(prefs, PrefsKeys.favoritePubsMapNames),
+      ),
+      quietHours: QuietHours(
+        enabled: _bool(prefs, PrefsKeys.alertQuietEnabled) ?? false,
+        startMinute:
+            validMinuteOfDay(prefs.get(PrefsKeys.alertQuietStartMinute)) ??
+            kDefaultQuietStartMinute,
+        endMinute:
+            validMinuteOfDay(prefs.get(PrefsKeys.alertQuietEndMinute)) ??
+            kDefaultQuietEndMinute,
+      ),
+      mutedUntil: parseMutes(
+        _string(prefs, PrefsKeys.alertMuteUntil),
+        DateTime.now(),
       ),
     );
   }

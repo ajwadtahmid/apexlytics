@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../constants/map_constants.dart';
+import '../constants/prefs_keys.dart';
 import '../models/map_rotation.dart';
+import '../utils/alert_silence.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatting/format.dart' show formatClock;
+import 'background_service.dart' show replanAlertsInBackground;
 
 /// A single scheduling decision produced by
 /// [NotificationService.projectModeSeries]: which alert id fires, with what body
@@ -19,10 +23,15 @@ class PlannedAlert {
   final String body;
   final tz.TZDateTime notifyAt;
 
+  /// Carried by the notification: its mode and fire time, which the mute
+  /// buttons need to find the alerts they silence. See [alertPayload].
+  final String payload;
+
   const PlannedAlert({
     required this.id,
     required this.body,
     required this.notifyAt,
+    this.payload = '',
   });
 }
 
@@ -109,6 +118,69 @@ class NotificationService {
     windows: WindowsNotificationDetails(),
   );
 
+  /// The iOS notification category that carries the mute buttons.
+  static const _alertCategory = 'map_alert';
+
+  /// The category, and the Android channel, of the confirmation that follows a
+  /// mute: a quiet notice with one Undo button, gone after half a minute on
+  /// Android.
+  static const _noticeCategory = 'mute_notice';
+  static const _noticeDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'alert_mute_v1',
+      'Mute confirmations',
+      channelDescription: 'Says when a mode was muted, with a way to undo it',
+      importance: Importance.low,
+      priority: Priority.low,
+      timeoutAfter: 30000,
+      actions: [AndroidNotificationAction(kUnmuteActionId, 'Undo')],
+    ),
+    iOS: DarwinNotificationDetails(
+      categoryIdentifier: _noticeCategory,
+      presentSound: false,
+    ),
+    macOS: DarwinNotificationDetails(
+      categoryIdentifier: _noticeCategory,
+      presentSound: false,
+    ),
+    linux: LinuxNotificationDetails(),
+    windows: WindowsNotificationDetails(),
+  );
+
+  /// Ids of the confirmations, one per mode (10 to 13), so a second mute of the
+  /// same mode replaces the first. Between the test alert (1 to 9) and the mode
+  /// blocks (100 and up).
+  static const _muteNoticeIdBase = 10;
+
+  /// How each mode reads in a confirmation.
+  static const _modeLabels = {
+    'ranked': 'Ranked',
+    'pubs': 'Pubs',
+    'mixtape': 'Mixtape',
+    'wildcard': 'Wildcards',
+  };
+
+  /// What a real map alert looks like: [_details] plus the two mute buttons
+  /// (Android and iOS; desktop notifications have no usable buttons). The test
+  /// alert keeps the plain [_details].
+  static const _alertDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channelId,
+      'Map Rotation',
+      channelDescription: 'Alerts before the map rotates',
+      importance: Importance.high,
+      priority: Priority.high,
+      actions: [
+        AndroidNotificationAction('mute_3h', 'Mute 3 h'),
+        AndroidNotificationAction('mute_tomorrow', 'Until tomorrow'),
+      ],
+    ),
+    iOS: DarwinNotificationDetails(categoryIdentifier: _alertCategory),
+    macOS: DarwinNotificationDetails(categoryIdentifier: _alertCategory),
+    linux: LinuxNotificationDetails(),
+    windows: WindowsNotificationDetails(),
+  );
+
   // The plugin resolves an Android icon name via getIdentifier(name,
   // "drawable", package) — a runtime string lookup, redone every time a
   // notification is built. Both icons below are pinned against R8 shrinking
@@ -141,10 +213,23 @@ class NotificationService {
   static Future<void> _init() async {
     if (_initialized) return;
     if (!_supported) return;
-    const darwinSettings = DarwinInitializationSettings(
+    final darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          _alertCategory,
+          actions: [
+            for (final c in MuteChoice.values)
+              DarwinNotificationAction.plain(c.actionId, c.label),
+          ],
+        ),
+        DarwinNotificationCategory(
+          _noticeCategory,
+          actions: [DarwinNotificationAction.plain(kUnmuteActionId, 'Undo')],
+        ),
+      ],
     );
     const linuxSettings = LinuxInitializationSettings(
       defaultActionName: 'Open Apexlytics',
@@ -164,6 +249,9 @@ class NotificationService {
         linux: linuxSettings,
         windows: windowsSettings,
       ),
+      // A mute button on an alert; the second runs while the app is closed.
+      onDidReceiveNotificationResponse: handleResponse,
+      onDidReceiveBackgroundNotificationResponse: handleResponse,
     );
 
     // Falls through primary -> fallback -> last-resort icon, then gives up
@@ -284,6 +372,179 @@ class NotificationService {
     wildcardIdBase,
   ];
 
+  /// What the test alert's payload names in place of a mode.
+  static const _testMode = 'test';
+
+  /// The name each mode's id block goes by in a mute and in an alert's payload.
+  /// They match `MapAlertMode.name`.
+  static const _modeKeys = {
+    rankedIdBase: 'ranked',
+    pubsIdBase: 'pubs',
+    ltmIdBase: 'mixtape',
+    wildcardIdBase: 'wildcard',
+  };
+
+  /// The first id of [mode]'s block, or null for a name no mode goes by.
+  @visibleForTesting
+  static int? idBaseForMode(String mode) {
+    for (final e in _modeKeys.entries) {
+      if (e.value == mode) return e.key;
+    }
+    return null;
+  }
+
+  /// Bumped when a mute changes while the app is running, so Home can show it.
+  static final ValueNotifier<int> muteChanges = ValueNotifier(0);
+
+  /// An alert's mute button, pressed. Runs in the background isolate when the app
+  /// is closed, so it uses prefs and the plugin only: no providers, no database,
+  /// no rotation.
+  @pragma('vm:entry-point')
+  static Future<void> handleResponse(NotificationResponse response) async {
+    final target = parseAlertPayload(response.payload);
+    if (response.actionId == kUnmuteActionId && target != null) {
+      await _undoMute(target.mode);
+      return;
+    }
+    final choice = MuteChoice.fromActionId(response.actionId);
+    if (choice == null || target == null) return;
+    if (target.mode == _testMode) {
+      await _answerTestMute(choice, DateTime.now());
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // This isolate may hold a copy from before the app changed anything.
+      await prefs.reload();
+      await muteMode(prefs, target.mode, choice, DateTime.now());
+      muteChanges.value++;
+    } catch (e) {
+      log.w('NotificationService: mute failed', error: e);
+    }
+  }
+
+  /// How the alerts are planned again once a mute is undone. A field so a test
+  /// can stand in for the network fetch.
+  @visibleForTesting
+  static Future<void> Function() replanner = replanAlertsInBackground;
+
+  /// The Undo on a mute's confirmation: ends the mute, then plans the alerts it
+  /// cancelled again.
+  static Future<void> _undoMute(String mode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      await unmuteMode(prefs, mode);
+      muteChanges.value++;
+      await replanner();
+    } catch (e) {
+      log.w('NotificationService: undoing a mute failed', error: e);
+    }
+  }
+
+  /// Ends [mode]'s mute in storage. Leaves the other modes' alone.
+  @visibleForTesting
+  static Future<void> unmuteMode(SharedPreferences prefs, String mode) async {
+    final mutes = {
+      ...parseMutes(prefs.getString(PrefsKeys.alertMuteUntil), DateTime.now()),
+    }..remove(mode);
+    final encoded = encodeMutes(mutes);
+    if (encoded == null) {
+      await prefs.remove(PrefsKeys.alertMuteUntil);
+    } else {
+      await prefs.setString(PrefsKeys.alertMuteUntil, encoded);
+    }
+  }
+
+  /// "Ranked alerts muted until 9:40 PM", with an Undo button. Best effort: the
+  /// mute is already in force whether or not this shows.
+  static Future<void> _postMuteNotice(
+    String mode,
+    DateTime end,
+    DateTime now,
+  ) async {
+    try {
+      if (!_initialized) await init();
+      if (!_initialized) return;
+      final index = _modeKeys.values.toList().indexOf(mode);
+      await _plugin.show(
+        id: _muteNoticeIdBase + (index < 0 ? 0 : index),
+        title: 'Apexlytics',
+        body:
+            '${_modeLabels[mode] ?? mode} alerts muted until '
+            '${formatMuteEnd(end, now)}.',
+        notificationDetails: _noticeDetails,
+        payload: alertPayload(mode, end),
+      );
+    } catch (e) {
+      log.w('NotificationService: mute confirmation failed', error: e);
+    }
+  }
+
+  /// What a mute button on the test alert does: nothing is muted, and a short
+  /// alert says what the same press would have done on a real one. It shows that
+  /// the buttons reach the app, also when it is closed.
+  static Future<void> _answerTestMute(MuteChoice choice, DateTime now) async {
+    try {
+      if (!_initialized) await init();
+      if (!_initialized) return;
+      await _plugin.show(
+        id: nextTestAlertId(),
+        title: 'Apexlytics',
+        body:
+            'The buttons work. On a map alert, "${choice.label}" would mute '
+            'that mode until ${formatMuteEnd(muteEnd(choice, now), now)}. '
+            'Nothing was muted.',
+        notificationDetails: _details,
+      );
+    } catch (e) {
+      log.w('NotificationService: test mute answer failed', error: e);
+    }
+  }
+
+  /// Mutes [mode] until [choice] runs out: stores the end, then cancels that
+  /// mode's armed alerts due before it. Alerts due after it stay armed, so the
+  /// mode comes back by itself. Returns the end, or null for an unknown mode.
+  @visibleForTesting
+  static Future<DateTime?> muteMode(
+    SharedPreferences prefs,
+    String mode,
+    MuteChoice choice,
+    DateTime now,
+  ) async {
+    final idBase = idBaseForMode(mode);
+    if (idBase == null) return null;
+    final mutes = {
+      ...parseMutes(prefs.getString(PrefsKeys.alertMuteUntil), now),
+    };
+    final end = muteEnd(choice, now);
+    // A shorter mute never cuts a longer one short.
+    final held = mutes[mode];
+    if (held == null || end.isAfter(held)) mutes[mode] = end;
+    await prefs.setString(PrefsKeys.alertMuteUntil, encodeMutes(mutes)!);
+    await _cancelModeBefore(idBase, mutes[mode]!);
+    await _postMuteNotice(mode, mutes[mode]!, now);
+    return mutes[mode];
+  }
+
+  /// Cancels the armed alerts of the block starting at [idBase] that fire before
+  /// [before]. An alert with no readable time (armed by an older version) is
+  /// cancelled too; the next plan puts back what falls after.
+  static Future<void> _cancelModeBefore(int idBase, DateTime before) =>
+      _serialized(() async {
+        try {
+          for (final p in await _plugin.pendingNotificationRequests()) {
+            if (p.id < idBase || p.id >= idBase + _maxPerMode) continue;
+            final at = parseAlertPayload(p.payload)?.at;
+            if (at != null && !at.isBefore(before)) continue;
+            _desktopTimers.remove(p.id)?.cancel();
+            await _plugin.cancel(id: p.id);
+          }
+        } catch (e) {
+          log.w('NotificationService: cancel before mute end failed', error: e);
+        }
+      });
+
   /// The real ceiling this service must never exceed — iOS's 64-pending
   /// limit — expressed as `modeCount × _maxPerMode`. Not read at runtime;
   /// exposed only so notification_planner_test.dart can assert it stays
@@ -344,6 +605,8 @@ class NotificationService {
     List<String> favoritePubsMapNames = const [],
     List<String> rankedSequence = const [],
     List<String> pubsSequence = const [],
+    QuietHours quietHours = QuietHours.off,
+    Map<String, DateTime> mutedUntil = const {},
   }) => _serialized(
     () => _scheduleAllNow(
       rotation,
@@ -359,6 +622,8 @@ class NotificationService {
       favoritePubsMapNames: favoritePubsMapNames,
       rankedSequence: rankedSequence,
       pubsSequence: pubsSequence,
+      quietHours: quietHours,
+      mutedUntil: mutedUntil,
     ),
   );
 
@@ -376,6 +641,8 @@ class NotificationService {
     required List<String> favoritePubsMapNames,
     required List<String> rankedSequence,
     required List<String> pubsSequence,
+    required QuietHours quietHours,
+    required Map<String, DateTime> mutedUntil,
   }) async {
     if (!_supported || !_initialized) return;
 
@@ -401,6 +668,8 @@ class NotificationService {
         budget,
         favoriteMapNames: favoriteRankedMapNames,
         mapSequence: rankedSequence,
+        quietHours: quietHours,
+        mutedUntil: mutedUntil[_modeKeys[rankedIdBase]],
       );
     }
     if (notifyPubs && pubsMinutesBefore > 0) {
@@ -413,6 +682,8 @@ class NotificationService {
         budget,
         favoriteMapNames: favoritePubsMapNames,
         mapSequence: pubsSequence,
+        quietHours: quietHours,
+        mutedUntil: mutedUntil[_modeKeys[pubsIdBase]],
       );
     }
     if (notifyMixtape &&
@@ -426,6 +697,8 @@ class NotificationService {
         rotation.ltmCurrent!.remainingSecs,
         mixtapeMinutesBefore,
         budget,
+        quietHours: quietHours,
+        mutedUntil: mutedUntil[_modeKeys[ltmIdBase]],
       );
     }
     if (notifyWildcard &&
@@ -439,6 +712,8 @@ class NotificationService {
         rotation.wildcardCurrent!.remainingSecs,
         wildcardMinutesBefore,
         budget,
+        quietHours: quietHours,
+        mutedUntil: mutedUntil[_modeKeys[wildcardIdBase]],
       );
     }
   }
@@ -459,6 +734,8 @@ class NotificationService {
     int budget, {
     List<String> favoriteMapNames = const [],
     List<String> mapSequence = const [],
+    QuietHours quietHours = QuietHours.off,
+    DateTime? mutedUntil,
   }) async {
     final now = tz.TZDateTime.now(tz.UTC);
     final alerts = projectModeSeries(
@@ -470,12 +747,14 @@ class NotificationService {
       budget,
       favoriteMapNames: favoriteMapNames,
       mapSequence: mapSequence,
+      quietHours: quietHours,
+      mutedUntil: mutedUntil,
       now: now,
     );
     var scheduled = 0;
     for (final a in alerts) {
       try {
-        await _dispatch(a.id, a.body, a.notifyAt, now);
+        await _dispatch(a.id, a.body, a.notifyAt, now, a.payload);
         scheduled++;
       } on ArgumentError catch (e) {
         // One alert that expired in flight must not abort the rest of the
@@ -506,6 +785,8 @@ class NotificationService {
     int budget, {
     List<String> favoriteMapNames = const [],
     List<String> mapSequence = const [],
+    QuietHours quietHours = QuietHours.off,
+    DateTime? mutedUntil,
     required tz.TZDateTime now,
   }) {
     final alerts = <PlannedAlert>[];
@@ -548,7 +829,14 @@ class NotificationService {
           .subtract(Duration(minutes: minutesBefore))
           .subtract(scheduleSlack);
 
-      if (notifyAt.isAfter(now.add(scheduleMinLead))) {
+      // Left out, not delayed: in the player's quiet hours, or before a mute
+      // they pressed on an earlier alert runs out. The rotation clock still
+      // moves on and nothing is spent from the budget.
+      final silenced =
+          quietHours.covers(notifyAt) ||
+          (mutedUntil != null && notifyAt.isBefore(mutedUntil));
+
+      if (!silenced && notifyAt.isAfter(now.add(scheduleMinLead))) {
         final unit = minutesBefore == 1 ? 'minute' : 'minutes';
         // "about", deliberately. Android batches inexact alarms and may defer
         // them by minutes under Doze, so promising an exact lead time is a
@@ -563,7 +851,12 @@ class NotificationService {
           body = '$modeLabel: Next map starts in about $minutesBefore $unit';
         }
         alerts.add(
-          PlannedAlert(id: idBase + i, body: body, notifyAt: notifyAt),
+          PlannedAlert(
+            id: idBase + i,
+            body: body,
+            notifyAt: notifyAt,
+            payload: alertPayload(_modeKeys[idBase] ?? '', notifyAt),
+          ),
         );
       }
 
@@ -593,6 +886,7 @@ class NotificationService {
     String body,
     tz.TZDateTime at,
     tz.TZDateTime now,
+    String payload,
   ) async {
     if (_supportsScheduled) {
       await _plugin.zonedSchedule(
@@ -600,7 +894,8 @@ class NotificationService {
         title: 'Apexlytics',
         body: body,
         scheduledDate: at,
-        notificationDetails: _details,
+        notificationDetails: _alertDetails,
+        payload: payload,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     } else {
@@ -614,7 +909,8 @@ class NotificationService {
           id: id,
           title: 'Apexlytics',
           body: body,
-          notificationDetails: _details,
+          notificationDetails: _alertDetails,
+          payload: payload,
         );
       });
     }
@@ -648,7 +944,10 @@ class NotificationService {
         body:
             'Test alert at ${formatClock(at)}: this is how a '
             'map alert will look.',
-        notificationDetails: _details,
+        // The same buttons a real alert has; a press on this one only answers
+        // (see [handleResponse]) and mutes nothing.
+        notificationDetails: _alertDetails,
+        payload: alertPayload(_testMode, at),
       );
       return TestAlertResult.sent;
     } catch (e) {

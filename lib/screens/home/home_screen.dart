@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/map_rotation.dart';
+import '../../providers/alert_mute_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../utils/alert_silence.dart' show formatMuteEnd;
 import '../../utils/api_cache.dart' show ApiResult;
 import '../../providers/news_provider.dart';
 import '../../providers/predator_provider.dart';
@@ -68,7 +70,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         for (final m in MapAlertMode.values)
           if (p == null || n.alertPlanDiffers(m, p)) m,
       ];
-      if (changedModes.isEmpty) return;
+      final quietChanged = p != null && p.quietHours != n.quietHours;
+      if (changedModes.isEmpty && !quietChanged) return;
       // Sync background fetch cadence with the smallest active timing.
       BackgroundService.updateInterval(
         calculateMinActiveNotificationInterval(
@@ -125,6 +128,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // The foreground refresh timer is frozen while the app is backgrounded,
       // so refetch on resume to top up the notification queue immediately.
       ref.invalidate(mapRotationProvider);
+      // A mute pressed on an alert while the app was closed.
+      unawaited(ref.read(alertMuteProvider.notifier).refresh());
     }
   }
 
@@ -142,6 +147,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Future<void> _onAlertTap(String label) async {
     final mode = MapAlertMode.fromLabel(label);
     if (mode == null) return;
+    final mutedUntil = ref.read(alertMuteProvider)[mode.name];
+    if (mutedUntil != null &&
+        ref.read(playerSettingsProvider).alertActive(mode)) {
+      _showMutedMessage(mode, mutedUntil);
+      return;
+    }
     if (ref.read(playerSettingsProvider).alertActive(mode)) {
       showMapAlertsSheet(context);
       return;
@@ -162,6 +173,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             label: 'Change',
             textColor: AppTheme.accent,
             onPressed: () => showMapAlertsSheet(context),
+          ),
+        ),
+      );
+  }
+
+  /// Says an alert mode is muted and when it ends, with a way to end it now.
+  void _showMutedMessage(MapAlertMode mode, DateTime until) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            '${mode.label} alerts are muted until '
+            '${formatMuteEnd(until, DateTime.now())}.',
+          ),
+          persist: false,
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: 'Unmute',
+            textColor: AppTheme.accent,
+            onPressed: () async {
+              await ref.read(alertMuteProvider.notifier).unmute(mode.name);
+              await rescheduleMapAlerts(ref);
+            },
           ),
         ),
       );
@@ -189,6 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
       ),
     );
+    final mutes = ref.watch(alertMuteProvider);
     final mapAsync = ref.watch(mapRotationProvider);
     final serverAsync = ref.watch(serverStatusProvider);
     final newsAsync = ref.watch(newsProvider);
@@ -265,12 +301,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 data: (result) => MapRotationCard(
                   rotation: result.data,
                   onExpired: () => ref.invalidate(mapRotationProvider),
-                  alertActive: (label) => switch (MapAlertMode.fromLabel(label)) {
-                    MapAlertMode.ranked => alertsOn.ranked,
-                    MapAlertMode.pubs => alertsOn.pubs,
-                    MapAlertMode.wildcard => alertsOn.wildcard,
-                    MapAlertMode.mixtape => alertsOn.mixtape,
-                    null => false,
+                  alertActive: (label) =>
+                      switch (MapAlertMode.fromLabel(label)) {
+                        MapAlertMode.ranked => alertsOn.ranked,
+                        MapAlertMode.pubs => alertsOn.pubs,
+                        MapAlertMode.wildcard => alertsOn.wildcard,
+                        MapAlertMode.mixtape => alertsOn.mixtape,
+                        null => false,
+                      },
+                  alertMutedUntil: (label) {
+                    final mode = MapAlertMode.fromLabel(label);
+                    return mode == null ? null : mutes[mode.name];
                   },
                   onAlertTap: _onAlertTap,
                 ),

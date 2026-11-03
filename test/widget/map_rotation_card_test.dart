@@ -97,6 +97,7 @@ void main() {
     Future<void> pump(
       WidgetTester tester, {
       bool Function(String)? active,
+      DateTime? Function(String)? mutedUntil,
       ValueChanged<String>? onTap,
     }) {
       return tester.pumpWidget(
@@ -106,6 +107,7 @@ void main() {
               child: MapRotationCard(
                 rotation: rotation,
                 alertActive: active,
+                alertMutedUntil: mutedUntil,
                 onAlertTap: onTap,
               ),
             ),
@@ -113,6 +115,41 @@ void main() {
         ),
       );
     }
+
+    testWidgets('is paused while the mode is muted, and says until when', (
+      tester,
+    ) async {
+      final until = DateTime.now().add(const Duration(hours: 2));
+      await pump(
+        tester,
+        active: (m) => m == 'Ranked',
+        mutedUntil: (m) => m == 'Ranked' ? until : null,
+        onTap: (_) {},
+      );
+
+      expect(find.byIcon(Icons.notifications_paused), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_active), findsNothing);
+      expect(
+        find.byTooltip(
+          RegExp(r'Ranked alerts are muted until .*Tap to unmute'),
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('is not paused for a mode whose alert is off', (tester) async {
+      await pump(
+        tester,
+        active: (_) => false,
+        mutedUntil: (_) => DateTime.now().add(const Duration(hours: 2)),
+        onTap: (_) {},
+      );
+
+      expect(find.byIcon(Icons.notifications_paused), findsNothing);
+      expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
 
     testWidgets('is not there unless the card is given something to do', (
       tester,

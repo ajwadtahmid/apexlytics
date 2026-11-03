@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/map_rotation.dart';
+import '../providers/alert_mute_provider.dart';
 import '../providers/map_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_logger.dart';
@@ -51,6 +52,8 @@ class MapNotificationService {
               favoritePubsMapNames: s.favoritePubsMapNames,
               rankedSequence: seasonal?.rankedNames ?? const [],
               pubsSequence: seasonal?.pubsNames ?? const [],
+              quietHours: s.quietHours,
+              mutedUntil: ref.read(alertMuteProvider),
             )
             .then((_) {
               // scheduleAll silently no-ops if the plugin never initialized —

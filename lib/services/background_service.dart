@@ -139,6 +139,8 @@ Future<bool> scheduleFetchedRotation(
     favoritePubsMapNames: settings.favoritePubsMapNames,
     rankedSequence: seasonal?.rankedNames ?? const [],
     pubsSequence: seasonal?.pubsNames ?? const [],
+    quietHours: settings.quietHours,
+    mutedUntil: settings.mutedUntil,
   );
   // scheduleAll is a silent no-op when the plugin never finished
   // initialising — without this check, that skip reads as a successful
@@ -211,6 +213,11 @@ Future<void> _backgroundFetchAndSchedule() async {
     await _recordFetchResult(ok: false, prefs: prefs);
   }
 }
+
+/// Plans the alerts again from a fresh fetch, outside the foreground app: what
+/// an Undo on a mute's confirmation needs, since the alerts the mute cancelled
+/// are not armed any more. A failed fetch leaves them for the next one.
+Future<void> replanAlertsInBackground() => _backgroundFetchAndSchedule();
 
 class BackgroundService {
   static bool get _supported => Platform.isAndroid || Platform.isIOS;

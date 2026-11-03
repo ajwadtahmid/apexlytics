@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../models/map_rotation.dart';
 import '../../../utils/formatting/format.dart' show formatClock;
+import '../../../utils/alert_silence.dart' show formatMuteEnd;
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
 import 'map_hero_image.dart';
@@ -34,11 +35,13 @@ String? formatNextMapEnd({
 /// about.
 ///
 /// With [onAlertTap], the map shows a bell for the mode on screen: filled when
-/// [alertActive] says that mode's alert is on. Both take the mode's label.
+/// [alertActive] says that mode's alert is on, and paused while
+/// [alertMutedUntil] gives an end time for it. All three take the mode's label.
 class MapRotationCard extends StatefulWidget {
   final MapRotation rotation;
   final VoidCallback? onExpired;
   final bool Function(String mode)? alertActive;
+  final DateTime? Function(String mode)? alertMutedUntil;
   final ValueChanged<String>? onAlertTap;
 
   const MapRotationCard({
@@ -46,6 +49,7 @@ class MapRotationCard extends StatefulWidget {
     required this.rotation,
     this.onExpired,
     this.alertActive,
+    this.alertMutedUntil,
     this.onAlertTap,
   });
 
@@ -98,6 +102,7 @@ class _MapRotationCardState extends State<MapRotationCard> {
           mode: modes[idx],
           onExpired: widget.onExpired,
           alertActive: widget.alertActive?.call(modes[idx].label) ?? false,
+          mutedUntil: widget.alertMutedUntil?.call(modes[idx].label),
           onAlertTap: widget.onAlertTap == null
               ? null
               : () => widget.onAlertTap!(modes[idx].label),
@@ -179,11 +184,13 @@ class _MapCard extends StatefulWidget {
   final _ModeData mode;
   final VoidCallback? onExpired;
   final bool alertActive;
+  final DateTime? mutedUntil;
   final VoidCallback? onAlertTap;
   const _MapCard({
     required this.mode,
     this.onExpired,
     this.alertActive = false,
+    this.mutedUntil,
     this.onAlertTap,
   });
 
@@ -301,6 +308,7 @@ class _MapCardState extends State<_MapCard> {
                   child: _AlertBell(
                     mode: widget.mode.label,
                     active: widget.alertActive,
+                    mutedUntil: widget.mutedUntil,
                     onTap: widget.onAlertTap!,
                   ),
                 ),
@@ -370,21 +378,27 @@ class _MapCardState extends State<_MapCard> {
 // ── Alert bell ────────────────────────────────────────────────────────────────
 
 /// A round bell over the map: outlined to set an alert for [mode], filled and
-/// orange once one is set.
+/// orange once one is set, and paused (with the time it ends, in its label)
+/// while [mutedUntil] is set.
 class _AlertBell extends StatelessWidget {
   final String mode;
   final bool active;
+  final DateTime? mutedUntil;
   final VoidCallback onTap;
 
   const _AlertBell({
     required this.mode,
     required this.active,
+    required this.mutedUntil,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final label = active
+    final muted = active && mutedUntil != null;
+    final label = muted
+        ? '$mode alerts are muted until ${formatMuteEnd(mutedUntil!, DateTime.now())}. Tap to unmute.'
+        : active
         ? '$mode alerts are on. Tap to change.'
         : 'Alert me before the $mode map changes';
     return Tooltip(
@@ -404,10 +418,16 @@ class _AlertBell extends StatelessWidget {
               width: 40,
               height: 40,
               child: Icon(
-                active
+                muted
+                    ? Icons.notifications_paused
+                    : active
                     ? Icons.notifications_active
                     : Icons.notifications_none_outlined,
-                color: active ? AppTheme.accent : Colors.white,
+                color: muted
+                    ? AppTheme.muted
+                    : active
+                    ? AppTheme.accent
+                    : Colors.white,
                 size: 22,
               ),
             ),

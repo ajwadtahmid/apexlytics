@@ -28,6 +28,17 @@ class PrefsKeys {
   static const mixtapeNotifyMinutes = 'mixtape_notify_minutes';
   static const wildcardNotifyMinutes = 'wildcard_notify_minutes';
 
+  /// Quiet hours for map alerts: on or off, and the window as minutes after
+  /// midnight (local time). Backed up like the other alert settings.
+  static const alertQuietEnabled = 'alert_quiet_enabled';
+  static const alertQuietStartMinute = 'alert_quiet_start_minute';
+  static const alertQuietEndMinute = 'alert_quiet_end_minute';
+
+  /// Modes muted from an alert's button, as JSON `{mode: end time in ms}`. Short
+  /// lived and set from the background, so not backed up; removed by "Clear all
+  /// data".
+  static const alertMuteUntil = 'alert_mute_until';
+
   static const favoriteRankedMapNames = 'favorite_ranked_map_names';
   static const favoritePubsMapNames = 'favorite_pubs_map_names';
 
