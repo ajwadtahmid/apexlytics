@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:apexlytics/utils/formatting/season_utils.dart' show computeWeeks;
 import 'package:apexlytics/utils/ranked/best_metric.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/season_meta.dart';
@@ -478,6 +479,46 @@ void main() {
       ),
     );
     expectNoOverflow();
+  });
+
+  testWidgets('the Sessions overview with its calendar and a day sheet', (
+    tester,
+  ) async {
+    final played = sessionize([
+      for (var s = 0; s < 4; s++)
+        for (var g = 0; g < 3; g++)
+          buildMatch(
+            rp: g.isEven ? 25 : -12,
+            start: 1782000000 + s * 30 * 3600 + g * 1500,
+          ),
+    ]);
+    // A 13-week split, the longest of the real ones.
+    final weeks = computeWeeks(
+      SeasonMeta.fromApi(
+        id: 'br_ranked_s99_s1',
+        startSeconds: 1782000000,
+        endSeconds: 1782000000 + 91 * 24 * 3600,
+      ),
+    );
+    await pump(
+      tester,
+      SessionsOverview(
+        sessions: played,
+        onOpen: (_) {},
+        weeks: weeks,
+        splitSessions: played,
+      ),
+    );
+    expectNoOverflow();
+
+    // The split's first day is a played one: its sheet lists the session.
+    final handle = tester.ensureSemantics();
+    await tester.tap(find.bySemanticsLabel(RegExp(r'RP, \d+ session')).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(find.byType(SessionCard), findsOneWidget);
+    expectNoOverflow();
+    handle.dispose();
   });
 
   testWidgets('the session detail page', (tester) async {

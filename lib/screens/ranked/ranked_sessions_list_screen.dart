@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/formatting/format.dart' show formatSignedInt, plural;
+import '../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../utils/ranked/ranked_aggregates.dart';
 import '../../utils/ranked/session_groups.dart';
 import '../../utils/ranked/session_overview.dart';
@@ -19,10 +20,19 @@ class RankedSessionsEntry extends StatelessWidget {
   final List<RankedSession> sessions;
   final Future<void> Function() onRefresh;
 
+  /// For the page's calendar: the split's weeks, every session of the split
+  /// whichever week is selected, and that week (-1 for all).
+  final List<WeekRange> weeks;
+  final List<RankedSession> splitSessions;
+  final int selectedWeek;
+
   const RankedSessionsEntry({
     super.key,
     required this.sessions,
     required this.onRefresh,
+    this.weeks = const [],
+    this.splitSessions = const [],
+    this.selectedWeek = -1,
   });
 
   @override
@@ -37,6 +47,9 @@ class RankedSessionsEntry extends StatelessWidget {
           builder: (_) => RankedSessionsListScreen(
             sessions: sessions,
             onRefresh: onRefresh,
+            weeks: weeks,
+            splitSessions: splitSessions,
+            selectedWeek: selectedWeek,
           ),
         ),
       ),
@@ -54,6 +67,11 @@ class RankedSessionsListScreen extends StatefulWidget {
   final List<RankedSession> sessions;
   final Future<void> Function() onRefresh;
 
+  /// See [RankedSessionsEntry]. Without [weeks] the chart card has no calendar.
+  final List<WeekRange> weeks;
+  final List<RankedSession> splitSessions;
+  final int selectedWeek;
+
   /// Stands in for the current time when sorting sessions under headings.
   @visibleForTesting
   final DateTime? now;
@@ -62,6 +80,9 @@ class RankedSessionsListScreen extends StatefulWidget {
     super.key,
     required this.sessions,
     required this.onRefresh,
+    this.weeks = const [],
+    this.splitSessions = const [],
+    this.selectedWeek = -1,
     this.now,
   });
 
@@ -74,6 +95,7 @@ class _RankedSessionsListScreenState extends State<RankedSessionsListScreen> {
   // Held here so a game corrected on a session's page moves the overview, the
   // bars and the badges on this one at once.
   late List<RankedSession> _sessions = widget.sessions;
+  late List<RankedSession> _splitSessions = widget.splitSessions;
 
   @override
   void didUpdateWidget(RankedSessionsListScreen old) {
@@ -81,7 +103,21 @@ class _RankedSessionsListScreenState extends State<RankedSessionsListScreen> {
     if (!identical(old.sessions, widget.sessions)) {
       _sessions = widget.sessions;
     }
+    if (!identical(old.splitSessions, widget.splitSessions)) {
+      _splitSessions = widget.splitSessions;
+    }
   }
+
+  /// [list] with [current] swapped for [updated], or dropped when [updated] has
+  /// no games left.
+  static List<RankedSession> _replaced(
+    List<RankedSession> list,
+    RankedSession current,
+    RankedSession updated,
+  ) => [
+    for (final s in list)
+      if (!identical(s, current)) s else if (updated.games > 0) updated,
+  ];
 
   void _open(RankedSession session) {
     // The session as it stands, which a correction on its page replaces.
@@ -92,13 +128,8 @@ class _RankedSessionsListScreenState extends State<RankedSessionsListScreen> {
           session: session,
           onRefresh: widget.onRefresh,
           onSessionChanged: (updated) => setState(() {
-            _sessions = [
-              for (final s in _sessions)
-                if (!identical(s, current))
-                  s
-                else if (updated.games > 0)
-                  updated,
-            ];
+            _sessions = _replaced(_sessions, current, updated);
+            _splitSessions = _replaced(_splitSessions, current, updated);
             current = updated;
           }),
         ),
@@ -135,7 +166,13 @@ class _RankedSessionsListScreenState extends State<RankedSessionsListScreen> {
               SliverPadding(
                 padding: const EdgeInsets.all(AppTheme.md),
                 sliver: SliverToBoxAdapter(
-                  child: SessionsOverview(sessions: sessions, onOpen: _open),
+                  child: SessionsOverview(
+                    sessions: sessions,
+                    onOpen: _open,
+                    weeks: widget.weeks,
+                    splitSessions: _splitSessions,
+                    selectedWeek: widget.selectedWeek,
+                  ),
                 ),
               ),
               SliverPadding(

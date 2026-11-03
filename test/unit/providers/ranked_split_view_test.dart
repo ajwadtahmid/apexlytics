@@ -73,6 +73,18 @@ void main() {
     expect(view.rpScope.live, isTrue);
   });
 
+  test('sessions follow the selected week, the split\'s sessions do not',
+      () async {
+    final week = await viewWith([week2, week1], week: 0);
+    expect(week.sessions, hasLength(1));
+    expect(week.splitSessions, hasLength(2));
+
+    // With every week showing they are the one list, so nothing is computed twice.
+    final all = await viewWith([week2, week1]);
+    expect(all.sessions, hasLength(2));
+    expect(identical(all.splitSessions, all.sessions), isTrue);
+  });
+
   test('a week with no games stands where the games before it left the player',
       () async {
     // Week 3 has nothing; week 2 ended on 1500.

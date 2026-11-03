@@ -405,6 +405,9 @@ typedef RankedSplitView = ({
   // RankedSessionsEntry used to each call sessionize() on every
   // rebuild of the always-visible Overview tab.
   List<RankedSession> sessions,
+  // The whole split's sessions, whichever week is selected: the same list as
+  // [sessions] with every week showing. Feeds the Sessions page's calendar.
+  List<RankedSession> splitSessions,
   // What the header's RP figure stands for (today's, or a week's or split's end).
   RankedRpScope rpScope,
 });
@@ -433,6 +436,7 @@ final rankedSplitViewProvider = FutureProvider.autoDispose
         for (final m in matches)
           if (m.isRanked && (weekEnd == null || m.endTime.isBefore(weekEnd))) m,
       ];
+      final sessions = sessionize(filtered);
       return (
         view: view,
         summary: summarize(filtered, currentRpFrom: rpGames),
@@ -441,7 +445,10 @@ final rankedSplitViewProvider = FutureProvider.autoDispose
         maps: mapBreakdowns(filtered),
         timeOfDay: timeOfDayBuckets(filtered),
         dayOfWeek: dayOfWeekBuckets(filtered),
-        sessions: sessionize(filtered),
+        sessions: sessions,
+        splitSessions: view.weekIndex < 0
+            ? sessions
+            : sessionize(rankedOnly(matches)),
       );
     });
 

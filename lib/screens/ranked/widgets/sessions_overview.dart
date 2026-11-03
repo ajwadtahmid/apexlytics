@@ -2,10 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/formatting/format.dart'
     show formatDuration, formatShortDate, formatSigned, formatSignedInt, plural;
+import '../../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../../utils/ranked/ranked_aggregates.dart';
 import '../../../utils/ranked/session_overview.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
+import 'play_calendar_grid.dart';
 
 /// How many of the latest sessions the chart draws.
 const _kChartSessions = 30;
@@ -16,10 +18,21 @@ const _kChartSessions = 30;
 class SessionsOverview extends StatelessWidget {
   final List<RankedSession> sessions;
   final ValueChanged<RankedSession> onOpen;
+
+  /// What the calendar card draws: the split's weeks, all of its sessions (not
+  /// just the week being looked at) and the week to outline. There is no
+  /// calendar card without [weeks].
+  final List<WeekRange> weeks;
+  final List<RankedSession> splitSessions;
+  final int selectedWeek;
+
   const SessionsOverview({
     super.key,
     required this.sessions,
     required this.onOpen,
+    this.weeks = const [],
+    this.splitSessions = const [],
+    this.selectedWeek = -1,
   });
 
   @override
@@ -65,7 +78,17 @@ class SessionsOverview extends StatelessWidget {
         ),
         if (sessions.length > 1) ...[
           const SizedBox(height: AppTheme.sm),
-          _RpPerSessionChart(sessions: sessions, onOpen: onOpen),
+          _RpPerSessionCard(sessions: sessions, onOpen: onOpen),
+        ],
+        // Whole split, whichever week the page shows; none without its weeks.
+        if (weeks.isNotEmpty && splitSessions.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.sm),
+          _PlayCalendarCard(
+            weeks: weeks,
+            splitSessions: splitSessions,
+            selectedWeek: selectedWeek,
+            onOpen: onOpen,
+          ),
         ],
       ],
     );
@@ -162,22 +185,16 @@ class _Extreme extends StatelessWidget {
 
 /// One bar per session, oldest on the left, green for RP gained and red for
 /// lost. Tapping a bar opens that session.
-class _RpPerSessionChart extends StatelessWidget {
+class _RpPerSessionCard extends StatelessWidget {
   final List<RankedSession> sessions;
   final ValueChanged<RankedSession> onOpen;
-  const _RpPerSessionChart({required this.sessions, required this.onOpen});
+
+  const _RpPerSessionCard({required this.sessions, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
     // Newest first in, oldest first out, so time runs left to right.
     final shown = sessions.take(_kChartSessions).toList().reversed.toList();
-    final values = [for (final s in shown) s.netRp.toDouble()];
-    final top = values.fold(0.0, (a, b) => a > b ? a : b);
-    final bottom = values.fold(0.0, (a, b) => a < b ? a : b);
-    final maxY = top <= 0 ? 1.0 : top * 1.15;
-    final minY = bottom >= 0 ? 0.0 : bottom * 1.15;
-    final barWidth = (240 / shown.length).clamp(3.0, 14.0);
-
     return SurfaceCard(
       padding: const EdgeInsets.all(AppTheme.md),
       child: Column(
@@ -209,51 +226,110 @@ class _RpPerSessionChart extends StatelessWidget {
             style: AppTheme.captionSmall,
           ),
           const SizedBox(height: AppTheme.md),
-          SizedBox(
-            height: 110,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY,
-                minY: minY,
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: const FlTitlesData(show: false),
-                extraLinesData: ExtraLinesData(
-                  horizontalLines: [
-                    HorizontalLine(
-                      y: 0,
-                      color: AppTheme.muted.withValues(alpha: 0.5),
-                      strokeWidth: 1,
-                    ),
-                  ],
-                ),
-                barTouchData: BarTouchData(
-                  handleBuiltInTouches: false,
-                  touchCallback: (event, response) {
-                    if (event is! FlTapUpEvent) return;
-                    final i = response?.spot?.touchedBarGroupIndex;
-                    if (i != null) onOpen(shown[i]);
-                  },
-                ),
-                barGroups: [
-                  for (final (i, v) in values.indexed)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: v,
-                          color: AppTheme.signColor(v >= 0),
-                          width: barWidth,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
+          _RpPerSessionBars(shown: shown, onOpen: onOpen),
+        ],
+      ),
+    );
+  }
+}
+
+/// The split's days as a calendar, in a card of its own under the bars.
+class _PlayCalendarCard extends StatelessWidget {
+  final List<WeekRange> weeks;
+  final List<RankedSession> splitSessions;
+  final int selectedWeek;
+  final ValueChanged<RankedSession> onOpen;
+
+  const _PlayCalendarCard({
+    required this.weeks,
+    required this.splitSessions,
+    required this.selectedWeek,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      padding: const EdgeInsets.all(AppTheme.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('PLAY CALENDAR', style: AppTheme.cardTitle),
+          const SizedBox(height: 2),
+          const Text(
+            'Each day by the RP of the games that started on it',
+            style: AppTheme.captionSmall,
+          ),
+          const SizedBox(height: AppTheme.md),
+          PlayCalendar(
+            weeks: weeks,
+            sessions: splitSessions,
+            selectedWeek: selectedWeek,
+            onOpen: onOpen,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RpPerSessionBars extends StatelessWidget {
+  /// Oldest first, so time runs left to right.
+  final List<RankedSession> shown;
+  final ValueChanged<RankedSession> onOpen;
+  const _RpPerSessionBars({required this.shown, required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final values = [for (final s in shown) s.netRp.toDouble()];
+    final top = values.fold(0.0, (a, b) => a > b ? a : b);
+    final bottom = values.fold(0.0, (a, b) => a < b ? a : b);
+    final maxY = top <= 0 ? 1.0 : top * 1.15;
+    final minY = bottom >= 0 ? 0.0 : bottom * 1.15;
+    final barWidth = (240 / shown.length).clamp(3.0, 14.0);
+
+    return SizedBox(
+      height: 110,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxY,
+          minY: minY,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          extraLinesData: ExtraLinesData(
+            horizontalLines: [
+              HorizontalLine(
+                y: 0,
+                color: AppTheme.muted.withValues(alpha: 0.5),
+                strokeWidth: 1,
+              ),
+            ],
+          ),
+          barTouchData: BarTouchData(
+            handleBuiltInTouches: false,
+            touchCallback: (event, response) {
+              if (event is! FlTapUpEvent) return;
+              final i = response?.spot?.touchedBarGroupIndex;
+              if (i != null) onOpen(shown[i]);
+            },
+          ),
+          barGroups: [
+            for (final (i, v) in values.indexed)
+              BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: v,
+                    color: AppTheme.signColor(v >= 0),
+                    width: barWidth,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

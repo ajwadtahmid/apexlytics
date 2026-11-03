@@ -777,6 +777,9 @@ class _OverviewTab extends ConsumerWidget {
                   child: RankedSessionsEntry(
                     sessions: data.sessions,
                     onRefresh: onRefresh,
+                    weeks: data.view.weeks,
+                    splitSessions: data.splitSessions,
+                    selectedWeek: data.view.weekIndex,
                   ),
                 ),
               ],
