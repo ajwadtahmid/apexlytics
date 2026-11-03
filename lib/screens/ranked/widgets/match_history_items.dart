@@ -1,6 +1,8 @@
 import '../../../constants/legend_constants.dart';
 import '../../../constants/map_constants.dart';
+import '../../../constants/rank_constants.dart' show RankDivision, kRankLadder;
 import '../../../models/ranked_match.dart';
+import '../../../utils/formatting/rank_utils.dart' show rankIndex;
 import '../../../utils/ranked/ranked_aggregates.dart'
     show kSessionGap, sessionNumbers;
 
@@ -88,6 +90,16 @@ class DayDividerItem extends HistoryItem {
   final DateTime later;
   final DateTime earlier;
   DayDividerItem({required this.later, required this.earlier});
+}
+
+/// Marks where the games above it carried the player into another division of
+/// the ladder (or back out of one): [to] is the division reached. The list is
+/// newest first, so it sits just above the game that did it, which reads as
+/// "after this game".
+class RankChangeItem extends HistoryItem {
+  final RankDivision to;
+  final bool promoted;
+  RankChangeItem({required this.to, required this.promoted});
 }
 
 class GroupHeaderItem extends HistoryItem {
@@ -236,6 +248,23 @@ List<HistoryItem> buildSessionItems(
     buckets.last.add(m);
   }
 
+  // Each counted ranked game's next older one, over the whole history rather
+  // than what is listed, so a filtered list still shows where a game moved the
+  // player. Games from different splits are not compared: RP resets between
+  // them.
+  final olderRanked = <String, RankedMatch>{};
+  RankedMatch? previous;
+  for (final m in sessionPool ?? matches) {
+    if (!m.isRanked || !m.countsTowardStats) continue;
+    if (previous != null &&
+        (previous.seasonId == null ||
+            m.seasonId == null ||
+            previous.seasonId == m.seasonId)) {
+      olderRanked[previous.id] = m;
+    }
+    previous = m;
+  }
+
   final items = <HistoryItem>[];
   for (var b = 0; b < buckets.length; b++) {
     final bucket = buckets[b]; // newest first
@@ -279,6 +308,18 @@ List<HistoryItem> buildSessionItems(
         final earlier = _dayOf(bucket[i].startTime);
         if (later != earlier) {
           items.add(DayDividerItem(later: later, earlier: earlier));
+        }
+      }
+      // The list runs newest first, so the line goes above the game that moved
+      // the player: it reads as "after this game".
+      final older = olderRanked[bucket[i].id];
+      if (older != null) {
+        final now = rankIndex(bucket[i].cumulativeRp);
+        final before = rankIndex(older.cumulativeRp);
+        if (now != before) {
+          items.add(
+            RankChangeItem(to: kRankLadder[now], promoted: now > before),
+          );
         }
       }
       items.add(MatchItem(bucket[i]));

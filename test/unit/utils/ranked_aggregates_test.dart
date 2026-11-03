@@ -1161,4 +1161,60 @@ void main() {
     expect(session.totalKills, 4);
     expect(sessionFromGames([out, casual]), isNull);
   });
+
+  group('rank changes in the Games list', () {
+    // Oldest first: 9,950 -> 10,050 crosses Platinum II (10,000), then 10,050 ->
+    // 9,980 drops back under it.
+    List<RankedMatch> climb(List<int> rps) => [
+      for (var i = 0; i < rps.length; i++)
+        buildMatch(
+          start: 1782000000 + (rps.length - 1 - i) * 1200,
+          rp: 10,
+          cumulativeRp: rps[rps.length - 1 - i],
+        ),
+    ];
+
+    List<RankChangeItem> changes(List<RankedMatch> newestFirst) =>
+        buildSessionItems(newestFirst).whereType<RankChangeItem>().toList();
+
+    test('a game that carries the player over a division starts it', () {
+      final found = changes(climb([9950, 10050, 9980]));
+      expect(found.map((c) => c.promoted), [false, true]);
+      expect(found.map((c) => c.to.label), ['Platinum III', 'Platinum II']);
+    });
+
+    test('the line sits above the game that moved the player', () {
+      // Newest first: the 10,050 game promoted, so the line comes right above it.
+      final games = climb([9950, 10050, 10100]);
+      final items = buildSessionItems(games);
+      final at = items.indexWhere((i) => i is RankChangeItem);
+      expect(items[at + 1], isA<MatchItem>());
+      expect((items[at + 1] as MatchItem).match.cumulativeRp, 10050);
+    });
+
+    test('moving inside a division, or a lone game, marks nothing', () {
+      expect(changes(climb([10010, 10200, 10400])), isEmpty);
+      expect(changes(climb([10050])), isEmpty);
+    });
+
+    test('a filtered list still shows the move, using the whole history', () {
+      final all = climb([9950, 10050]);
+      // Only the newer game is listed; the older one is in the pool.
+      final found = buildSessionItems([
+        all.first,
+      ], sessionPool: all).whereType<RankChangeItem>();
+      expect(found.single.promoted, isTrue);
+    });
+
+    test('games that do not count toward the stats are skipped', () {
+      final out = buildMatch(
+        start: 1782000600,
+        rp: 10,
+        cumulativeRp: 12000,
+        excluded: true,
+      );
+      final games = climb([10010, 10200]);
+      expect(changes([games.first, out, games.last]), isEmpty);
+    });
+  });
 }

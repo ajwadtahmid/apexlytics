@@ -17,6 +17,7 @@ import '../../../utils/formatting/format.dart'
         plural,
         timeAgo;
 import '../../../utils/theme.dart';
+import '../../../widgets/rank_badge.dart';
 import '../../../widgets/rp_pill.dart';
 import '../../../widgets/legend_asset_image.dart';
 import 'match_detail_sheet.dart';
@@ -447,6 +448,7 @@ class _SectionSliver extends ConsumerWidget {
                 later: d.later,
                 earlier: d.earlier,
               ),
+              final RankChangeItem r => _RankChange(item: r),
               final MatchItem m => _MatchRow(
                 match: m.match,
                 selecting: selected.isNotEmpty,
@@ -508,6 +510,55 @@ class _DayChange extends StatelessWidget {
             ),
           ),
           const Expanded(child: Divider(color: AppTheme.surface2, height: 1)),
+        ],
+      ),
+    );
+  }
+}
+
+/// A line between two games where the player moved to another division: the
+/// badge and "Promoted to Gold I" (or "Dropped to Gold II") in the division's
+/// colour.
+class _RankChange extends StatelessWidget {
+  final RankChangeItem item;
+  const _RankChange({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = item.to.color;
+    final label =
+        '${item.promoted ? 'Promoted to' : 'Dropped to'} '
+        '${item.to.label}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: color.withAlpha(90), height: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RankBadge(assetPath: item.to.assetPath, size: 18),
+                const SizedBox(width: AppTheme.xs),
+                Icon(
+                  item.promoted ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 12,
+                  color: color,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: Divider(color: color.withAlpha(90), height: 1)),
         ],
       ),
     );
