@@ -425,14 +425,14 @@ void main() {
       expect(r.hasProblem, isFalse);
     });
 
-    test('is brief when the newest game is recent', () {
+    test('is brief, with no advice, when the newest game is recent', () {
       final r = result(
         totalMatches: 5,
         lastGameAt: DateTime.now().subtract(const Duration(days: 2)),
       );
 
       expect(r.historySummary, 'No new games found');
-      expect(r.historyHint, contains('Apexlytics'));
+      expect(r.historyHint, isNull);
       expect(r.hasProblem, isFalse);
     });
 

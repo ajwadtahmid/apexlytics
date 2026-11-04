@@ -58,10 +58,19 @@ class ProfileRefreshResult {
   bool get hasProblem => !statsOk || !(historyOk || serverNotTracking);
 
   /// Said under an empty or quiet history: how to make sure games are recorded.
-  String? get historyHint => nothingNew
-      ? 'Keep Apexlytics open, or the profile tracked on ALS, so new games '
-            'are recorded.'
-      : null;
+  /// A profile whose last game is recent is being recorded already, so it gets
+  /// no advice.
+  String? get historyHint {
+    if (!nothingNew) return null;
+    final last = lastGameAt;
+    final quiet =
+        totalMatches == 0 ||
+        (last != null && DateTime.now().difference(last) > quietPeriod);
+    return quiet
+        ? 'Keep Apexlytics open, or the profile tracked on ALS, so new games '
+              'are recorded.'
+        : null;
+  }
 
   String get statsSummary =>
       statsOk ? 'Stats updated' : "Couldn't update stats";
