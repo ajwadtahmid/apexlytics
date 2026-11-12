@@ -40,6 +40,7 @@ Future<void> showLegendDetailSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _LegendDetailSheet(
       breakdown: breakdown,
@@ -154,7 +155,7 @@ class _LegendDetailSheetState extends ConsumerState<_LegendDetailSheet> {
     }
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,

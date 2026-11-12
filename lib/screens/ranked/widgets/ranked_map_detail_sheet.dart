@@ -37,6 +37,7 @@ Future<void> showMapDetailSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _MapDetailSheet(
       map: map,
@@ -109,7 +110,7 @@ class _MapDetailSheetState extends ConsumerState<_MapDetailSheet> {
         ref.watch(entityTrendWindowProvider);
     final asset = battleRoyaleMapAsset(map.mapKey);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,

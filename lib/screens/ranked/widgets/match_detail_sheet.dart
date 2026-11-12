@@ -33,6 +33,7 @@ Future<RankedMatch?> showMatchDetailSheet(
 }) {
   return showModalBottomSheet<RankedMatch>(
     context: context,
+    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _MatchDetailSheet(
       matches: matches,
@@ -59,6 +60,9 @@ class _MatchDetailSheet extends StatefulWidget {
 class _MatchDetailSheetState extends State<_MatchDetailSheet> {
   static final _fmt = DateFormat('EEEE, MMMM d, y · h:mm a');
   static const _swipeVelocity = 300.0;
+
+  /// Trackers the Kills and Damage tiles already show.
+  static const _shownAsTiles = {'BR Kills', 'BR Damage'};
 
   late int _index = widget.initialIndex;
 
@@ -87,6 +91,10 @@ class _MatchDetailSheetState extends State<_MatchDetailSheet> {
     final notes = matchTagNotes(match);
     final pool = widget.baselinePool;
     final baseline = pool == null ? null : legendBaselineFor(match, pool);
+    final extraTrackers = [
+      for (final t in match.trackers)
+        if (!_shownAsTiles.contains(t.name)) t,
+    ];
 
     return SafeArea(
       child: GestureDetector(
@@ -106,10 +114,19 @@ class _MatchDetailSheetState extends State<_MatchDetailSheet> {
               ],
               _StatsBlock(match: match, baseline: baseline),
               for (final n in notes) _NoteRow(note: n),
-              const SizedBox(height: AppTheme.md),
-              const Divider(color: AppTheme.surface2, height: 1),
-              const SizedBox(height: AppTheme.md),
-              _Trackers(match: match),
+              // Kills and damage are in the tiles above; only what they don't
+              // show is listed here.
+              if (extraTrackers.isNotEmpty) ...[
+                const SizedBox(height: AppTheme.md),
+                const Divider(color: AppTheme.surface2, height: 1),
+                const SizedBox(height: AppTheme.md),
+                _Trackers(trackers: extraTrackers),
+              ] else if (match.trackers.isEmpty) ...[
+                const SizedBox(height: AppTheme.md),
+                const Divider(color: AppTheme.surface2, height: 1),
+                const SizedBox(height: AppTheme.md),
+                const _Trackers(trackers: []),
+              ],
               if (widget.matches.length > 1) ...[
                 const SizedBox(height: AppTheme.sm),
                 _NavRow(
@@ -352,12 +369,12 @@ class _NoteRow extends StatelessWidget {
 }
 
 class _Trackers extends StatelessWidget {
-  final RankedMatch match;
-  const _Trackers({required this.match});
+  final List<MatchTracker> trackers;
+  const _Trackers({required this.trackers});
 
   @override
   Widget build(BuildContext context) {
-    if (match.trackers.isEmpty) {
+    if (trackers.isEmpty) {
       return const Text(
         'No tracker data for this match',
         style: AppTheme.captionLarge,
@@ -365,7 +382,7 @@ class _Trackers extends StatelessWidget {
     }
     return Column(
       children: [
-        for (final t in match.trackers)
+        for (final t in trackers)
           Padding(
             padding: const EdgeInsets.only(bottom: AppTheme.sm),
             child: Row(
@@ -406,10 +423,9 @@ class _NavRow extends StatelessWidget {
     return Opacity(
       opacity: onTap == null ? 0 : 0.45,
       child: IconButton(
-        icon: Icon(icon, size: 22),
+        icon: Icon(icon, size: 24),
         color: AppTheme.muted,
         tooltip: tooltip,
-        visualDensity: VisualDensity.compact,
         onPressed: onTap,
       ),
     );
