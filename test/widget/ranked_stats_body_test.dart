@@ -203,10 +203,7 @@ void main() {
       // resolve — the first pump only gets as far as its loading state.
       await tester.pump();
 
-      expect(
-        find.textContaining('3 of 15 history slots free'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('3 of 15 history slots free'), findsOneWidget);
     },
   );
 
@@ -284,21 +281,20 @@ void main() {
     expect(find.text('Offline'), findsOneWidget);
   });
 
-  testWidgets(
-    'requestError outcome shows a distinct message from offline',
-    (tester) async {
-      final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
-      await tester.pumpWidget(
-        app(prefs: prefs, outcome: RankedSyncOutcome.requestError),
-      );
-      await tester.pump();
+  testWidgets('requestError outcome shows a distinct message from offline', (
+    tester,
+  ) async {
+    final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
+    await tester.pumpWidget(
+      app(prefs: prefs, outcome: RankedSyncOutcome.requestError),
+    );
+    await tester.pump();
 
-      expect(find.text('Can\'t sync right now'), findsOneWidget);
-      // Must not be misdiagnosed as a connectivity problem — that's the
-      // whole point of the distinct outcome.
-      expect(find.text('Offline'), findsNothing);
-    },
-  );
+    expect(find.text('Can\'t sync right now'), findsOneWidget);
+    // Must not be misdiagnosed as a connectivity problem — that's the
+    // whole point of the distinct outcome.
+    expect(find.text('Offline'), findsNothing);
+  });
 
   testWidgets('synced with nothing recorded yet shows warming up', (
     tester,
@@ -337,24 +333,25 @@ void main() {
     },
   );
 
-  testWidgets('recording, with the server unable to say, shows neutral wording', (
-    tester,
-  ) async {
-    final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
-    await tester.pumpWidget(
-      app(
-        prefs: prefs,
-        outcome: RankedSyncOutcome.cooldown,
-        eligibility: (eligible: false, pollCount: null),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
+  testWidgets(
+    'recording, with the server unable to say, shows neutral wording',
+    (tester) async {
+      final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
+      await tester.pumpWidget(
+        app(
+          prefs: prefs,
+          outcome: RankedSyncOutcome.cooldown,
+          eligibility: (eligible: false, pollCount: null),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
 
-    expect(find.textContaining("can't confirm"), findsOneWidget);
-    expect(find.textContaining("hasn't seen"), findsNothing);
-    expect(find.textContaining('Tracking has paused'), findsNothing);
-  });
+      expect(find.textContaining("can't confirm"), findsOneWidget);
+      expect(find.textContaining("hasn't seen"), findsNothing);
+      expect(find.textContaining('Tracking has paused'), findsNothing);
+    },
+  );
 
   testWidgets(
     '"View available stats" is offered when snapshots exist, even with no '
@@ -432,73 +429,76 @@ void main() {
     },
   );
 
-  group('the "not synced" badge only compares live RP against the current split', () {
-    const uid = 'uid123';
-    // The only bucket, so it's on screen by default in both tests below.
-    // "old" relative to the second test's live split (numbered later).
-    const splitId = 'br_ranked_s29_s1';
-    const liveSplitId = 'br_ranked_s30_s1';
+  group(
+    'the "not synced" badge only compares live RP against the current split',
+    () {
+      const uid = 'uid123';
+      // The only bucket, so it's on screen by default in both tests below.
+      // "old" relative to the second test's live split (numbered later).
+      const splitId = 'br_ranked_s29_s1';
+      const liveSplitId = 'br_ranked_s30_s1';
 
-    testWidgets(
-      'shows when the split on screen is the live current split and its '
-      'RP disagrees with the match history',
-      (tester) async {
-        final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
-        await tester.pumpWidget(
-          app(
-            prefs: prefs,
-            outcome: RankedSyncOutcome.synced,
-            splits: const [
-              RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
-            ],
-            splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
-            stats: buildStats(
-              uid: uid,
-              rankScore: 1200, // hasn't synced into history yet
-              rankedSeason: SeasonMeta.fromApi(
-                id: splitId, // the split on screen IS the live one
-                startSeconds: 0,
-                endSeconds: 1000000,
+      testWidgets(
+        'shows when the split on screen is the live current split and its '
+        'RP disagrees with the match history',
+        (tester) async {
+          final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
+          await tester.pumpWidget(
+            app(
+              prefs: prefs,
+              outcome: RankedSyncOutcome.synced,
+              splits: const [
+                RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
+              ],
+              splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
+              stats: buildStats(
+                uid: uid,
+                rankScore: 1200, // hasn't synced into history yet
+                rankedSeason: SeasonMeta.fromApi(
+                  id: splitId, // the split on screen IS the live one
+                  startSeconds: 0,
+                  endSeconds: 1000000,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
+          );
+          await tester.pumpAndSettle();
 
-        expect(find.byIcon(Icons.sync), findsOneWidget);
-      },
-    );
+          expect(find.byIcon(Icons.sync), findsOneWidget);
+        },
+      );
 
-    testWidgets(
-      'stays hidden on an old split even though its final RP disagrees '
-      'with the live RP',
-      (tester) async {
-        final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
-        await tester.pumpWidget(
-          app(
-            prefs: prefs,
-            outcome: RankedSyncOutcome.synced,
-            splits: const [
-              RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
-            ],
-            splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
-            stats: buildStats(
-              uid: uid,
-              rankScore: 1200, // the player's *current* RP, a new split away
-              rankedSeason: SeasonMeta.fromApi(
-                id: liveSplitId, // a later split is the live one, not splitId
-                startSeconds: 0,
-                endSeconds: 1000000,
+      testWidgets(
+        'stays hidden on an old split even though its final RP disagrees '
+        'with the live RP',
+        (tester) async {
+          final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
+          await tester.pumpWidget(
+            app(
+              prefs: prefs,
+              outcome: RankedSyncOutcome.synced,
+              splits: const [
+                RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
+              ],
+              splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
+              stats: buildStats(
+                uid: uid,
+                rankScore: 1200, // the player's *current* RP, a new split away
+                rankedSeason: SeasonMeta.fromApi(
+                  id: liveSplitId, // a later split is the live one, not splitId
+                  startSeconds: 0,
+                  endSeconds: 1000000,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
+          );
+          await tester.pumpAndSettle();
 
-        expect(find.byIcon(Icons.sync), findsNothing);
-      },
-    );
-  });
+          expect(find.byIcon(Icons.sync), findsNothing);
+        },
+      );
+    },
+  );
   group('the Highlights header', () {
     const uid = 'uid123';
     const splitId = 'br_ranked_s29_s1';
@@ -658,7 +658,12 @@ void main() {
       await showOverview(tester);
 
       final tops = [
-        for (final h in ['Your account', 'This split', 'Highlights', 'Dig deeper'])
+        for (final h in [
+          'Your account',
+          'This split',
+          'Highlights',
+          'Dig deeper',
+        ])
           top(tester, h),
       ];
 
@@ -851,10 +856,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(
-        find.descendant(
-          of: find.byType(TabBar),
-          matching: find.text('Games'),
-        ),
+        find.descendant(of: find.byType(TabBar), matching: find.text('Games')),
       );
       await tester.pumpAndSettle();
       expect(tabIndex(tester), 3);
@@ -885,6 +887,65 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tabIndex(tester), 3);
+    });
+  });
+
+  group('the "New here?" tracking hint', () {
+    const uid = 'uid123';
+    const splitId = 'br_ranked_s29_s1';
+    const hint = 'New here? Tap to see how ranked tracking works.';
+
+    Future<SharedPreferences> unseenPrefs() => prefsWith({
+      PrefsKeys.statsRefreshMinutes: 10,
+      PrefsKeys.rankedInfoCoachMarkShown: false,
+    });
+
+    testWidgets('shows while no games are recorded', (tester) async {
+      final prefs = await unseenPrefs();
+      await tester.pumpWidget(
+        app(prefs: prefs, outcome: RankedSyncOutcome.synced),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(hint), findsOneWidget);
+    });
+
+    testWidgets('is hidden, and marked as seen, once games are recorded', (
+      tester,
+    ) async {
+      final prefs = await unseenPrefs();
+      await tester.pumpWidget(
+        app(
+          prefs: prefs,
+          outcome: RankedSyncOutcome.synced,
+          splits: const [
+            RankedSplitBucket(id: splitId, displayName: 'S29 Split 1'),
+          ],
+          splitMatches: [matchWith(uid: uid, cumulativeRp: 1000)],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(hint), findsNothing);
+      expect(prefs.getBool(PrefsKeys.rankedInfoCoachMarkShown), isTrue);
+    });
+
+    testWidgets('has a labelled dismiss button that marks it as seen', (
+      tester,
+    ) async {
+      final prefs = await unseenPrefs();
+      await tester.pumpWidget(
+        app(prefs: prefs, outcome: RankedSyncOutcome.synced),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pump();
+
+      expect(find.text(hint), findsNothing);
+      expect(prefs.getBool(PrefsKeys.rankedInfoCoachMarkShown), isTrue);
     });
   });
 }

@@ -1,11 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../providers/ranked_provider.dart';
 import '../../../utils/ranked/ranked_period.dart';
 import '../../../utils/theme.dart';
+import '../../../widgets/control_pill.dart';
 
-/// Split selector for the AppBar actions — a compact pill that opens the list
-/// of available splits. Drives [rankedPeriodProvider].
+/// The small rounded label both header dropdowns share. A long [label] is cut
+/// with an ellipsis rather than pushing the other dropdown off the row.
+class _HeaderPill extends StatelessWidget {
+  final String label;
+  final bool dropdown;
+  const _HeaderPill({required this.label, required this.dropdown});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // The arrow icon has space of its own beside its drawn shape, so the
+      // right edge takes less padding for the pill to look even.
+      padding: EdgeInsets.fromLTRB(10, 6, dropdown ? 4 : 10, 6),
+      decoration: BoxDecoration(
+        color: AppTheme.surface2,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppTheme.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (dropdown) ...[
+            const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.accent),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The pill is short; this gives a thumb a taller area to hit without changing
+/// how it looks.
+Widget _thumbSized(Widget pill) => ConstrainedBox(
+  constraints: const BoxConstraints(minHeight: ControlPill.minHitHeight),
+  child: Center(widthFactor: 1, heightFactor: 1, child: pill),
+);
+
+/// Split selector: a compact pill that opens the list of available splits.
+/// Drives [rankedPeriodProvider].
 class RankedSplitDropdown extends ConsumerWidget {
   final RankedView view;
   const RankedSplitDropdown({super.key, required this.view});
@@ -19,32 +70,10 @@ class RankedSplitDropdown extends ConsumerWidget {
       orElse: () => view.splits.first,
     );
 
-    final pill = Container(
-      margin: const EdgeInsets.only(right: AppTheme.sm),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.surface2,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            selected.displayName,
-            style: const TextStyle(
-              color: AppTheme.accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (view.splits.length > 1) ...[
-            const SizedBox(width: 2),
-            const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.accent),
-          ],
-        ],
-      ),
+    final pill = _HeaderPill(
+      label: selected.displayName,
+      dropdown: view.splits.length > 1,
     );
-
     if (view.splits.length <= 1) return pill;
 
     return PopupMenuButton<String>(
@@ -70,101 +99,66 @@ class RankedSplitDropdown extends ConsumerWidget {
             ),
           )
           .toList(),
-      child: pill,
+      child: _thumbSized(pill),
     );
   }
 }
 
-/// Week-chip strip hosted in the AppBar's `bottom` slot: `All · W1 · W2 …`, so
-/// the split selector and weeks read as one cohesive header. Hidden for splits
-/// with no week metadata (the "Unknown" bucket) — callers gate on `weeks`.
-class RankedWeekStrip extends ConsumerWidget implements PreferredSizeWidget {
+/// Week selector, the other half of the Stats header: "Week: All", "Week: 1"
+/// and so on. A week that has not started is listed but cannot be picked, and
+/// says when it starts. Hidden for splits with no week metadata (the "Unknown"
+/// bucket), so callers gate on `weeks`.
+class RankedWeekDropdown extends ConsumerWidget {
   final RankedView view;
-  const RankedWeekStrip({super.key, required this.view});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(40);
+  const RankedWeekDropdown({super.key, required this.view});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (view.weeks.isEmpty) return const SizedBox.shrink();
     final notifier = ref.read(rankedPeriodProvider.notifier);
+    final now = DateTime.now();
+    final index = view.weekIndex;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.md,
-        2,
-        AppTheme.md,
-        AppTheme.sm,
+    final pill = _HeaderPill(
+      label: index < 0 ? 'Week: All' : 'Week: ${index + 1}',
+      dropdown: true,
+    );
+
+    return PopupMenuButton<int>(
+      tooltip: 'Choose week',
+      initialValue: index,
+      onSelected: notifier.selectWeek,
+      color: AppTheme.surface2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
-      // Centre the chips when they fit; fall back to horizontal scrolling when
-      // there are too many weeks to fit on one line.
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _WeekChip(
-                  label: 'All',
-                  selected: view.weekIndex < 0,
-                  onTap: () => notifier.selectWeek(-1),
-                ),
-                for (var i = 0; i < view.weeks.length; i++)
-                  _WeekChip(
-                    label: 'W${i + 1}',
-                    selected: view.weekIndex == i,
-                    enabled: !view.weeks[i].start.isAfter(DateTime.now()),
-                    onTap: () => notifier.selectWeek(i),
-                  ),
-              ],
+      itemBuilder: (_) => [
+        PopupMenuItem<int>(
+          value: -1,
+          child: _item('All weeks', selected: index < 0),
+        ),
+        for (var i = 0; i < view.weeks.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            enabled: !view.weeks[i].start.isAfter(now),
+            child: _item(
+              view.weeks[i].start.isAfter(now)
+                  ? 'Week ${i + 1}, starts '
+                        '${DateFormat('MMM d').format(view.weeks[i].start)}'
+                  : 'Week ${i + 1}',
+              selected: index == i,
             ),
           ),
-        ),
-      ),
+      ],
+      child: _thumbSized(pill),
     );
   }
-}
 
-class _WeekChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _WeekChip({
-    required this.label,
-    required this.selected,
-    this.enabled = true,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Opacity(
-        opacity: enabled ? 1.0 : 0.35,
-        child: Container(
-          margin: const EdgeInsets.only(right: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: AppTheme.xs),
-          decoration: BoxDecoration(
-            color: selected ? AppTheme.accent : AppTheme.surface2,
-            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              color: selected ? Colors.white : AppTheme.muted,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  static Widget _item(String text, {required bool selected}) => Text(
+    text,
+    style: TextStyle(
+      fontSize: 13,
+      color: selected ? AppTheme.accent : AppTheme.textPrimary,
+    ),
+  );
 }

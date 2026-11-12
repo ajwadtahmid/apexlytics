@@ -129,10 +129,20 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
     final syncOutcome = ref.watch(rankedSyncProvider(widget.uid)).value;
     final isOffline = syncOutcome == RankedSyncOutcome.offline;
     final isRequestError = syncOutcome == RankedSyncOutcome.requestError;
+    // Once games are recorded the nudge has done its job, so it is marked as
+    // seen instead of telling someone with a full history that they are new.
+    final hasHistory = splitsAsync.value?.isNotEmpty ?? false;
+    if (_showCoachMark && hasHistory) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _showCoachMark) _dismissCoachMark();
+      });
+    }
 
     return Column(
       children: [
-        if (_showCoachMark)
+        // Only once the splits are known, so it does not flash for a frame
+        // before it is hidden.
+        if (_showCoachMark && splitsAsync.hasValue && !hasHistory)
           _InfoCoachMark(
             onLearnMore: _openInfoFromCoachMark,
             onDismiss: _dismissCoachMark,
@@ -991,6 +1001,7 @@ class _InfoCoachMark extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 16, color: AppTheme.muted),
+            tooltip: 'Dismiss',
             onPressed: onDismiss,
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,

@@ -18,7 +18,7 @@ import '../../widgets/widgets.dart';
 import '../ranked/ranked_stats_body.dart';
 import '../ranked/widgets/ranked_info_sheet.dart';
 import '../ranked/widgets/ranked_period_selector.dart'
-    show RankedSplitDropdown, RankedWeekStrip;
+    show RankedSplitDropdown, RankedWeekDropdown;
 import 'refresh_all_sheet.dart';
 import '../../utils/navigation_utils.dart';
 
@@ -236,7 +236,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
             ) >=
             2;
 
-    // Built purely for the AppBar's split dropdown + week strip — the actual
+    // Built purely for the AppBar's split and week dropdowns — the actual
     // Ranked content (including its own loading/error handling) lives in
     // RankedStatsBody, which resolves the same split independently.
     final splits = ref.watch(rankedSplitsProvider(uid)).value;
@@ -264,22 +264,33 @@ class _StatsViewState extends ConsumerState<_StatsView> {
         title: InkWell(
           onTap: () => _openChangePlayer(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Flexible so a long name (e.g. a Twitch-style handle) shrinks
-              // and ellipsizes instead of overflowing the AppBar — a bare
-              // Text here has no width limit and renders the overflow stripes.
-              Flexible(
-                child: Text(name, overflow: TextOverflow.ellipsis, maxLines: 1),
-              ),
-              const SizedBox(width: AppTheme.xs),
-              const Icon(
-                Icons.keyboard_arrow_down,
-                size: 18,
-                color: AppTheme.muted,
-              ),
-            ],
+          // The name is one line of text; this keeps the area a thumb can
+          // tap the same height as a pill (see ControlPill.minHitHeight).
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: ControlPill.minHitHeight,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Flexible so a long name (e.g. a Twitch-style handle) shrinks
+                // and ellipsizes instead of overflowing the AppBar — a bare
+                // Text here has no width limit and renders the overflow stripes.
+                Flexible(
+                  child: Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.xs),
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 18,
+                  color: AppTheme.muted,
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -323,9 +334,8 @@ class _StatsViewState extends ConsumerState<_StatsView> {
                   onPressed: refreshAllMode ? _refreshAll : _sync,
                 ),
         ],
-        // Split + week selection get their own row so they don't compete with
-        // the actions above for space — riding in the AppBar's bottom slot
-        // keeps them reading as one header surface either way.
+        // Split + week selection share one row under the actions, so they
+        // don't compete with them for space and take a single row of height.
         bottom: shell != null
             ? _AppBarBottom(
                 shell: shell,
@@ -373,34 +383,44 @@ class _StatsViewState extends ConsumerState<_StatsView> {
   }
 }
 
-/// Split picker (its own row) + week strip, stacked in the AppBar's bottom
+/// Split and week dropdowns on one row, in the AppBar's bottom
 /// slot. Only the split row is shown when the split has no week metadata.
 class _AppBarBottom extends StatelessWidget implements PreferredSizeWidget {
   final RankedView shell;
 
-  /// Height of each row; grows with the text size, which the AppBar can't see.
+  /// Height of the row; grows with the text size, which the AppBar can't see.
   final double rowHeight;
   const _AppBarBottom({required this.shell, required this.rowHeight});
 
+  /// Room added to the row, so the pills do not sit against the tab bar below;
+  /// the row centres them in it.
+  static const _bottomPad = 6.0;
+
   @override
-  Size get preferredSize =>
-      Size.fromHeight(rowHeight * (shell.weeks.isNotEmpty ? 2 : 1));
+  Size get preferredSize => Size.fromHeight(rowHeight + _bottomPad);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: rowHeight,
-          child: Center(child: RankedSplitDropdown(view: shell)),
+    return SizedBox(
+      height: rowHeight + _bottomPad,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.md),
+        child: Row(
+          children: [
+            // The split name gives way first when the row is tight.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: RankedSplitDropdown(view: shell),
+              ),
+            ),
+            if (shell.weeks.isNotEmpty) ...[
+              const SizedBox(width: AppTheme.sm),
+              RankedWeekDropdown(view: shell),
+            ],
+          ],
         ),
-        if (shell.weeks.isNotEmpty)
-          SizedBox(
-            height: rowHeight,
-            child: RankedWeekStrip(view: shell),
-          ),
-      ],
+      ),
     );
   }
 }
