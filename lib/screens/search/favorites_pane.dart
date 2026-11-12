@@ -153,12 +153,7 @@ class FavoritesPane extends ConsumerWidget {
     ];
 
     if (favorites.isEmpty && recents.isEmpty) {
-      return const Center(
-        child: Text(
-          'Search for a player above to get started',
-          style: TextStyle(color: AppTheme.muted),
-        ),
-      );
+      return const _FirstSearchTips();
     }
 
     return RefreshIndicator(
@@ -517,6 +512,62 @@ class _Subtitle extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What the page says before there is a favorite or a recent search, which are
+/// what fill it afterwards: it sits where they will, under the form, headed
+/// like them.
+class _FirstSearchTips extends StatelessWidget {
+  const _FirstSearchTips();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tip(IconData icon, String text) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppTheme.accent),
+          const SizedBox(width: AppTheme.sm),
+          Expanded(
+            child: Text(text, style: const TextStyle(color: AppTheme.muted)),
+          ),
+        ],
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.all(AppTheme.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionLabel(
+            icon: Icons.lightbulb_outline,
+            label: 'Getting started',
+          ),
+          SurfaceCard(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.md,
+              vertical: AppTheme.sm,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  tip(Icons.edit_outlined, 'Type a name and pick a platform'),
+                  tip(Icons.tag, 'Know their UID? Use the UID tab'),
+                  tip(
+                    Icons.star_border,
+                    'Star a result to keep it as a favorite',
+                  ),
+                  tip(Icons.history, 'Recent searches appear here'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -105,6 +105,7 @@ class CacheSettingsSection extends ConsumerWidget {
               ActionRow(
                 icon: Icons.delete_sweep_outlined,
                 label: 'Clear data',
+                color: AppTheme.red,
                 onTap: () => _openClearSheet(context, ref),
               ),
             ],

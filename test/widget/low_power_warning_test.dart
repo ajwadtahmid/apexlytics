@@ -263,10 +263,23 @@ void main() {
       await unmount(tester, container);
     });
 
+    testWidgets('says what it is for', (tester) async {
+      final container = await pumpSectionFor(tester, keepAwake: true);
+
+      expect(
+        find.text(
+          'Keeps Apexlytics awake while it is open, so games are recorded.',
+        ),
+        findsOneWidget,
+      );
+      await unmount(tester, container);
+    });
+
     testWidgets('is not there on a computer', (tester) async {
       final container = await pumpSectionFor(tester, keepAwake: false);
 
       expect(find.text('Keep screen on'), findsNothing);
+      expect(find.textContaining('games are recorded'), findsNothing);
       expect(find.text('Default tab'), findsOneWidget); // the rest is there
       await unmount(tester, container);
     });

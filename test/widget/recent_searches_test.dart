@@ -76,10 +76,7 @@ void main() {
         t.getTopLeft(find.text('Alpha')).dy,
         lessThan(t.getTopLeft(find.text('Bravo')).dy),
       );
-      expect(
-        find.text('Search for a player above to get started'),
-        findsNothing,
-      );
+      expect(find.text('Recent searches appear here'), findsNothing);
     });
 
     testWidgets('the star adds that player to favourites', (t) async {
@@ -120,10 +117,14 @@ void main() {
       );
       await t.pump();
 
+      expect(find.text('Getting started'), findsOneWidget);
+      expect(find.text('Type a name and pick a platform'), findsOneWidget);
+      expect(find.text('Know their UID? Use the UID tab'), findsOneWidget);
       expect(
-        find.text('Search for a player above to get started'),
+        find.text('Star a result to keep it as a favorite'),
         findsOneWidget,
       );
+      expect(find.text('Recent searches appear here'), findsOneWidget);
     });
   });
 

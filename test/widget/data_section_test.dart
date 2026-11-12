@@ -15,6 +15,7 @@ import 'package:apexlytics/utils/formatting/format.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/ranked/best_metric.dart';
 import 'package:apexlytics/utils/storage/api_cache_store.dart';
+import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -169,6 +170,14 @@ void main() {
     });
   });
 
+  testWidgets('the Clear data row is red, the others are not', (t) async {
+    await pump(t, cached: 3);
+
+    Color? label(String text) => t.widget<Text>(find.text(text)).style?.color;
+    expect(label('Clear data'), AppTheme.red);
+    expect(label('Import data'), isNot(AppTheme.red));
+  });
+
   group('Clear data', () {
     Future<void> openSheet(WidgetTester t) async {
       await t.tap(find.text('Clear data'));
@@ -275,10 +284,9 @@ void main() {
       await container
           .read(entityTrendOverridesProvider.notifier)
           .set('legend:Wraith', 10);
-      expect(
-        jsonDecode(prefs.getString(PrefsKeys.entityTrendOverrides)!),
-        {'legend:Wraith': 10},
-      );
+      expect(jsonDecode(prefs.getString(PrefsKeys.entityTrendOverrides)!), {
+        'legend:Wraith': 10,
+      });
     });
 
     testWidgets('Clear profiles & favorites leaves the view choices alone', (
@@ -300,9 +308,7 @@ void main() {
       await letStorageFinish(t);
 
       expect(container.read(bestMetricProvider), BestMetric.totalKills);
-      expect(container.read(entityTrendOverridesProvider), {
-        'legend:Axle': 25,
-      });
+      expect(container.read(entityTrendOverridesProvider), {'legend:Axle': 25});
     });
 
     testWidgets('Clear history of removed players keeps the saved profile and '
@@ -353,13 +359,20 @@ void main() {
         () => store.uidsWithHistoryExcept(<String>{}),
       );
       expect(left, {'1000000000001', '1000000000003'});
-      expect(prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000002')), isFalse);
-      expect(prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000003')), isTrue);
+      expect(
+        prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000002')),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(PrefsKeys.legendStatsKeyFor('1000000000003')),
+        isTrue,
+      );
       expect(container.read(playerSettingsProvider).profiles, isNotEmpty);
     });
 
-    testWidgets('Clear history of removed players says so when there is none',
-        (t) async {
+    testWidgets('Clear history of removed players says so when there is none', (
+      t,
+    ) async {
       await pump(t);
       await openSheet(t);
 
@@ -367,13 +380,14 @@ void main() {
       await letStorageFinish(t);
       await t.pumpAndSettle();
 
-      expect(find.text('No saved history from removed players.'), findsOneWidget);
+      expect(
+        find.text('No saved history from removed players.'),
+        findsOneWidget,
+      );
       expect(find.text('Clear history of removed players?'), findsNothing);
     });
 
-    testWidgets('Clear all data asks twice before it does anything', (
-      t,
-    ) async {
+    testWidgets('Clear all data asks twice before it does anything', (t) async {
       await pump(t, games: 2);
       await openSheet(t);
 

@@ -73,6 +73,13 @@ class _PlayerSetupView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppTheme.muted, height: 1.5),
             ),
+            SizedBox(height: AppTheme.sm),
+            Text(
+              'Games are recorded from the moment you add a player. Earlier '
+              'games cannot be recovered.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.muted, height: 1.5),
+            ),
             SizedBox(height: AppTheme.xl),
             PlayerLookupForm(submitLabel: 'Find My Player'),
             SizedBox(height: AppTheme.sm),

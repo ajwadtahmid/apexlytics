@@ -118,7 +118,7 @@ void main() {
       expect(names(container), ['Alpha', 'Bravo']);
     });
 
-    testWidgets('swiping the last one leaves the starting hint', (t) async {
+    testWidgets('swiping the last one leaves the starting tips', (t) async {
       final container = await pumpPane(
         t,
         saved: '[{"query":"Alpha","platform":"PC","uid":"1000000000001"}]',
@@ -127,10 +127,7 @@ void main() {
       await swipeAway(t, 'Alpha');
 
       expect(names(container), isEmpty);
-      expect(
-        find.text('Search for a player above to get started'),
-        findsOneWidget,
-      );
+      expect(find.text('Recent searches appear here'), findsOneWidget);
     });
 
     testWidgets('a swipe the other way does nothing', (t) async {

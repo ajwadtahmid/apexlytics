@@ -133,6 +133,16 @@ class StatsRefreshSection extends ConsumerWidget {
                     ),
                   ],
                 ),
+                // The one setting that decides whether games are recorded, so
+                // it says so.
+                const Padding(
+                  padding: EdgeInsets.only(left: 28, right: AppTheme.sm),
+                  child: Text(
+                    'Keeps Apexlytics awake while it is open, so games are '
+                    'recorded.',
+                    style: AppTheme.caption,
+                  ),
+                ),
                 const LowPowerWarning(),
               ],
               if (ios) ...[

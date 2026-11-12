@@ -62,6 +62,24 @@ void main() {
     expect(find.text('Get Started'), findsOneWidget);
   });
 
+  testWidgets('the player setup says games are only recorded from now on', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(_app(prefs));
+    await tester.pump();
+
+    expect(
+      find.text(
+        'Games are recorded from the moment you add a player. Earlier games '
+        'cannot be recovered.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('renders the stats body (not skeleton) for fresh data', (
     tester,
   ) async {
