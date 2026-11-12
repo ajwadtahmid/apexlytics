@@ -50,8 +50,8 @@ class CacheSettingsSection extends ConsumerWidget {
   /// Under Export data: what there is to back up, and when it last was.
   static String _exportLine(StorageUsage? u, DateTime? lastBackup) {
     final backup = lastBackup == null
-        ? 'Never backed up'
-        : 'Backed up ${backupAgeLabel(lastBackup, DateTime.now())}';
+        ? 'Last export: never'
+        : 'Last export: ${backupAgeLabel(lastBackup, DateTime.now())}';
     if (u == null) return backup;
     final saved = u.games == 0
         ? 'No games saved yet'

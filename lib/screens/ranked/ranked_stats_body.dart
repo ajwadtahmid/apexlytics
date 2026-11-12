@@ -29,6 +29,7 @@ import 'ranked_personal_records_screen.dart';
 import 'ranked_pick_rate_screen.dart';
 import 'ranked_sessions_list_screen.dart';
 import 'ranked_performance_trends_screen.dart';
+import 'widgets/split_end_backup_nudge.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
 import 'widgets/ranked_highlight_cards.dart';
 import 'widgets/ranked_info_sheet.dart';
@@ -674,6 +675,7 @@ class _OverviewTab extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppTheme.md),
         children: [
+          SplitEndBackupNudge(splits: data.view.splits),
           const SectionLabel(label: 'Your account', icon: Icons.person_outline),
           PlayerInfoCard(stats: stats),
           const SizedBox(height: AppTheme.lg),

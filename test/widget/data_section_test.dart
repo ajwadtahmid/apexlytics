@@ -118,7 +118,7 @@ void main() {
 
       expect(
         find.textContaining(
-          RegExp(r'^3 games · \d+(\.\d)? (B|KB|MB) · Never backed up$'),
+          RegExp(r'^3 games · \d+(\.\d)? (B|KB|MB) · Last export: never$'),
         ),
         findsOneWidget,
       );
@@ -128,7 +128,7 @@ void main() {
       await pump(t);
 
       expect(
-        find.text('No games saved yet · Never backed up'),
+        find.text('No games saved yet · Last export: never'),
         findsOneWidget,
       );
     });

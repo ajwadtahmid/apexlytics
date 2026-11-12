@@ -139,6 +139,10 @@ class PrefsKeys {
   /// When the last backup was exported (epoch ms); device-local, not backed up.
   static const lastBackupAt = 'last_backup_at';
 
+  /// Id of the ended split whose "export a copy" reminder was dismissed;
+  /// device-local, not backed up.
+  static const backupSplitNudgeDismissed = 'backup_split_nudge_dismissed';
+
   /// Outcome of the most recent background fetch; device-local, not backed up.
   static const bgFetchLastResult = 'bg_fetch_last_result';
 

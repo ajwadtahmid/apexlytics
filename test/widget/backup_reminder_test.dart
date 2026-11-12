@@ -87,69 +87,87 @@ void main() {
     await t.pump();
   }
 
-  Finder banner() => find.text('Back up your match history');
+  Finder never() => find.text('Your history lives only on this phone');
+  Finder stale() => find.text('Time for a fresh backup');
+  Finder exportNow() => find.descendant(
+    of: find.byType(BackupReminderBanner),
+    matching: find.text('Export'),
+  );
+  Finder anyCard() => find.descendant(
+    of: find.byType(BackupReminderBanner),
+    matching: find.byType(Text),
+  );
 
-  group('the reminder at the top of Settings', () {
-    testWidgets('appears after 15 days with games no backup holds', (t) async {
-      await pump(t, gameDays: [3, 5, 20], backupDays: 16);
+  group('the backup card at the top of Settings', () {
+    testWidgets('asks for a fresh backup after 14 days with games not held', (
+      t,
+    ) async {
+      await pump(t, gameDays: [3, 5, 20], backupDays: 15);
 
-      expect(banner(), findsOneWidget);
+      expect(stale(), findsOneWidget);
       expect(
-        find.text('2 games recorded since your last backup, 16 days ago.'),
+        find.text('14+ days or 500+ games since last backup.'),
         findsOneWidget,
       );
+      expect(exportNow(), findsOneWidget);
     });
 
-    testWidgets('says so when there never was a backup', (t) async {
+    testWidgets('says the history lives on the phone when never exported', (
+      t,
+    ) async {
       await pump(t, gameDays: [1, 20, 30]);
 
-      expect(banner(), findsOneWidget);
-      expect(
-        find.text('3 games recorded, and none backed up yet.'),
-        findsOneWidget,
-      );
+      expect(never(), findsOneWidget);
+      expect(find.text('Export a copy to keep it safe.'), findsOneWidget);
+      expect(exportNow(), findsOneWidget);
     });
 
-    testWidgets('stays away before the 15 days are up', (t) async {
-      await pump(t, gameDays: [1, 2], backupDays: 14);
+    testWidgets('is not there after a recent export', (t) async {
+      await pump(t, gameDays: [1, 2], backupDays: 3);
 
-      expect(banner(), findsNothing);
+      expect(anyCard(), findsNothing);
     });
 
-    testWidgets('stays away when nothing new was recorded', (t) async {
-      // Every game is older than the backup.
-      await pump(t, gameDays: [30, 40], backupDays: 20);
+    testWidgets('does not mention automatic copies', (t) async {
+      await pump(t, gameDays: [3, 20], backupDays: 16);
 
-      expect(banner(), findsNothing);
+      final texts = anyCard()
+          .evaluate()
+          .map((e) => (e.widget as Text).data ?? '')
+          .join(' ')
+          .toLowerCase();
+      expect(texts, isNot(contains('automatic')));
     });
 
-    testWidgets('stays away for a new install with no games', (t) async {
+    testWidgets('stays away when nothing new was recorded and no export', (
+      t,
+    ) async {
       await pump(t, gameDays: []);
 
-      expect(banner(), findsNothing);
+      expect(anyCard(), findsNothing);
     });
 
-    testWidgets('stays away for a history under 15 days old', (t) async {
+    testWidgets('stays away for a history under 14 days old', (t) async {
       await pump(t, gameDays: [1, 9]);
 
-      expect(banner(), findsNothing);
+      expect(anyCard(), findsNothing);
     });
 
     testWidgets('goes once a backup is made', (t) async {
       await pump(t, gameDays: [3, 20], backupDays: 16);
-      expect(banner(), findsOneWidget);
+      expect(stale(), findsOneWidget);
 
       await t.runAsync(
         () => container.read(lastBackupProvider.notifier).markBackedUp(),
       );
       await settle(t);
 
-      expect(banner(), findsNothing);
+      expect(anyCard(), findsNothing);
     });
 
     testWidgets('counts again when Settings is opened', (t) async {
       await pump(t, gameDays: [20], backupDays: 16);
-      expect(banner(), findsNothing);
+      expect(stale(), findsNothing);
 
       // A game is recorded while Settings is out of view.
       await t.runAsync(
@@ -162,19 +180,7 @@ void main() {
       });
       await settle(t);
 
-      expect(banner(), findsOneWidget);
-    });
-
-    testWidgets('has an Export button', (t) async {
-      await pump(t, gameDays: [3, 20], backupDays: 16);
-
-      expect(
-        find.descendant(
-          of: find.byType(BackupReminderBanner),
-          matching: find.text('Export'),
-        ),
-        findsOneWidget,
-      );
+      expect(stale(), findsOneWidget);
     });
   });
 
@@ -182,13 +188,13 @@ void main() {
     testWidgets('says when the last backup was', (t) async {
       await pump(t, gameDays: [1], backupDays: 12);
 
-      expect(find.textContaining('Backed up 12 days ago'), findsOneWidget);
+      expect(find.textContaining('Last export: 12 days ago'), findsOneWidget);
     });
 
     testWidgets('says there has never been one', (t) async {
       await pump(t, gameDays: [1]);
 
-      expect(find.textContaining('Never backed up'), findsOneWidget);
+      expect(find.textContaining('Last export: never'), findsOneWidget);
     });
 
     testWidgets('updates when a backup is made', (t) async {
@@ -199,7 +205,7 @@ void main() {
       );
       await t.pump();
 
-      expect(find.textContaining('Backed up today'), findsOneWidget);
+      expect(find.textContaining('Last export: today'), findsOneWidget);
     });
   });
 
