@@ -4,6 +4,7 @@ import '../constants/api_constants.dart';
 import '../providers/owner_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/theme.dart';
+import 'confirm_dialog.dart';
 import 'player_lookup_form.dart';
 import 'sheet_handle.dart';
 
@@ -41,7 +42,18 @@ class _ProfileManagerSheetState extends ConsumerState<ProfileManagerSheet> {
     _editingIndex = null;
   });
 
-  Future<void> _removeProfile(int index) async {
+  Future<void> _removeProfile(int index, String name) async {
+    // Removing sits next to Edit, so it asks first and names who it is for.
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Remove $name?',
+      body:
+          'The profile is removed from this list. Games already recorded for '
+          'this player stay on this device, and adding them again brings '
+          'them back.',
+      confirmLabel: 'Remove',
+    );
+    if (!confirmed || !mounted) return;
     await ref.read(playerSettingsProvider.notifier).removeProfile(index);
     // If the form was open for this specific slot, return to the list.
     if (_editingIndex == index && mounted) {
@@ -109,7 +121,7 @@ class _ProfileManagerSheetState extends ConsumerState<ProfileManagerSheet> {
             isActive: i == activeProfileIndex,
             onSwitch: () => _switchTo(i),
             onEdit: () => _startEdit(i),
-            onRemove: () => _removeProfile(i),
+            onRemove: () => _removeProfile(i, profiles[i].name),
           ),
           const SizedBox(height: AppTheme.sm),
         ],
@@ -209,6 +221,15 @@ class _ProfileManagerSheetState extends ConsumerState<ProfileManagerSheet> {
   }
 }
 
+/// Edit and Remove: 40 dp square tap areas side by side, so the icons sit
+/// close together and Remove, which asks first, is still a separate target.
+final _kActionStyle = IconButton.styleFrom(
+  minimumSize: const Size(40, 40),
+  fixedSize: const Size(40, 40),
+  padding: EdgeInsets.zero,
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+);
+
 class _ProfileTile extends StatelessWidget {
   final PlayerProfile profile;
   final bool isActive;
@@ -243,8 +264,9 @@ class _ProfileTile extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // The tick replaces the avatar, so it sits right by the name.
             Icon(
-              Icons.person,
+              isActive ? Icons.check_circle : Icons.person,
               color: isActive ? AppTheme.accent : AppTheme.muted,
               size: 20,
             ),
@@ -269,35 +291,22 @@ class _ProfileTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (isActive)
-              const Padding(
-                padding: EdgeInsets.only(right: AppTheme.xs),
-                child: Icon(
-                  Icons.check_circle,
-                  color: AppTheme.accent,
-                  size: 16,
-                ),
-              ),
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 16),
+              icon: const Icon(Icons.edit_outlined, size: 20),
               color: AppTheme.muted,
+              tooltip: 'Edit profile',
               onPressed: onEdit,
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              style: _kActionStyle,
             ),
-            const SizedBox(width: AppTheme.sm),
             IconButton(
-              icon: const Icon(Icons.delete_outline, size: 16),
+              icon: const Icon(Icons.delete_outline, size: 20),
               color: AppTheme.red,
               // Stats/history for this UID are kept, not deleted — re-adding
               // the same player later picks them back up. See
               // PlayerSettingsNotifier.removeProfile.
               tooltip: 'Remove profile (their stats are kept)',
               onPressed: onRemove,
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+              style: _kActionStyle,
             ),
           ],
         ),

@@ -20,16 +20,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers.dart';
 
 /// A player payload as the proxy returns it.
-Map<String, Object?> player(String name, String uid, {String platform = 'PC'}) =>
-    {
-      'global': {
-        'name': name,
-        'uid': uid,
-        'platform': platform,
-        'level': 10,
-        'rank': {'rankName': 'Gold', 'rankScore': 5000},
-      },
-    };
+Map<String, Object?> player(
+  String name,
+  String uid, {
+  String platform = 'PC',
+}) => {
+  'global': {
+    'name': name,
+    'uid': uid,
+    'platform': platform,
+    'level': 10,
+    'rank': {'rankName': 'Gold', 'rankScore': 5000},
+  },
+};
 
 const _switchUidNotice =
     'Nintendo Switch players can only be found by UID, so UID search is on.';
@@ -75,6 +78,10 @@ void main() {
     FakeHttpAdapter adapter, {
     Map<String, Object> prefs = const {},
   }) async {
+    // Tall enough for the setup screen's whole form, notes included.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({
       'uid_search_warning_shown': true,
       ...prefs,
@@ -107,7 +114,6 @@ void main() {
 
   String fieldText(WidgetTester t) =>
       t.widget<TextField>(find.byType(TextField).first).controller!.text;
-
 
   Future<void> pickPlatform(WidgetTester t, String label) async {
     await t.tap(find.text(label));
@@ -468,6 +474,67 @@ void main() {
       return c;
     }
 
+    const twoProfiles = {
+      'player_profiles':
+          '[{"name":"Aceu","uid":"1001","platform":"PC"},'
+          '{"name":"Alt","uid":"1002","platform":"PC"}]',
+      'active_profile_index': 0,
+    };
+
+    testWidgets('the tick replaces the avatar of the active profile', (
+      t,
+    ) async {
+      await openSheet(t, FakeHttpAdapter(), stored: twoProfiles);
+
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      // The other profile keeps its avatar.
+      expect(find.byIcon(Icons.person), findsOneWidget);
+    });
+
+    testWidgets('Edit and Remove have a thumb-sized area, side by side', (
+      t,
+    ) async {
+      await openSheet(t, FakeHttpAdapter(), stored: twoProfiles);
+
+      final edit = find.widgetWithIcon(IconButton, Icons.edit_outlined).first;
+      final remove = find
+          .widgetWithIcon(IconButton, Icons.delete_outline)
+          .first;
+      expect(t.getSize(edit).shortestSide, greaterThanOrEqualTo(40));
+      expect(t.getSize(remove).shortestSide, greaterThanOrEqualTo(40));
+      // Close together, but not overlapping.
+      final gap = t.getTopLeft(remove).dx - t.getTopRight(edit).dx;
+      expect(gap, inInclusiveRange(0, 8));
+    });
+
+    testWidgets('Remove asks first, naming the profile, and Cancel keeps it', (
+      t,
+    ) async {
+      final c = await openSheet(t, FakeHttpAdapter(), stored: twoProfiles);
+
+      await t.tap(find.byIcon(Icons.delete_outline).last);
+      await t.pumpAndSettle();
+
+      expect(find.text('Remove Alt?'), findsOneWidget);
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+
+      expect(c.read(playerSettingsProvider).profiles, hasLength(2));
+    });
+
+    testWidgets('confirming Remove takes the profile out', (t) async {
+      final c = await openSheet(t, FakeHttpAdapter(), stored: twoProfiles);
+
+      await t.tap(find.byIcon(Icons.delete_outline).last);
+      await t.pumpAndSettle();
+      await t.tap(find.text('Remove'));
+      await t.pumpAndSettle();
+
+      expect(c.read(playerSettingsProvider).profiles.map((p) => p.name), [
+        'Aceu',
+      ]);
+    });
+
     testWidgets('adding starts from a blank form, not the active profile', (
       t,
     ) async {
@@ -663,12 +730,13 @@ void main() {
       await t.pump(const Duration(milliseconds: 500));
 
       final field = find.byType(TextField, skipOffstage: false).first;
+      expect((t.widget<TextField>(field).controller!.text), 'Aceu');
       expect(
-        (t.widget<TextField>(field).controller!.text),
-        'Aceu',
-      );
-      expect(
-        t.widget<LookupModePicker>(find.byType(LookupModePicker, skipOffstage: false)).byUid,
+        t
+            .widget<LookupModePicker>(
+              find.byType(LookupModePicker, skipOffstage: false),
+            )
+            .byUid,
         isFalse,
       );
     });
