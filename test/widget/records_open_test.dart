@@ -35,6 +35,7 @@ void main() {
     WidgetTester tester, {
     Override? allTime,
     List<RankedMatch>? games,
+    String? period,
   }) async {
     final list = games ?? played;
     tester.view.physicalSize = const Size(800, 2400);
@@ -49,6 +50,7 @@ void main() {
             matches: list,
             sessions: sessionize(list),
             onRefresh: () async {},
+            period: period,
           ),
         ),
       ),
@@ -144,12 +146,47 @@ void main() {
     });
   });
 
+  group('what the record is the best of', () {
+    testWidgets('says this split, or the week, beside each record title', (
+      tester,
+    ) async {
+      await pump(tester, period: 'this split');
+      expect(find.text('Most RP Gained · this split'), findsOneWidget);
+      expect(find.text('Most Kills · this split'), findsOneWidget);
+      expect(find.text('Most Damage · this split'), findsOneWidget);
+
+      await pump(tester, period: 'Week 3');
+      expect(find.text('Most Kills · Week 3'), findsOneWidget);
+    });
+
+    testWidgets('leaves it out when there is none to say', (tester) async {
+      await pump(tester);
+
+      expect(find.text('Most Kills'), findsOneWidget);
+      expect(find.textContaining('·  '), findsNothing);
+    });
+  });
+
   group('against the best over every split', () {
     PersonalBestGames best({int rp = 10, int kills = 1, int damage = 100}) => (
       bestRpGame: buildMatch(rp: rp),
       bestKillsGame: buildMatch(kills: kills),
       bestDamageGame: buildMatch(damage: damage),
     );
+
+    testWidgets('keeps AM or PM with the time, on one line', (tester) async {
+      await pump(tester, allTime: allTimeBestOverride(best()));
+
+      final stamps = find.byWidgetPredicate(
+        (w) => w is Text && RegExp(r', \d{1,2}:\d{2}').hasMatch(w.data ?? ''),
+      );
+      expect(stamps, findsWidgets);
+      for (final e in stamps.evaluate()) {
+        final text = (e.widget as Text).data!;
+        expect(text, matches(RegExp('\u00A0(AM|PM)\$')));
+        expect(text, isNot(matches(RegExp(' (AM|PM)\$'))));
+      }
+    });
 
     testWidgets('a record that is the all-time best says so, in orange', (
       tester,
@@ -194,7 +231,7 @@ void main() {
     ) async {
       await pump(tester);
 
-      expect(find.textContaining('All-time'), findsNothing);
+      expect(find.textContaining('All-time best'), findsNothing);
     });
 
     testWidgets('says nothing if the all-time games cannot be read', (
@@ -207,7 +244,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('All-time'), findsNothing);
+      expect(find.textContaining('All-time best'), findsNothing);
       // The records are still there.
       expect(find.text('4 kills'), findsOneWidget);
     });
@@ -218,7 +255,7 @@ void main() {
       await pump(tester, allTime: allTimeBestOverride(best()));
 
       // Three single-game records, nothing for the other two.
-      expect(find.textContaining('All-time'), findsNWidgets(3));
+      expect(find.textContaining('All-time best'), findsNWidgets(3));
     });
   });
 
@@ -230,7 +267,13 @@ void main() {
       await pump(tester);
 
       expect(find.text('Share'), findsNothing);
-      expect(find.text('Save'), findsNWidgets(6));
+      // Icon-only, one per record card.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is IconButton && (w.tooltip ?? '').startsWith('Save '),
+        ),
+        findsNWidgets(6),
+      );
 
       await tester.tap(find.byTooltip('Save Most Kills'));
       await tester.pumpAndSettle();

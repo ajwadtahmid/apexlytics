@@ -23,6 +23,18 @@ String recapScopeLabel(RankedView view, {bool week = true}) {
 String recapPeriodPhrase(RankedView view) =>
     view.weekIndex >= 0 ? 'in Week ${view.weekIndex + 1}' : 'this split';
 
+/// What a record on the Personal Records page is the best of: "this split"
+/// with all weeks, "this week" for the week going on now, otherwise "Week 3".
+String recordPeriodLabel(RankedView view, {DateTime? now}) {
+  final i = view.weekIndex;
+  if (i < 0 || i >= view.weeks.length) return 'this split';
+  final t = now ?? DateTime.now();
+  final w = view.weeks[i];
+  return !t.isBefore(w.start) && t.isBefore(w.end)
+      ? 'this week'
+      : 'Week ${i + 1}';
+}
+
 /// A tappable row that opens the recap of the period on screen as a shareable
 /// card. Hidden when there are no games to recap.
 class RankedRecapEntry extends StatelessWidget {

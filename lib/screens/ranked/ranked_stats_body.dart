@@ -824,6 +824,7 @@ class _OverviewTab extends ConsumerWidget {
                     live: data.rpScope.live,
                     onRefresh: onRefresh,
                     scope: recapScopeLabel(data.view),
+                    period: recordPeriodLabel(data.view),
                   ),
                 ),
               ],

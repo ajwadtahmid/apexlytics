@@ -51,7 +51,13 @@ void main() {
     expect(find.text('Share my profile'), findsNothing);
     // Each record here has its own labelled button (best game, session,
     // longest session and streak), and there is no other share section.
-    expect(find.text('Share'), findsNWidgets(4));
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is IconButton && (w.tooltip ?? '').startsWith('Share '),
+      ),
+      findsNWidgets(4),
+    );
+    expect(find.text('Share'), findsNothing);
     expect(find.text('Comparison'), findsNothing);
     expect(find.text('Legends'), findsNothing);
   });

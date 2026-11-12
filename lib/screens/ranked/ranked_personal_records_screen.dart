@@ -49,6 +49,10 @@ class RankedPersonalRecordsEntry extends StatelessWidget {
 
   /// The split (and week) on screen, for the title of the card of all records.
   final String scope;
+
+  /// What the records are the best of ("this split", "Week 3"), said on the
+  /// record cards; null leaves it out.
+  final String? period;
   const RankedPersonalRecordsEntry({
     super.key,
     required this.stats,
@@ -57,6 +61,7 @@ class RankedPersonalRecordsEntry extends StatelessWidget {
     required this.onRefresh,
     this.live = true,
     this.scope = 'Ranked',
+    this.period,
   });
 
   @override
@@ -75,6 +80,7 @@ class RankedPersonalRecordsEntry extends StatelessWidget {
             live: live,
             onRefresh: onRefresh,
             scope: scope,
+            period: period,
           ),
         ),
       ),
@@ -95,6 +101,9 @@ class RankedPersonalRecordsScreen extends ConsumerStatefulWidget {
 
   /// See [RankedPersonalRecordsEntry.scope].
   final String scope;
+
+  /// See [RankedPersonalRecordsEntry.period].
+  final String? period;
   const RankedPersonalRecordsScreen({
     super.key,
     required this.stats,
@@ -103,6 +112,7 @@ class RankedPersonalRecordsScreen extends ConsumerStatefulWidget {
     required this.onRefresh,
     this.live = true,
     this.scope = 'Ranked',
+    this.period,
   });
 
   @override
@@ -234,6 +244,7 @@ class _RankedPersonalRecordsScreenState
                 damage: summary.avgDamage,
               ),
               allTime: allTime,
+              period: widget.period,
               onOpenGame: _openGame,
             ),
             const SizedBox(height: AppTheme.md),
@@ -336,6 +347,12 @@ class RankedPersonalBestScreen extends ConsumerWidget {
   }
 }
 
+/// [formatShortDateTime] with a non-breaking space before AM or PM, so the
+/// line cannot wrap and leave it on a line of its own.
+String _whenPlayed(DateTime t) => formatShortDateTime(
+  t,
+).replaceFirstMapped(RegExp(r' (AM|PM)$'), (m) => '\u00A0${m[1]}');
+
 /// How a split's record compares with the best over every split: that it is the
 /// all-time best, or what the all-time best is. Null with nothing to compare.
 ({String text, bool isBest})? _allTimeStanding(
@@ -365,11 +382,13 @@ List<Widget> _recordCards({
   String? playerName,
   ({double rp, double? kills, double? damage})? averages,
   PersonalBestGames? allTime,
+  String? period,
 }) {
   return [
     _RecordCard(
       icon: StatIcons.totalRp,
       label: 'Most RP Gained',
+      period: period,
       match: bestRpGame,
       playerName: playerName,
       onOpen: onOpenGame,
@@ -398,6 +417,7 @@ List<Widget> _recordCards({
     _RecordCard(
       icon: StatIcons.totalKills,
       label: 'Most Kills',
+      period: period,
       match: bestKillsGame,
       playerName: playerName,
       onOpen: onOpenGame,
@@ -430,6 +450,7 @@ List<Widget> _recordCards({
     _RecordCard(
       icon: StatIcons.totalDamage,
       label: 'Most Damage',
+      period: period,
       match: bestDamageGame,
       playerName: playerName,
       onOpen: onOpenGame,
@@ -475,6 +496,11 @@ String? _vsAverage(num value, double? average, String averageText) {
 class _RecordCard extends StatelessWidget {
   final IconData icon;
   final String label;
+
+  /// What the record is the best of ("this split", "Week 3"), said beside
+  /// [label] on the card so the all-time figure under it reads as a different
+  /// thing. Not on the shared card, which has its own context.
+  final String? period;
   final RankedMatch? match;
   final String? value;
   final String? playerName;
@@ -501,6 +527,7 @@ class _RecordCard extends StatelessWidget {
     required this.match,
     required this.value,
     required this.onOpen,
+    this.period,
     this.allTime,
     this.playerName,
     this.shareDrops,
@@ -524,7 +551,10 @@ class _RecordCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: AppTheme.captionSmall),
+                Text(
+                  period == null ? label : '$label · $period',
+                  style: AppTheme.captionSmall,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   value ?? 'No data yet',
@@ -540,7 +570,7 @@ class _RecordCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${m.legend} · ${battleRoyaleMapName(m.mapKey)} · '
-                    '${formatShortDateTime(m.endTime)}',
+                    '${_whenPlayed(m.endTime)}',
                     style: AppTheme.caption,
                   ),
                 ],
@@ -559,7 +589,7 @@ class _RecordCard extends StatelessWidget {
                 record: label,
                 value: shareValue ?? value!,
                 unit: shareUnit,
-                detail: formatShortDateTime(m.endTime),
+                detail: _whenPlayed(m.endTime),
                 comparison: comparison,
                 legend: m.legend,
                 playerName: name,
@@ -644,22 +674,17 @@ class _ShareButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final share = canShareFiles;
-    return Tooltip(
-      message: '${share ? 'Share' : 'Save'} $title',
-      child: TextButton.icon(
-        icon: Icon(share ? Icons.ios_share : Icons.save_alt, size: 18),
-        label: Text(share ? 'Share' : 'Save'),
-        style: TextButton.styleFrom(
-          foregroundColor: AppTheme.accent,
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
-        ),
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ShareCardScreen(
-              title: title,
-              offerNameToggle: playerName != null,
-              cardBuilder: (showName) => card(showName ? playerName : null),
-            ),
+    // Icon only: "Share" on every card read as the same word over and over.
+    return IconButton(
+      icon: Icon(share ? Icons.ios_share : Icons.save_alt, size: 22),
+      color: AppTheme.accent,
+      tooltip: '${share ? 'Share' : 'Save'} $title',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ShareCardScreen(
+            title: title,
+            offerNameToggle: playerName != null,
+            cardBuilder: (showName) => card(showName ? playerName : null),
           ),
         ),
       ),
