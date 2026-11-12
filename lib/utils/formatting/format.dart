@@ -129,3 +129,15 @@ String formatDuration(int seconds) {
   if (hours > 0) return '${hours}h ${mins}m';
   return '${mins}m';
 }
+
+/// Time left as `20d 11h`, `1h 7m` or `2m 40s`: always with its units, so a
+/// reading like `02:40` is never a question of minutes or hours.
+String formatTimeLeft(int secs) {
+  final d = secs ~/ 86400;
+  final h = (secs % 86400) ~/ 3600;
+  final m = (secs % 3600) ~/ 60;
+  final s = secs % 60;
+  if (d > 0) return '${d}d ${h}h';
+  if (h > 0) return '${h}h ${m}m';
+  return '${m}m ${s}s';
+}

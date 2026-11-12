@@ -255,4 +255,20 @@ void main() {
       );
     });
   });
+
+  group('formatTimeLeft', () {
+    test('always carries its units', () {
+      expect(formatTimeLeft(20 * 86400 + 11 * 3600 + 5), '20d 11h');
+      expect(formatTimeLeft(3600 + 7 * 60 + 31), '1h 7m');
+      expect(formatTimeLeft(2 * 60 + 40), '2m 40s');
+      expect(formatTimeLeft(45), '0m 45s');
+    });
+
+    test('changes unit at the hour and the day', () {
+      expect(formatTimeLeft(3599), '59m 59s');
+      expect(formatTimeLeft(3600), '1h 0m');
+      expect(formatTimeLeft(86399), '23h 59m');
+      expect(formatTimeLeft(86400), '1d 0h');
+    });
+  });
 }

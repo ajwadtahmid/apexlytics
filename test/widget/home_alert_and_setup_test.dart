@@ -92,9 +92,7 @@ void main() {
   }
 
   group('with no player set up', () {
-    testWidgets('offers to set one up, and takes you to Stats', (
-      tester,
-    ) async {
+    testWidgets('offers to set one up, and takes you to Stats', (tester) async {
       await openHome(tester);
 
       expect(find.text('Guest'), findsOneWidget);
@@ -127,6 +125,19 @@ void main() {
   });
 
   group('the bell on the map card', () {
+    testWidgets('has a 48 dp tap area around its 40 dp circle', (tester) async {
+      await openHome(tester);
+
+      final area = find.ancestor(
+        of: find.byIcon(Icons.notifications_none_outlined),
+        matching: find.byWidgetPredicate(
+          (w) => w is SizedBox && w.width == 48 && w.height == 48,
+        ),
+      );
+      expect(area, findsOneWidget);
+      expect(tester.getSize(area), const Size(48, 48));
+    });
+
     testWidgets('turns on the alert for the mode on screen', (tester) async {
       await openHome(tester);
       expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);

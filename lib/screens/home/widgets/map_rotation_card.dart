@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../models/map_rotation.dart';
-import '../../../utils/formatting/format.dart' show formatClock;
+import '../../../utils/formatting/format.dart' show formatClock, formatTimeLeft;
 import '../../../utils/alert_silence.dart' show formatMuteEnd;
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
@@ -261,20 +261,6 @@ class _MapCardState extends State<_MapCard> {
     super.dispose();
   }
 
-  static String _formatCountdown(int secs) {
-    final d = secs ~/ 86400;
-    final h = (secs % 86400) ~/ 3600;
-    final m = (secs % 3600) ~/ 60;
-    final s = secs % 60;
-    if (d > 0) {
-      return '${d}d ${h}h';
-    }
-    if (h > 0) {
-      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
   static String _formatEndTime(int remainingSecs) {
     final end = DateTime.now().add(Duration(seconds: remainingSecs));
     return formatClock(end);
@@ -308,8 +294,10 @@ class _MapCardState extends State<_MapCard> {
               MapHeroImage(mapName: current.map, assetUrl: current.asset),
               if (widget.onAlertTap != null)
                 Positioned(
-                  top: AppTheme.sm,
-                  right: AppTheme.sm,
+                  // The bell's tap area is 4 dp bigger all round than the
+                  // circle drawn, so it moves out to keep the circle in place.
+                  top: AppTheme.sm - 4,
+                  right: AppTheme.sm - 4,
                   child: _AlertBell(
                     mode: widget.mode.label,
                     active: widget.alertActive,
@@ -352,7 +340,7 @@ class _MapCardState extends State<_MapCard> {
                     ),
                     const SizedBox(width: AppTheme.xs),
                     Text(
-                      '${_formatCountdown(_remaining)} remaining',
+                      '${formatTimeLeft(_remaining)} remaining',
                       style: const TextStyle(
                         color: AppTheme.accent,
                         fontWeight: FontWeight.w600,
@@ -413,27 +401,38 @@ class _AlertBell extends StatelessWidget {
         label: label,
         excludeSemantics: true,
         onTap: onTap,
-        child: Material(
-          color: Colors.black54,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(
-                muted
-                    ? Icons.notifications_paused
-                    : active
-                    ? Icons.notifications_active
-                    : Icons.notifications_none_outlined,
-                color: muted
-                    ? AppTheme.muted
-                    : active
-                    ? AppTheme.accent
-                    : Colors.white,
-                size: 22,
+        // 48 dp to tap, 40 dp drawn.
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onTap,
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Icon(
+                      muted
+                          ? Icons.notifications_paused
+                          : active
+                          ? Icons.notifications_active
+                          : Icons.notifications_none_outlined,
+                      color: muted
+                          ? AppTheme.muted
+                          : active
+                          ? AppTheme.accent
+                          : Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
