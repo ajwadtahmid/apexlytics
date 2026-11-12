@@ -342,7 +342,7 @@ class _SplitPicker extends StatelessWidget {
 
 const _kLabelStyle = TextStyle(
   color: AppTheme.muted,
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.5,
 );

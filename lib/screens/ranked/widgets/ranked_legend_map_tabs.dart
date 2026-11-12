@@ -515,7 +515,7 @@ class _MapStat extends StatelessWidget {
           label.toUpperCase(),
           style: const TextStyle(
             color: Colors.white60,
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),

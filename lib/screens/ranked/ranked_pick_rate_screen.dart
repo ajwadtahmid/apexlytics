@@ -373,7 +373,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
                             value.toStringAsFixed(0),
                             style: const TextStyle(
                               color: AppTheme.muted,
-                              fontSize: 9,
+                              fontSize: 11,
                             ),
                           ),
                         ),
@@ -387,7 +387,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
                             '${value.toStringAsFixed(0)}%',
                             style: const TextStyle(
                               color: AppTheme.muted,
-                              fontSize: 9,
+                              fontSize: 11,
                             ),
                           ),
                         ),
@@ -572,7 +572,7 @@ class _LabelsPainter extends CustomPainter {
               color: names[i] == selected
                   ? AppTheme.textPrimary
                   : AppTheme.textPrimary.withValues(alpha: 0.8),
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: names[i] == selected
                   ? FontWeight.w700
                   : FontWeight.w500,
@@ -1219,7 +1219,7 @@ class _HeaderCell extends StatelessWidget {
                   sort.heading,
                   style: TextStyle(
                     color: color,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

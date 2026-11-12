@@ -390,7 +390,7 @@ class _RpPerSessionBars extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: AppTheme.muted,
-                              fontSize: 10,
+                              fontSize: 11,
                             ),
                           ),
                         ),

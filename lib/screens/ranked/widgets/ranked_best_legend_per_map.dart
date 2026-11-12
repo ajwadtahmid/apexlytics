@@ -106,7 +106,7 @@ class _MapRow extends StatelessWidget {
                     'PLAYING NOW',
                     style: TextStyle(
                       color: AppTheme.accent,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

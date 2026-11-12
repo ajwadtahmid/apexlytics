@@ -253,7 +253,7 @@ class _RankedSlotChartState extends State<RankedSlotChart> {
                             overflow: TextOverflow.visible,
                             style: const TextStyle(
                               color: AppTheme.muted,
-                              fontSize: 9,
+                              fontSize: 11,
                             ),
                           ),
                         );

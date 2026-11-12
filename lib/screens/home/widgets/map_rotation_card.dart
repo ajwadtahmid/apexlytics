@@ -475,7 +475,7 @@ class _NextMapRow extends StatelessWidget {
               'UP NEXT',
               style: TextStyle(
                 color: AppTheme.muted,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.2,
               ),

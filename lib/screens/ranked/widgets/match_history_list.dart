@@ -506,7 +506,7 @@ class _DayChange extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
             child: Text(
               '${formatShortDate(later)} ↑ · ${formatShortDate(earlier)} ↓',
-              style: const TextStyle(color: AppTheme.muted, fontSize: 10),
+              style: const TextStyle(color: AppTheme.muted, fontSize: 11),
             ),
           ),
           const Expanded(child: Divider(color: AppTheme.surface2, height: 1)),
@@ -816,7 +816,7 @@ class _SessionBreak extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
             child: Text(
               '${formatDuration(gapSecs)} break',
-              style: const TextStyle(color: AppTheme.muted, fontSize: 10),
+              style: const TextStyle(color: AppTheme.muted, fontSize: 11),
             ),
           ),
           const Expanded(child: Divider(color: AppTheme.surface2, height: 1)),

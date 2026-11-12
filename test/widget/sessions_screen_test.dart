@@ -165,7 +165,6 @@ void main() {
         (w) =>
             w is Text &&
             w.style?.color == AppTheme.muted &&
-            w.style?.fontSize == 10 &&
             RegExp(r'^[A-Z][a-z]{2} \d+$').hasMatch(w.data ?? ''),
       );
       expect(labels.evaluate().length, lessThan(30));

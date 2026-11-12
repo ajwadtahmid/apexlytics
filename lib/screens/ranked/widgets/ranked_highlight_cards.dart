@@ -360,7 +360,7 @@ class _MapHighlight extends StatelessWidget {
                     label.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.8,
                     ),
@@ -374,7 +374,7 @@ class _MapHighlight extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
@@ -482,7 +482,7 @@ class _HighlightStat extends StatelessWidget {
     final labelColor = onImage ? Colors.white60 : AppTheme.muted;
     final valueColor = color ?? (onImage ? Colors.white : AppTheme.textPrimary);
     return Padding(
-      padding: const EdgeInsets.only(right: AppTheme.md),
+      padding: const EdgeInsets.only(right: AppTheme.sm + AppTheme.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -491,11 +491,10 @@ class _HighlightStat extends StatelessWidget {
             label.toUpperCase(),
             style: TextStyle(
               color: labelColor,
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 1),
           Text(
             value,
             style: TextStyle(

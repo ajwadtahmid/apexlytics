@@ -396,7 +396,7 @@ class _DeltaBadge extends StatelessWidget {
         '${isLiveWeek ? 'this week' : 'that week'}',
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),

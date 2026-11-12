@@ -266,7 +266,7 @@ class _PlayCalendarState extends State<PlayCalendar> {
                                 // has no week number.
                                 w < widget.weeks.length ? '${w + 1}' : '',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   color: w == widget.selectedWeek
                                       ? AppTheme.accent
                                       : AppTheme.muted,

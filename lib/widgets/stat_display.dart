@@ -161,7 +161,7 @@ class StatTable extends StatelessWidget {
       textAlign: TextAlign.right,
       style: const TextStyle(
         color: AppTheme.muted,
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: FontWeight.w600,
       ),
     ),

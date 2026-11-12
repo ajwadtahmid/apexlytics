@@ -193,7 +193,7 @@ class _BadgeChip extends StatelessWidget {
         badge.label,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),

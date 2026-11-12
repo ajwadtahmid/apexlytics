@@ -196,7 +196,7 @@ class _MoreHint extends StatelessWidget {
                 '+$hidden',
                 style: const TextStyle(
                   color: AppTheme.muted,
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -394,7 +394,7 @@ class _HeaderCell extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: strong ? AppTheme.textPrimary : AppTheme.muted,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: strong ? FontWeight.bold : FontWeight.w600,
           ),
         ),

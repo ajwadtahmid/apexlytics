@@ -153,7 +153,7 @@ class _Brand extends StatelessWidget {
           'APEXLYTICS',
           style: TextStyle(
             color: AppTheme.accent,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
           ),
