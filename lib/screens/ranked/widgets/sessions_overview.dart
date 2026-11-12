@@ -294,9 +294,8 @@ class _RpPerSessionBars extends StatelessWidget {
     final values = [for (final s in shown) s.netRp.toDouble()];
     final top = values.fold(0.0, (a, b) => a > b ? a : b);
     final bottom = values.fold(0.0, (a, b) => a < b ? a : b);
-    // Headroom for the value above (or below) the tallest bar.
-    final maxY = top <= 0 ? 1.0 : top * 1.3;
-    final minY = bottom >= 0 ? 0.0 : bottom * 1.3;
+    final maxY = top <= 0 ? 1.0 : top * 1.1;
+    final minY = bottom >= 0 ? 0.0 : bottom * 1.1;
     final barWidth = (240 / shown.length).clamp(3.0, 14.0);
 
     return LayoutBuilder(
@@ -307,9 +306,6 @@ class _RpPerSessionBars extends StatelessWidget {
         // the newest.
         final step = (_labelWidth / slot).ceil().clamp(1, n);
         bool labelled(int i) => (n - 1 - i) % step == 0;
-        // Where a bar's value sits on the chart, from the top.
-        double yOf(double v) => _chartHeight * (maxY - v) / (maxY - minY);
-
         return Column(
           children: [
             SizedBox(
@@ -351,31 +347,6 @@ class _RpPerSessionBars extends StatelessWidget {
                       ],
                     ),
                   ),
-                  for (final (i, v) in values.indexed)
-                    if (labelled(i))
-                      Positioned(
-                        left: slot * (i + 0.5) - _labelWidth / 2,
-                        width: _labelWidth,
-                        // Above a gain, below a loss.
-                        top: v >= 0
-                            ? (yOf(v) - _labelHeight).clamp(0.0, _chartHeight)
-                            : (yOf(v) + 2).clamp(
-                                0.0,
-                                _chartHeight - _labelHeight,
-                              ),
-                        child: ExcludeSemantics(
-                          child: Text(
-                            formatSignedInt(shown[i].netRp),
-                            maxLines: 1,
-                            softWrap: false,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.signColor(v >= 0),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ),
                   // One tap area per session, as wide as its share of the card
                   // and as tall as the chart, so a thin bar is easy to hit.
                   for (final (i, session) in shown.indexed)

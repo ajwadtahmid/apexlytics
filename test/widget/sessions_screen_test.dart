@@ -4,8 +4,7 @@ import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
-import 'package:apexlytics/utils/formatting/format.dart'
-    show formatShortDate, formatSignedInt;
+import 'package:apexlytics/utils/formatting/format.dart' show formatShortDate;
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -140,30 +139,34 @@ void main() {
       ]);
     });
 
-    testWidgets('puts each bar\'s RP above it and its date under it', (
+    testWidgets('puts each bar\'s date under it, with no RP over it', (
       tester,
     ) async {
       await pump(tester, three);
 
-      // +30, -30 and +5, each with the day its session started.
-      expect(find.text('+30'), findsOneWidget);
-      expect(find.text('-30'), findsOneWidget);
-      expect(find.text('+5'), findsOneWidget);
+      // The RP is on the session card and in the bar's tap label.
+      expect(find.text('+30'), findsNothing);
+      expect(find.text('-30'), findsNothing);
+      expect(find.text('+5'), findsNothing);
       expect(find.text(formatShortDate(three.last.start)), findsWidgets);
     });
 
-    testWidgets('labels only some bars when there are too many, newest '
+    testWidgets('dates only some bars when there are too many, newest '
         'included', (tester) async {
       final many = _sessions([
         for (var i = 0; i < 30; i++) [i.isEven ? 10 + i : -10 - i],
       ]);
       await pump(tester, many, size: const Size(400, 2400));
 
-      final newest = formatSignedInt(many.first.netRp);
-      expect(find.text(newest), findsOneWidget);
-      // Fewer labels than bars, so they do not run into each other.
+      final newest = formatShortDate(many.first.start);
+      expect(find.text(newest), findsWidgets);
+      // Fewer dates than bars, so they do not run into each other.
       final labels = find.byWidgetPredicate(
-        (w) => w is Text && RegExp(r'^[+-]\d+$').hasMatch(w.data ?? ''),
+        (w) =>
+            w is Text &&
+            w.style?.color == AppTheme.muted &&
+            w.style?.fontSize == 10 &&
+            RegExp(r'^[A-Z][a-z]{2} \d+$').hasMatch(w.data ?? ''),
       );
       expect(labels.evaluate().length, lessThan(30));
       expect(labels.evaluate().length, greaterThan(2));
