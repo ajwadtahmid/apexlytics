@@ -137,11 +137,31 @@ class AppTheme {
       bodyMedium: TextStyle(color: textPrimary),
       bodySmall: TextStyle(color: muted),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    // The bottom bar: the palette's surface, an orange tick-mark pill behind
+    // the selected icon, and labels that always show and follow the text size.
+    navigationBarTheme: NavigationBarThemeData(
       backgroundColor: surface,
-      selectedItemColor: accent,
-      unselectedItemColor: muted,
-      type: BottomNavigationBarType.fixed,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      // Close to the height of the bar it replaced.
+      height: 64,
+      indicatorColor: accent.withAlpha(40),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 24,
+          color: states.contains(WidgetState.selected) ? accent : muted,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontSize: 12,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w600
+              : FontWeight.normal,
+          color: states.contains(WidgetState.selected) ? accent : muted,
+        ),
+      ),
     ),
     cardTheme: const CardThemeData(color: surface),
     // Every modal bottom sheet: surface background, rounded top, and the same

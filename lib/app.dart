@@ -184,9 +184,9 @@ class _AppShellState extends ConsumerState<_AppShell>
     return KeyedSubtree(key: ValueKey(tab), child: screen);
   }
 
-  BottomNavigationBarItem _navItemFor(AppTab tab) => BottomNavigationBarItem(
+  NavigationDestination _navItemFor(AppTab tab) => NavigationDestination(
     icon: Icon(tab.icon),
-    activeIcon: Icon(tab.activeIcon),
+    selectedIcon: Icon(tab.activeIcon),
     label: tab.label,
   );
 
@@ -279,12 +279,11 @@ class _AppShellState extends ConsumerState<_AppShell>
         index: index,
         children: [for (final t in tabs) _screenFor(t)],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        // Fixed type keeps every label visible.
-        type: BottomNavigationBarType.fixed,
-        currentIndex: index,
-        onTap: (i) => ref.read(currentTabProvider.notifier).tapNav(tabs[i]),
-        items: [for (final t in tabs) _navItemFor(t)],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (i) =>
+            ref.read(currentTabProvider.notifier).tapNav(tabs[i]),
+        destinations: [for (final t in tabs) _navItemFor(t)],
       ),
     );
     // Android only — keeps the transparent nav bar (see AppTheme).
