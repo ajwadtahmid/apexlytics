@@ -98,7 +98,10 @@ class SessionCardBody extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _stat('${session.games}', 'games'),
+                      _stat(
+                        '${session.games}',
+                        session.games == 1 ? 'game' : 'games',
+                      ),
                       _stat(
                         formatTotalOrNone(
                           session.totalKills,

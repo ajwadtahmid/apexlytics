@@ -10,17 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers.dart';
 
 void main() {
-  RankedSession session({required int killsGames}) => RankedSession(
-    start: DateTime(2026, 9, 1, 20),
-    end: DateTime(2026, 9, 1, 21),
-    games: 3,
-    netRp: 20,
-    totalKills: killsGames * 2,
-    totalDamage: 0,
-    killsGames: killsGames,
-    damageGames: 0,
-    matches: const [],
-  );
+  RankedSession session({required int killsGames, int games = 3}) =>
+      RankedSession(
+        start: DateTime(2026, 9, 1, 20),
+        end: DateTime(2026, 9, 1, 21),
+        games: games,
+        netRp: 20,
+        totalKills: killsGames * 2,
+        totalDamage: 0,
+        killsGames: killsGames,
+        damageGames: 0,
+        matches: const [],
+      );
 
   Future<void> pump(WidgetTester tester, RankedSession s) async =>
       tester.pumpWidget(
@@ -58,6 +59,13 @@ void main() {
     expect(find.text('played'), findsNothing);
     expect(find.text('games'), findsOneWidget);
     expect(find.text('kills'), findsOneWidget);
+  });
+
+  testWidgets('a one-game session says "game", not "games"', (tester) async {
+    await pump(tester, session(killsGames: 1, games: 1));
+
+    expect(find.text('game'), findsOneWidget);
+    expect(find.text('games'), findsNothing);
   });
 
   testWidgets('a long legend name stops short of the RP column', (
