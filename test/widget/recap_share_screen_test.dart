@@ -6,6 +6,7 @@ import 'package:apexlytics/screens/ranked/ranked_recap_share_screen.dart';
 import 'package:apexlytics/utils/ranked/split_recap.dart';
 import 'package:apexlytics/utils/share_image.dart';
 import 'package:apexlytics/widgets/share_card.dart';
+import 'package:apexlytics/utils/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -168,6 +169,21 @@ void main() {
     expect(chip('Win streak'), findsNothing);
   });
 
+  testWidgets('a chip that is on is orange with a tick, one that is off is '
+      'a quiet outline', (tester) async {
+    await pump(tester);
+
+    FilterChip chipOf(String label) => tester.widget<FilterChip>(chip(label));
+    final on = chipOf('Games');
+    expect(on.showCheckmark, isTrue);
+    expect(on.selectedColor, AppTheme.accent);
+    expect(on.labelStyle!.color, AppTheme.bg);
+
+    final off = chipOf('Win rate');
+    expect(off.backgroundColor, Colors.transparent);
+    expect(off.labelStyle!.color, AppTheme.muted);
+  });
+
   group('choosing the tiles', () {
     testWidgets('turning one off takes it off the card, and keeps that', (
       tester,
@@ -210,7 +226,7 @@ void main() {
 
       expect(find.byType(ShareTile), findsNWidgets(10));
       // Four wins of +20 RP each.
-      expect(find.text('100%'), findsOneWidget);
+      expect(find.text('100.0%'), findsOneWidget);
       expect(find.text('+20.0'), findsOneWidget);
       // They come last, after the best map.
       final map = tester.getTopLeft(tile('BEST MAP')).dy;

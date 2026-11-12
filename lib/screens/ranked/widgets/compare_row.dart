@@ -70,6 +70,11 @@ class CompareRow extends StatelessWidget {
   /// minus the first.
   final bool deltaFromFirst;
 
+  /// True for a row that is a fact, not a score (how many games were played):
+  /// neither side leads, the change is not coloured, and the row is left out
+  /// of the "leads on" count.
+  final bool neutral;
+
   /// The tint of each side's leading chip. The defaults are the colours of the
   /// ranked Compare page.
   final Color colorA;
@@ -85,6 +90,7 @@ class CompareRow extends StatelessWidget {
     this.decimals = 1,
     this.invert = false,
     this.deltaFromFirst = false,
+    this.neutral = false,
     this.colorA = kCompareColorA,
     this.colorB = kCompareColorB,
   });
@@ -93,7 +99,7 @@ class CompareRow extends StatelessWidget {
   /// level as shown or the row says nothing about better or worse.
   int get winner {
     final d = delta;
-    if (d == null) return 0;
+    if (d == null || neutral) return 0;
     final scale = math.pow(10, decimals);
     final shown = integerDelta ? d.round() : (d * scale).round() / scale;
     if (shown == 0) return 0;
@@ -148,7 +154,7 @@ class CompareRow extends StatelessWidget {
                     textAlign: TextAlign.end,
                     style: TextStyle(
                       // A change that is nothing as shown is neither good nor bad.
-                      color: lead == 0
+                      color: lead == 0 || neutral
                           ? AppTheme.muted
                           : (isGood! ? AppTheme.green : AppTheme.red),
                       fontSize: 12,

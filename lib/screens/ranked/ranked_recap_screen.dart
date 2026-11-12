@@ -166,7 +166,7 @@ Widget _figure(RecapTile tile, SplitRecap r) {
       final rate = r.winRate;
       return StatDisplay(
         label: 'Win rate',
-        value: rate == null ? kNoReading : formatPercent(rate, decimals: 0),
+        value: rate == null ? kNoReading : formatPercent(rate),
         footnote:
             '${plural(r.wins, 'win')} · ${plural(r.losses, 'loss', 'losses')}',
       );

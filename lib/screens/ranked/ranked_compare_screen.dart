@@ -647,9 +647,9 @@ class _SummarySection extends StatelessWidget {
                 '${b.summary.games}',
                 delta: (b.summary.games - a.summary.games).toDouble(),
                 integerDelta: true,
-                // Needing more games for a comparable result reads as worse,
-                // not better, so this is the one row where "more" colors red.
-                invert: true,
+                // How many games were played is a fact, not a score: no colour,
+                // no leader.
+                neutral: true,
               ),
               CompareRow(
                 'Games/day',
@@ -662,7 +662,7 @@ class _SummarySection extends StatelessWidget {
                 delta: (gamesPerDayA != null && gamesPerDayB != null)
                     ? gamesPerDayB - gamesPerDayA
                     : null,
-                invert: true,
+                neutral: true,
               ),
               CompareRow(
                 'Net RP',

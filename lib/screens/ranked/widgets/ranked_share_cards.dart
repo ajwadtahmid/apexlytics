@@ -124,9 +124,7 @@ class RecapShareCard extends StatelessWidget {
         return ShareTile(
           icon: StatIcons.winRate,
           label: 'Win rate',
-          value: r.winRate == null
-              ? kNoReading
-              : formatPercent(r.winRate!, decimals: 0),
+          value: r.winRate == null ? kNoReading : formatPercent(r.winRate!),
         );
       case RecapTile.rpPerGame:
         return ShareTile(

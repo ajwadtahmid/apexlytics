@@ -303,6 +303,11 @@ class _MatrixState extends State<_Matrix> {
               ],
             ],
           ),
+          const SizedBox(height: AppTheme.sm),
+          const Text(
+            'Faded = fewer than $kMinGamesForInsight games',
+            style: AppTheme.captionSmall,
+          ),
           if (widget.footer != null) ...[
             const SizedBox(height: AppTheme.lg),
             widget.footer!,

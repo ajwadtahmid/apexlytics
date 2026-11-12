@@ -323,6 +323,12 @@ void main() {
       await tester.pump();
     }
 
+    testWidgets('says what the faded cells are', (tester) async {
+      await pump(tester, rankedNow: 'Olympus');
+
+      expect(find.text('Faded = fewer than 3 games'), findsOneWidget);
+    });
+
     testWidgets('lists each map with your record and best legend', (
       tester,
     ) async {

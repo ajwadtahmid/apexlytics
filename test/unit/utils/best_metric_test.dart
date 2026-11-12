@@ -50,12 +50,7 @@ void main() {
       damage: 9000,
       damageGames: 2,
     );
-    final solid = legend(
-      'Bloodhound',
-      games: 30,
-      kills: 75,
-      damage: 15000,
-    );
+    final solid = legend('Bloodhound', games: 30, kills: 75, damage: 15000);
 
     test('counts the games behind the figure', () {
       expect(BestMetric.avgKills.samplesIn(thin), 1);
@@ -79,10 +74,13 @@ void main() {
       ]);
     });
 
-    test('with the soft gate the thin one is ranked when nobody has enough', () {
-      expect(order([thin], BestMetric.avgKills, softGate: true), ['Wraith']);
-      expect(order([thin], BestMetric.avgKills), isEmpty);
-    });
+    test(
+      'with the soft gate the thin one is ranked when nobody has enough',
+      () {
+        expect(order([thin], BestMetric.avgKills, softGate: true), ['Wraith']);
+        expect(order([thin], BestMetric.avgKills), isEmpty);
+      },
+    );
   });
 
   group('BestMetric.valueOf', () {
@@ -183,7 +181,7 @@ void main() {
         BestMetric.totalKills: ('1,204 kills', '1,204 kills'),
         BestMetric.avgDamage: ('521 dmg/game', '521 dmg/game'),
         BestMetric.totalDamage: ('23,760 dmg', '23,760 dmg'),
-        BestMetric.winRate: ('62% win rate', '62% win rate'),
+        BestMetric.winRate: ('62.0% win rate', '62.0% win rate'),
       };
       final values = {
         BestMetric.avgRp: 80.1,

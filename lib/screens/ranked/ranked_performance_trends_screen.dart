@@ -287,6 +287,8 @@ class _SessionSparklines extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: AppTheme.xs),
+          _TrendKey(withAverage: shown.length > _kSmoothing),
           const SizedBox(height: AppTheme.md),
           _SparklineRow(
             label: 'Avg RP',
@@ -311,7 +313,7 @@ class _SessionSparklines extends StatelessWidget {
             steadyBand: kWinRateSteadyBand,
             valuesOf: (s) => s.wins,
             gamesOf: (s) => s.wins + s.losses,
-            formatValue: (v) => formatPercent(v, decimals: 0),
+            formatValue: formatPercent,
             formatDelta: (v) =>
                 '${v >= 0 ? '+' : '-'}${(v.abs() * 100).toStringAsFixed(1)} pts',
             // Half the games won: the line between winning more than losing
@@ -390,6 +392,37 @@ class _SessionSparklines extends StatelessWidget {
 String _length(double secs) {
   final total = secs.round();
   return '${total ~/ 60}m ${(total % 60).toString().padLeft(2, '0')}s';
+}
+
+/// What the two lines on the charts are: the orange one is each session, the
+/// pale one a running average of the last [_kSmoothing] (drawn once there are
+/// enough sessions to average). No number in the label: how many sessions the
+/// page covers is said in the header, and the figures under each chart say how
+/// many are averaged.
+class _TrendKey extends StatelessWidget {
+  final bool withAverage;
+  const _TrendKey({required this.withAverage});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget item(Color color, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 14, height: 2, color: color),
+        const SizedBox(width: 6),
+        Flexible(child: Text(text, style: AppTheme.captionSmall)),
+      ],
+    );
+    return Wrap(
+      spacing: AppTheme.md,
+      runSpacing: 2,
+      children: [
+        item(AppTheme.accent, 'Each session'),
+        if (withAverage)
+          item(AppTheme.textPrimary.withValues(alpha: 0.8), 'Running average'),
+      ],
+    );
+  }
 }
 
 class _SparklineRow extends StatelessWidget {

@@ -110,6 +110,24 @@ void main() {
     expect(find.byIcon(Icons.trending_flat), findsNWidgets(3));
   });
 
+  testWidgets('keys the two lines under Recent trend', (tester) async {
+    await pump(
+      tester,
+      sessions([for (var i = 0; i < 10; i++) i < 5 ? -20 : 20]),
+    );
+
+    expect(find.text('Each session'), findsOneWidget);
+    expect(find.text('Running average'), findsOneWidget);
+  });
+
+  testWidgets('keys only the sessions line when there are too few to '
+      'average', (tester) async {
+    await pump(tester, sessions([10, 20, 30]));
+
+    expect(find.text('Each session'), findsOneWidget);
+    expect(find.text('Running average'), findsNothing);
+  });
+
   testWidgets('says why there is no trend yet with fewer than ten sessions', (
     tester,
   ) async {
@@ -671,8 +689,8 @@ void main() {
         rich('Improving: +50.0 pts win rate vs your 5 sessions before'),
         findsOneWidget,
       );
-      expect(rich('25%'), findsWidgets);
-      expect(rich('75%'), findsWidgets);
+      expect(rich('25.0%'), findsWidgets);
+      expect(rich('75.0%'), findsWidgets);
     });
 
     testWidgets('a falling win rate is declining', (tester) async {
@@ -796,7 +814,7 @@ void main() {
       );
 
       expect(
-        rich('Average over all 10 sessions: 75% win rate'),
+        rich('Average over all 10 sessions: 75.0% win rate'),
         findsOneWidget,
       );
       expect(

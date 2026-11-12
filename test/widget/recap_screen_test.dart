@@ -217,7 +217,7 @@ void main() {
     expect(find.text('1,600'), findsOneWidget); // damage
     expect(find.text('+80 RP'), findsOneWidget); // best session
     expect(find.text('Axle'), findsOneWidget); // best legend
-    expect(find.text('100%'), findsOneWidget);
+    expect(find.text('100.0%'), findsOneWidget);
     expect(find.text('4 wins · 0 losses'), findsOneWidget);
     expect(find.text('+20.0'), findsOneWidget);
   });

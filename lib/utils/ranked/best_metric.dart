@@ -28,7 +28,7 @@ enum BestMetric {
 
   /// [value] (as [valueOf] gives it) written for a pill: `+80.1 /game`,
   /// `+561 RP`, `2.8 kills/game`, `1,204 kills`, `521 dmg/game`, `23,760 dmg`,
-  /// `62% win rate`.
+  /// `62.4% win rate`.
   String formatValue(double value) => switch (this) {
     avgRp => '${formatSigned(value)} /game',
     totalRp => '${formatSignedInt(value.round())} RP',
@@ -36,7 +36,7 @@ enum BestMetric {
     totalKills => '${formatNumber(value.round())} kills',
     avgDamage => '${formatNumber(value.round())} dmg/game',
     totalDamage => '${formatNumber(value.round())} dmg',
-    winRate => '${formatPercent(value, decimals: 0)} win rate',
+    winRate => '${formatPercent(value)} win rate',
   };
 
   /// [formatValue] for a line of text, where a bare "/game" would not say what

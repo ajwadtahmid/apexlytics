@@ -1335,10 +1335,7 @@ class _LegendStatsRow extends StatelessWidget {
                   ),
                 ),
               ),
-              _number(
-                LegendSort.win,
-                formatPercent(legend.winRate, decimals: 0),
-              ),
+              _number(LegendSort.win, formatPercent(legend.winRate)),
               _number(
                 LegendSort.rpPerGame,
                 formatSigned(legend.avgRpPerGame),

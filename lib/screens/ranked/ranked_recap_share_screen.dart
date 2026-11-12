@@ -128,8 +128,22 @@ class _TilePicker extends StatelessWidget {
                 FilterChip(
                   label: Text(tile.label),
                   selected: shown.contains(tile),
-                  showCheckmark: false,
-                  selectedColor: AppTheme.accent.withAlpha(60),
+                  // On: orange with dark text and a tick. Off: a quiet outline.
+                  showCheckmark: true,
+                  checkmarkColor: AppTheme.bg,
+                  selectedColor: AppTheme.accent,
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(
+                    color: shown.contains(tile)
+                        ? AppTheme.accent
+                        : AppTheme.muted.withAlpha(120),
+                  ),
+                  labelStyle: TextStyle(
+                    color: shown.contains(tile) ? AppTheme.bg : AppTheme.muted,
+                    fontWeight: shown.contains(tile)
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                   // Switching off the last two is refused: left disabled.
                   onSelected: shown.contains(tile) && atLeast
                       ? null

@@ -31,6 +31,20 @@ void main() {
       );
     });
 
+    test('is nobody on a row that is a fact, not a score', () {
+      expect(
+        const CompareRow(
+          'Games',
+          '94',
+          '103',
+          delta: 9,
+          integerDelta: true,
+          neutral: true,
+        ).winner,
+        0,
+      );
+    });
+
     test('is nobody when level as shown, or when there is no change', () {
       expect(const CompareRow('Kills', '1.0', '1.0', delta: 0.04).winner, 0);
       expect(
@@ -44,6 +58,39 @@ void main() {
         0,
       );
       expect(const CompareRow('Games', '9', '12').winner, 0);
+    });
+  });
+
+  group('a row that is a fact, not a score', () {
+    const games = CompareRow(
+      'Games',
+      '94',
+      '103',
+      delta: 9,
+      integerDelta: true,
+      neutral: true,
+    );
+
+    testWidgets('has no leader and no colour on its change', (tester) async {
+      await pump(tester, games);
+
+      expect(weightOf(tester, '94'), FontWeight.w500);
+      expect(weightOf(tester, '103'), FontWeight.w500);
+      expect(find.text('+9'), findsOneWidget);
+      expect(colorOf(tester, '+9'), AppTheme.muted);
+    });
+
+    testWidgets('is left out of the count of who leads', (tester) async {
+      await pump(
+        tester,
+        const CompareTable(
+          nameA: 'S30',
+          nameB: 'S31',
+          rows: [games, CompareRow('Win rate', '40%', '55%', delta: 15)],
+        ),
+      );
+
+      expect(find.text('S31 leads on 1 of 1 stat'), findsOneWidget);
     });
   });
 

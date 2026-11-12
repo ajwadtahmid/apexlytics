@@ -297,7 +297,7 @@ void main() {
       );
 
       // Four wins of four games, +20 RP each.
-      expect(find.text('100%'), findsOneWidget);
+      expect(find.text('100.0%'), findsOneWidget);
       expect(find.text('+20.0'), findsOneWidget);
     });
 
@@ -318,7 +318,7 @@ void main() {
         ),
       );
 
-      expect(find.text('0%'), findsOneWidget);
+      expect(find.text('0.0%'), findsOneWidget);
       expect(find.text('-20.0'), findsOneWidget);
       expect(find.byType(ShareTile), findsNWidgets(2));
     });
