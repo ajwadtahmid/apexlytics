@@ -22,6 +22,10 @@ class AppTheme {
   static const surface2 = Color(0xFF1c2330);
   static const accent = Color(0xFFd4722f);
   static const accent2 = Color(0xFFe8943a);
+
+  /// Text and icons on a solid [accent] fill. The dark background colour is
+  /// 5.6:1 on the orange; white is only 3.4:1, below the 4.5:1 minimum.
+  static const onAccent = bg;
   static const textPrimary = Color(0xFFe6edf3);
   static const muted = Color(0xFF8b929c);
   static const green = Color(0xFF56d364);
@@ -123,6 +127,7 @@ class AppTheme {
     ),
     colorScheme: const ColorScheme.dark(
       primary: accent,
+      onPrimary: onAccent,
       secondary: accent2,
       surface: surface,
       error: red,
@@ -169,7 +174,7 @@ class AppTheme {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: accent,
-        foregroundColor: Colors.white,
+        foregroundColor: onAccent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMd),
         ),

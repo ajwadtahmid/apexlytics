@@ -388,7 +388,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
                             width: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AppTheme.onAccent,
                             ),
                           )
                         : const Text('Save'),

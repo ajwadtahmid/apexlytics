@@ -130,7 +130,7 @@ class _TilePicker extends StatelessWidget {
                   selected: shown.contains(tile),
                   // On: orange with dark text and a tick. Off: a quiet outline.
                   showCheckmark: true,
-                  checkmarkColor: AppTheme.bg,
+                  checkmarkColor: AppTheme.onAccent,
                   selectedColor: AppTheme.accent,
                   backgroundColor: Colors.transparent,
                   side: BorderSide(
@@ -139,7 +139,9 @@ class _TilePicker extends StatelessWidget {
                         : AppTheme.muted.withAlpha(120),
                   ),
                   labelStyle: TextStyle(
-                    color: shown.contains(tile) ? AppTheme.bg : AppTheme.muted,
+                    color: shown.contains(tile)
+                        ? AppTheme.onAccent
+                        : AppTheme.muted,
                     fontWeight: shown.contains(tile)
                         ? FontWeight.w600
                         : FontWeight.normal,

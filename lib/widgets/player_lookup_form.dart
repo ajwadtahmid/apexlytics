@@ -154,7 +154,7 @@ class _PlayerLookupFormState extends ConsumerState<PlayerLookupForm> {
                   width: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppTheme.onAccent,
                   ),
                 )
               : Text(widget.submitLabel),

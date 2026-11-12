@@ -102,7 +102,7 @@ class _WeekTabStripState extends State<WeekTabStrip> {
                         ? FontWeight.w600
                         : FontWeight.normal,
                     color: isSelected
-                        ? Colors.white
+                        ? AppTheme.onAccent
                         : isFuture
                         ? AppTheme.muted.withAlpha(80)
                         : AppTheme.muted,

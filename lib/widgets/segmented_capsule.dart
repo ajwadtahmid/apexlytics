@@ -49,7 +49,7 @@ class SegmentedCapsule extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : AppTheme.muted,
+                      color: isSelected ? AppTheme.onAccent : AppTheme.muted,
                     ),
                   ),
                 ),

@@ -375,7 +375,7 @@ class _SplitChip extends StatelessWidget {
               child: Text(
                 live ? '$label · now' : label,
                 style: TextStyle(
-                  color: selected ? AppTheme.bg : AppTheme.textPrimary,
+                  color: selected ? AppTheme.onAccent : AppTheme.textPrimary,
                   fontSize: 14,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),

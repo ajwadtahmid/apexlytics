@@ -87,7 +87,7 @@ class _Segment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? Colors.white : AppTheme.muted;
+    final color = selected ? AppTheme.onAccent : AppTheme.muted;
     final radius = BorderRadius.circular(AppTheme.radiusFull);
     return Semantics(
       button: true,

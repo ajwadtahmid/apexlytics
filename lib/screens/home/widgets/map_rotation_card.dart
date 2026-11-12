@@ -162,7 +162,7 @@ class _ModePicker extends StatelessWidget {
                     modes[i],
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: active ? Colors.white : AppTheme.muted,
+                      color: active ? AppTheme.onAccent : AppTheme.muted,
                       fontWeight: active ? FontWeight.bold : FontWeight.normal,
                       fontSize: 14,
                     ),
