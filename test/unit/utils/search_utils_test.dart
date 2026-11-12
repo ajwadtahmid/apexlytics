@@ -358,7 +358,7 @@ void main() {
         1100,
       );
       // And nothing was left showing a result for a page that is gone.
-      expect(container.exists(liveSearchResultProvider(params)), isFalse);
+      expect(container.read(liveSearchResultProvider(params).exists), isFalse);
     });
   });
 }
