@@ -62,7 +62,7 @@ void main() {
       await pumpWeeks(tester);
 
       expect(
-        tester.getSize(find.byType(PopupMenuButton<int>)).height,
+        tester.getSize(find.byType(GestureDetector).first).height,
         greaterThanOrEqualTo(ControlPill.minHitHeight),
       );
     });
@@ -71,29 +71,31 @@ void main() {
       tester,
     ) async {
       await pumpWeeks(tester);
-      await tester.tap(find.byType(PopupMenuButton<int>));
+      await tester.tap(find.text('Week: All'));
       await tester.pumpAndSettle();
 
       final starts = DateFormat('MMM d').format(now.add(day * 7));
       expect(find.text('All weeks'), findsOneWidget);
       expect(find.text('Week 1'), findsOneWidget);
       expect(find.text('Week 2'), findsOneWidget);
-      expect(find.text('Week 3, starts $starts'), findsOneWidget);
+      expect(find.text('Week 3'), findsOneWidget);
+      expect(find.text('starts $starts'), findsOneWidget);
     });
 
     testWidgets('only select a week that has started', (tester) async {
       final container = await pumpWeeks(tester);
 
-      await tester.tap(find.byType(PopupMenuButton<int>));
+      await tester.tap(find.text('Week: All'));
       await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('Week 3'));
+      await tester.tap(find.text('Week 3'));
       await tester.pumpAndSettle();
       expect(container.read(rankedPeriodProvider).weekIndex, -1);
 
-      // The menu stays open on an unavailable week: pick a started one.
+      // The sheet stays open on an unavailable week: pick a started one.
       await tester.tap(find.text('Week 1'));
       await tester.pumpAndSettle();
       expect(container.read(rankedPeriodProvider).weekIndex, 0);
+      expect(find.text('All weeks'), findsNothing);
     });
 
     testWidgets('is not there for a split with no weeks', (tester) async {
@@ -110,7 +112,7 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(PopupMenuButton<int>), findsNothing);
+      expect(find.byType(GestureDetector), findsNothing);
     });
   });
 
@@ -167,8 +169,111 @@ void main() {
     await pump(tester, RankedSplitDropdown(view: viewWith(splitCount: 2)));
 
     expect(
-      tester.getSize(find.byType(PopupMenuButton<String>)).height,
+      tester.getSize(find.byType(GestureDetector).first).height,
       greaterThanOrEqualTo(ControlPill.minHitHeight),
     );
+  });
+
+  group('the season sheet', () {
+    RankedSplitBucket split(String id, String name) =>
+        RankedSplitBucket(id: id, displayName: name);
+
+    RankedView many({String selected = 'br_ranked_s30_s2'}) => RankedView(
+      splits: [
+        split(kLifetimeSplitId, 'Lifetime'),
+        split('br_ranked_s31_s1', 'Season 31 (Split 1)'),
+        split('br_ranked_s30_s2', 'Season 30 (Split 2)'),
+        split('br_ranked_s30_s1', 'Season 30 (Split 1)'),
+        split('br_ranked_s29_s2', 'Season 29 (Split 2)'),
+      ],
+      effectiveSplitId: selected,
+      weeks: const [],
+      weekIndex: -1,
+      filtered: const [],
+      history: const [],
+    );
+
+    testWidgets('lists Lifetime, then a row per season with its splits', (
+      tester,
+    ) async {
+      await pump(tester, RankedSplitDropdown(view: many()));
+      await tester.tap(find.text('Season 30 (Split 2)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lifetime'), findsOneWidget);
+      expect(find.text('Season 31'), findsOneWidget);
+      expect(find.text('Season 30'), findsOneWidget);
+      expect(find.text('Season 29'), findsOneWidget);
+      // Season 30 has both splits, in order.
+      expect(
+        tester.getTopLeft(find.text('Split 1').at(1)).dx,
+        lessThan(tester.getTopLeft(find.text('Split 2').first).dx),
+      );
+      // Newest season first.
+      expect(
+        tester.getTopLeft(find.text('Season 31')).dy,
+        lessThan(tester.getTopLeft(find.text('Season 30')).dy),
+      );
+    });
+
+    testWidgets('keeps each split in its own column, even in a season with '
+        'only one', (tester) async {
+      await pump(tester, RankedSplitDropdown(view: many()));
+      await tester.tap(find.text('Season 30 (Split 2)'));
+      await tester.pumpAndSettle();
+
+      // Season 30 has both; Season 29 only has Split 2, under the same one.
+      final splitTwo = find.text('Split 2');
+      expect(splitTwo, findsNWidgets(2));
+      expect(
+        tester.getCenter(splitTwo.at(0)).dx,
+        closeTo(tester.getCenter(splitTwo.at(1)).dx, 0.5),
+      );
+    });
+
+    testWidgets('shows Lifetime as a button, ticked when it is the one in '
+        'use', (tester) async {
+      await pump(tester, RankedSplitDropdown(view: many()));
+      await tester.tap(find.text('Season 30 (Split 2)'));
+      await tester.pumpAndSettle();
+      expect(find.text('BY SEASON'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+
+      // Start over, so the first sheet is not still open.
+      await tester.pumpWidget(const SizedBox());
+      await pump(
+        tester,
+        RankedSplitDropdown(view: many(selected: kLifetimeSplitId)),
+      );
+      await tester.tap(find.text('Lifetime').first);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
+
+    testWidgets('picks a split with one tap on its chip, and closes', (
+      tester,
+    ) async {
+      final container = await pump(tester, RankedSplitDropdown(view: many()));
+      await tester.tap(find.text('Season 30 (Split 2)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Split 1').at(1)); // Season 30's
+      await tester.pumpAndSettle();
+
+      expect(container.read(rankedPeriodProvider).splitId, 'br_ranked_s30_s1');
+      expect(find.text('Lifetime'), findsNothing);
+    });
+
+    testWidgets('Lifetime is one tap too', (tester) async {
+      final container = await pump(tester, RankedSplitDropdown(view: many()));
+      await tester.tap(find.text('Season 30 (Split 2)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lifetime'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(rankedPeriodProvider).splitId, kLifetimeSplitId);
+    });
   });
 }

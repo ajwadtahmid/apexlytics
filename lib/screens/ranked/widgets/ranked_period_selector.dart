@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../providers/ranked_provider.dart';
 import '../../../utils/ranked/ranked_period.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/control_pill.dart';
+import 'ranked_period_sheets.dart';
 
 /// The small rounded label both header dropdowns share. A long [label] is cut
 /// with an ellipsis rather than pushing the other dropdown off the row.
@@ -55,6 +55,23 @@ Widget _thumbSized(Widget pill) => ConstrainedBox(
   child: Center(widthFactor: 1, heightFactor: 1, child: pill),
 );
 
+/// A pill that opens a sheet on tap, announced as a button.
+Widget _pillButton({
+  required Widget pill,
+  required String label,
+  required VoidCallback onTap,
+}) => Semantics(
+  button: true,
+  label: label,
+  excludeSemantics: true,
+  onTap: onTap,
+  child: GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: _thumbSized(pill),
+  ),
+);
+
 /// Split selector: a compact pill that opens the list of available splits.
 /// Drives [rankedPeriodProvider].
 class RankedSplitDropdown extends ConsumerWidget {
@@ -76,30 +93,11 @@ class RankedSplitDropdown extends ConsumerWidget {
     );
     if (view.splits.length <= 1) return pill;
 
-    return PopupMenuButton<String>(
-      initialValue: selected.id,
-      onSelected: notifier.selectSplit,
-      color: AppTheme.surface2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      itemBuilder: (_) => view.splits
-          .map(
-            (s) => PopupMenuItem<String>(
-              value: s.id,
-              child: Text(
-                s.displayName,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: s.id == view.effectiveSplitId
-                      ? AppTheme.accent
-                      : AppTheme.textPrimary,
-                ),
-              ),
-            ),
-          )
-          .toList(),
-      child: _thumbSized(pill),
+    return _pillButton(
+      pill: pill,
+      label: 'Season, ${selected.displayName}',
+      onTap: () =>
+          showSplitSheet(context, view: view, onSelected: notifier.selectSplit),
     );
   }
 }
@@ -116,7 +114,6 @@ class RankedWeekDropdown extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (view.weeks.isEmpty) return const SizedBox.shrink();
     final notifier = ref.read(rankedPeriodProvider.notifier);
-    final now = DateTime.now();
     final index = view.weekIndex;
 
     final pill = _HeaderPill(
@@ -124,41 +121,11 @@ class RankedWeekDropdown extends ConsumerWidget {
       dropdown: true,
     );
 
-    return PopupMenuButton<int>(
-      tooltip: 'Choose week',
-      initialValue: index,
-      onSelected: notifier.selectWeek,
-      color: AppTheme.surface2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      itemBuilder: (_) => [
-        PopupMenuItem<int>(
-          value: -1,
-          child: _item('All weeks', selected: index < 0),
-        ),
-        for (var i = 0; i < view.weeks.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            enabled: !view.weeks[i].start.isAfter(now),
-            child: _item(
-              view.weeks[i].start.isAfter(now)
-                  ? 'Week ${i + 1}, starts '
-                        '${DateFormat('MMM d').format(view.weeks[i].start)}'
-                  : 'Week ${i + 1}',
-              selected: index == i,
-            ),
-          ),
-      ],
-      child: _thumbSized(pill),
+    return _pillButton(
+      pill: pill,
+      label: index < 0 ? 'Week, all' : 'Week ${index + 1}',
+      onTap: () =>
+          showWeekSheet(context, view: view, onSelected: notifier.selectWeek),
     );
   }
-
-  static Widget _item(String text, {required bool selected}) => Text(
-    text,
-    style: TextStyle(
-      fontSize: 13,
-      color: selected ? AppTheme.accent : AppTheme.textPrimary,
-    ),
-  );
 }
