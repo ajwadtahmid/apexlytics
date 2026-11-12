@@ -39,9 +39,9 @@ class PlayCalendar extends StatefulWidget {
 }
 
 class _PlayCalendarState extends State<PlayCalendar> {
-  static const _labelWidth = 30.0;
+  static const _baseLabelWidth = 30.0;
   static const _gap = 3.0;
-  static const _headerHeight = 16.0;
+  static const _baseHeaderHeight = 16.0;
 
   late Map<DateTime, DayPlay> _days = dailyPlay(widget.sessions);
 
@@ -195,6 +195,10 @@ class _PlayCalendarState extends State<PlayCalendar> {
     }
     final columns = calendarColumns(widget.weeks, _days, now: widget.now);
     final scale = calendarScale(_days.values);
+    // The day names and "Week" grow with the text size, so their column and
+    // the header row do too.
+    final labelWidth = AppTheme.scaledWithText(context, _baseLabelWidth);
+    final headerHeight = AppTheme.scaledWithText(context, _baseHeaderHeight);
     final firstDay = calendarDay(widget.weeks.first.start);
 
     return Column(
@@ -203,18 +207,18 @@ class _PlayCalendarState extends State<PlayCalendar> {
         LayoutBuilder(
           builder: (context, constraints) {
             final n = columns.length;
-            final fit = (constraints.maxWidth - _labelWidth) / n - _gap - 2;
+            final fit = (constraints.maxWidth - labelWidth) / n - _gap - 2;
             final size = fit.clamp(16.0, 28.0);
             final grid = Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: _labelWidth,
+                  width: labelWidth,
                   child: Column(
                     children: [
-                      const SizedBox(
-                        height: _headerHeight,
-                        child: Align(
+                      SizedBox(
+                        height: headerHeight,
+                        child: const Align(
                           alignment: Alignment.centerLeft,
                           child: Text('Week', style: AppTheme.captionSmall),
                         ),
@@ -255,7 +259,7 @@ class _PlayCalendarState extends State<PlayCalendar> {
                       child: Column(
                         children: [
                           SizedBox(
-                            height: _headerHeight,
+                            height: headerHeight,
                             child: Center(
                               child: Text(
                                 // The split's last day, past its final week,
@@ -278,7 +282,7 @@ class _PlayCalendarState extends State<PlayCalendar> {
               ],
             );
             // A very long split scrolls rather than squeezing the squares.
-            final needed = _labelWidth + n * (size + _gap + 2);
+            final needed = labelWidth + n * (size + _gap + 2);
             return needed > constraints.maxWidth
                 ? SingleChildScrollView(
                     scrollDirection: Axis.horizontal,

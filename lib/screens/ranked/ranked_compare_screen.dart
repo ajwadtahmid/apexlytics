@@ -293,20 +293,40 @@ class _SplitPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final left = _LabeledDropdown(
+      label: 'Comparing',
+      splits: splitsA,
+      value: selectedA,
+      onChanged: onChangedA,
+      profiles: profiles,
+      profile: profileA,
+      onProfile: onProfileA,
+    );
+    final right = _LabeledDropdown(
+      label: nameB == null ? 'Current' : 'Current · $nameB',
+      splits: splitsB,
+      value: selectedB,
+      onChanged: onChangedB,
+    );
+    // At a larger text size two dropdowns side by side cut off the very thing
+    // being chosen, so they stack.
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          left,
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppTheme.sm),
+            child: Text('vs', style: AppTheme.captionLarge),
+          ),
+          right,
+        ],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(
-          child: _LabeledDropdown(
-            label: 'Comparing',
-            splits: splitsA,
-            value: selectedA,
-            onChanged: onChangedA,
-            profiles: profiles,
-            profile: profileA,
-            onProfile: onProfileA,
-          ),
-        ),
+        Expanded(child: left),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: AppTheme.sm),
           child: Padding(
@@ -314,14 +334,7 @@ class _SplitPicker extends StatelessWidget {
             child: Text('vs', style: AppTheme.captionLarge),
           ),
         ),
-        Expanded(
-          child: _LabeledDropdown(
-            label: nameB == null ? 'Current' : 'Current · $nameB',
-            splits: splitsB,
-            value: selectedB,
-            onChanged: onChangedB,
-          ),
-        ),
+        Expanded(child: right),
       ],
     );
   }

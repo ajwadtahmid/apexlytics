@@ -69,6 +69,7 @@ void main() {
     List<(String, String)> saved, {
     List<RankedSplitBucket>? altSplits,
     bool twoSplits = false,
+    double textScale = 1,
   }) async {
     SharedPreferences.setMockInitialValues({
       'player_profiles': jsonEncode([
@@ -112,6 +113,12 @@ void main() {
           }),
         ],
         child: MaterialApp(
+          builder: (context, app) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: app!,
+          ),
           home: Scaffold(
             body: SingleChildScrollView(
               child: RankedCompareBody(uid: '1', splits: mine),
@@ -139,6 +146,23 @@ void main() {
     expect(find.text('COMPARING'), findsOneWidget);
     expect(find.byType(PopupMenuButton<String>), findsNothing);
   });
+
+  testWidgets(
+    'the two sides sit side by side, and stack at a large text size',
+    (tester) async {
+      await pump(tester, [('Main', '1'), ('Alt', '2')]);
+      final left = tester.getTopLeft(find.text('COMPARING · MAIN'));
+      final right = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      expect(right.dy, closeTo(left.dy, 3));
+      expect(right.dx, greaterThan(left.dx));
+
+      await pump(tester, [('Main', '1'), ('Alt', '2')], textScale: 1.5);
+      final top = tester.getTopLeft(find.text('COMPARING · MAIN'));
+      final below = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      expect(below.dy, greaterThan(top.dy));
+      expect(below.dx, closeTo(top.dx, 2));
+    },
+  );
 
   testWidgets('a profile with no UID yet is not offered', (tester) async {
     await pump(tester, [('Main', '1'), ('Pending', '')]);

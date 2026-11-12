@@ -154,13 +154,18 @@ class _ModePicker extends StatelessWidget {
                   color: active ? AppTheme.accent : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                 ),
-                child: Text(
-                  modes[i],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: active ? Colors.white : AppTheme.muted,
-                    fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 14,
+                // Four labels share one row, so the longest ("Wildcards") would
+                // break mid-word past this size.
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: 1.3,
+                  child: Text(
+                    modes[i],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: active ? Colors.white : AppTheme.muted,
+                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),

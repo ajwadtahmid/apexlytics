@@ -49,6 +49,7 @@ class SessionsOverview extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Stat('${overview.count}', 'sessions'),
                   _Stat(overview.avgGames.toStringAsFixed(1), 'games each'),
@@ -117,9 +118,12 @@ class _Stat extends StatelessWidget {
               ),
             ),
           ),
+          // Two lines, so a larger text size wraps the label rather than
+          // cutting it.
           Text(
             label,
-            maxLines: 1,
+            maxLines: 2,
+            textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: AppTheme.captionSmall,
           ),
