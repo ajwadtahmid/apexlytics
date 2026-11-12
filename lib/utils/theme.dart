@@ -111,6 +111,9 @@ class AppTheme {
     appBarTheme: AppBarTheme(
       backgroundColor: surface,
       elevation: 0,
+      // Material 3 mixes the primary (orange) into the bar once content
+      // scrolls under it, turning it brown; the bar stays the palette's own.
+      surfaceTintColor: Colors.transparent,
       foregroundColor: textPrimary,
       // Android only: on iOS the AppBar default (which sets statusBarBrightness)
       // must stay in effect.

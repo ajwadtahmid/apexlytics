@@ -7,7 +7,8 @@ import '../utils/theme.dart';
 import 'graph_season_picker.dart';
 import 'graph_week_tab_strip.dart';
 import 'surface_card.dart';
-import '../utils/formatting/format.dart' show formatNumber, formatShortDate, formatShortDateTime, formatSignedInt;
+import '../utils/formatting/format.dart'
+    show formatNumber, formatShortDate, formatShortDateTime, formatSignedInt;
 import 'sheet_handle.dart';
 
 /// Opens [GraphCard] — the snapshot-based RP history — as a bottom sheet.
@@ -62,6 +63,9 @@ Future<void> showSnapshotBackupSheet(
     ),
   );
 }
+
+/// The height of the chart area when the week has nothing to draw a line with.
+const _kShortChartHeight = 48.0;
 
 class GraphCard extends StatefulWidget {
   final List<StatSnapshot> snapshots;
@@ -278,8 +282,11 @@ class _GraphCardState extends State<GraphCard> {
           const SizedBox(height: AppTheme.md),
 
           // ── Chart area ────────────────────────────────────────────────────
+          // A week with fewer than two points has no line to draw, so it gets
+          // a short strip rather than a tall empty plot; with a line, the
+          // chart keeps its usual height.
           SizedBox(
-            height: 110,
+            height: displaySnaps.length < 2 ? _kShortChartHeight : 110,
             child: displaySnaps.isEmpty
                 ? const Center(
                     child: Text(
@@ -362,7 +369,6 @@ class _GraphCardState extends State<GraphCard> {
       child: Text('Ranked Point History', style: AppTheme.cardTitle),
     );
   }
-
 }
 
 // ── Delta badge ───────────────────────────────────────────────────────────────

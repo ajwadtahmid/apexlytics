@@ -283,58 +283,153 @@ class _RpPerSessionBars extends StatelessWidget {
   final ValueChanged<RankedSession> onOpen;
   const _RpPerSessionBars({required this.shown, required this.onOpen});
 
+  static const _chartHeight = 110.0;
+  static const _labelHeight = 14.0;
+
+  /// Room a label needs on each side of its bar's centre line.
+  static const _labelWidth = 36.0;
+
   @override
   Widget build(BuildContext context) {
     final values = [for (final s in shown) s.netRp.toDouble()];
     final top = values.fold(0.0, (a, b) => a > b ? a : b);
     final bottom = values.fold(0.0, (a, b) => a < b ? a : b);
-    final maxY = top <= 0 ? 1.0 : top * 1.15;
-    final minY = bottom >= 0 ? 0.0 : bottom * 1.15;
+    // Headroom for the value above (or below) the tallest bar.
+    final maxY = top <= 0 ? 1.0 : top * 1.3;
+    final minY = bottom >= 0 ? 0.0 : bottom * 1.3;
     final barWidth = (240 / shown.length).clamp(3.0, 14.0);
 
-    return SizedBox(
-      height: 110,
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: maxY,
-          minY: minY,
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: 0,
-                color: AppTheme.muted.withValues(alpha: 0.5),
-                strokeWidth: 1,
-              ),
-            ],
-          ),
-          barTouchData: BarTouchData(
-            handleBuiltInTouches: false,
-            touchCallback: (event, response) {
-              if (event is! FlTapUpEvent) return;
-              final i = response?.spot?.touchedBarGroupIndex;
-              if (i != null) onOpen(shown[i]);
-            },
-          ),
-          barGroups: [
-            for (final (i, v) in values.indexed)
-              BarChartGroupData(
-                x: i,
-                barRods: [
-                  BarChartRodData(
-                    toY: v,
-                    color: AppTheme.signColor(v >= 0),
-                    width: barWidth,
-                    borderRadius: BorderRadius.circular(2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final n = shown.length;
+        final slot = constraints.maxWidth / n;
+        // Label every bar when they fit, otherwise every few, always keeping
+        // the newest.
+        final step = (_labelWidth / slot).ceil().clamp(1, n);
+        bool labelled(int i) => (n - 1 - i) % step == 0;
+        // Where a bar's value sits on the chart, from the top.
+        double yOf(double v) => _chartHeight * (maxY - v) / (maxY - minY);
+
+        return Column(
+          children: [
+            SizedBox(
+              height: _chartHeight,
+              child: Stack(
+                children: [
+                  BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: maxY,
+                      minY: minY,
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      titlesData: const FlTitlesData(show: false),
+                      extraLinesData: ExtraLinesData(
+                        horizontalLines: [
+                          HorizontalLine(
+                            y: 0,
+                            color: AppTheme.muted.withValues(alpha: 0.5),
+                            strokeWidth: 1,
+                          ),
+                        ],
+                      ),
+                      // Taps are taken by the full-height areas below.
+                      barTouchData: const BarTouchData(enabled: false),
+                      barGroups: [
+                        for (final (i, v) in values.indexed)
+                          BarChartGroupData(
+                            x: i,
+                            barRods: [
+                              BarChartRodData(
+                                toY: v,
+                                color: AppTheme.signColor(v >= 0),
+                                width: barWidth,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
+                  for (final (i, v) in values.indexed)
+                    if (labelled(i))
+                      Positioned(
+                        left: slot * (i + 0.5) - _labelWidth / 2,
+                        width: _labelWidth,
+                        // Above a gain, below a loss.
+                        top: v >= 0
+                            ? (yOf(v) - _labelHeight).clamp(0.0, _chartHeight)
+                            : (yOf(v) + 2).clamp(
+                                0.0,
+                                _chartHeight - _labelHeight,
+                              ),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            formatSignedInt(shown[i].netRp),
+                            maxLines: 1,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.signColor(v >= 0),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                  // One tap area per session, as wide as its share of the card
+                  // and as tall as the chart, so a thin bar is easy to hit.
+                  for (final (i, session) in shown.indexed)
+                    Positioned(
+                      left: slot * i,
+                      width: slot,
+                      top: 0,
+                      bottom: 0,
+                      child: Semantics(
+                        button: true,
+                        label:
+                            '${formatShortDate(session.start)}, '
+                            '${formatSignedInt(session.netRp)} RP, '
+                            '${plural(session.games, 'game')}',
+                        excludeSemantics: true,
+                        onTap: () => onOpen(session),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => onOpen(session),
+                        ),
+                      ),
+                    ),
                 ],
               ),
+            ),
+            const SizedBox(height: AppTheme.xs),
+            SizedBox(
+              height: _labelHeight,
+              child: Stack(
+                children: [
+                  for (final (i, session) in shown.indexed)
+                    if (labelled(i))
+                      Positioned(
+                        left: slot * (i + 0.5) - _labelWidth / 2,
+                        width: _labelWidth,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            formatShortDate(session.start),
+                            maxLines: 1,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AppTheme.muted,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                ],
+              ),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

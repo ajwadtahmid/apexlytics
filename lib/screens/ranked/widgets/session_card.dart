@@ -18,6 +18,15 @@ enum SessionBadge {
   final String label;
   final Color color;
   const SessionBadge(this.label, this.color);
+
+  /// The tag's colour for a session that netted [netRp]. "Worst" and "best" are
+  /// only relative: the worst of a run of gains is still a gain, so it is not
+  /// painted as a loss (nor the best of a run of losses as a win).
+  Color colorFor(int netRp) => switch (this) {
+    worst when netRp >= 0 => AppTheme.muted,
+    best when netRp < 0 => AppTheme.muted,
+    _ => color,
+  };
 }
 
 /// A tappable session summary as its own card. Used by the Sessions
@@ -72,7 +81,7 @@ class SessionCardBody extends ConsumerWidget {
                 ),
               ),
             ),
-            if (badge != null) _BadgeChip(badge!),
+            if (badge != null) _BadgeChip(badge!, netRp: session.netRp),
           ],
         ),
         const SizedBox(height: AppTheme.sm),
@@ -165,20 +174,22 @@ class SessionCardBody extends ConsumerWidget {
 
 class _BadgeChip extends StatelessWidget {
   final SessionBadge badge;
-  const _BadgeChip(this.badge);
+  final int netRp;
+  const _BadgeChip(this.badge, {required this.netRp});
 
   @override
   Widget build(BuildContext context) {
+    final color = badge.colorFor(netRp);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 2),
       decoration: BoxDecoration(
-        color: badge.color.withAlpha(30),
+        color: color.withAlpha(30),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         badge.label,
         style: TextStyle(
-          color: badge.color,
+          color: color,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),

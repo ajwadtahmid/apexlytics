@@ -4,7 +4,10 @@ import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
+import 'package:apexlytics/utils/formatting/format.dart'
+    show formatShortDate, formatSignedInt;
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
+import 'package:apexlytics/utils/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,6 +140,48 @@ void main() {
       ]);
     });
 
+    testWidgets('puts each bar\'s RP above it and its date under it', (
+      tester,
+    ) async {
+      await pump(tester, three);
+
+      // +30, -30 and +5, each with the day its session started.
+      expect(find.text('+30'), findsOneWidget);
+      expect(find.text('-30'), findsOneWidget);
+      expect(find.text('+5'), findsOneWidget);
+      expect(find.text(formatShortDate(three.last.start)), findsWidgets);
+    });
+
+    testWidgets('labels only some bars when there are too many, newest '
+        'included', (tester) async {
+      final many = _sessions([
+        for (var i = 0; i < 30; i++) [i.isEven ? 10 + i : -10 - i],
+      ]);
+      await pump(tester, many, size: const Size(400, 2400));
+
+      final newest = formatSignedInt(many.first.netRp);
+      expect(find.text(newest), findsOneWidget);
+      // Fewer labels than bars, so they do not run into each other.
+      final labels = find.byWidgetPredicate(
+        (w) => w is Text && RegExp(r'^[+-]\d+$').hasMatch(w.data ?? ''),
+      );
+      expect(labels.evaluate().length, lessThan(30));
+      expect(labels.evaluate().length, greaterThan(2));
+    });
+
+    testWidgets('gives each bar a labelled button for a screen reader', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester, three);
+
+      expect(
+        find.bySemanticsLabel(RegExp(r'^\w{3} \d+, [+-]\d+ RP, \d+ games?$')),
+        findsNWidgets(3),
+      );
+      handle.dispose();
+    });
+
     testWidgets('a single session has no best or worst and no chart', (
       tester,
     ) async {
@@ -174,6 +219,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(RankedSessionDetailScreen), findsOneWidget);
+    });
+  });
+
+  group('the best and worst tags', () {
+    test('a worst session that still gained is not painted as a loss', () {
+      expect(SessionBadge.worst.colorFor(54), AppTheme.muted);
+      expect(SessionBadge.worst.colorFor(0), AppTheme.muted);
+      expect(SessionBadge.worst.colorFor(-20), AppTheme.red);
+    });
+
+    test('nor a best session that still lost as a win', () {
+      expect(SessionBadge.best.colorFor(-5), AppTheme.muted);
+      expect(SessionBadge.best.colorFor(30), AppTheme.green);
     });
   });
 

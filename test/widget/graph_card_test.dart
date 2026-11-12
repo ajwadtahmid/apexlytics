@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:apexlytics/models/season_meta.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/widgets/graph_card.dart';
@@ -21,7 +22,11 @@ void main() {
     seasonId: season.id,
   );
 
-  Future<void> pump(WidgetTester tester, {required int? currentRp}) {
+  Future<void> pump(
+    WidgetTester tester, {
+    required int? currentRp,
+    List<StatSnapshot> thisWeek = const [],
+  }) {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -30,7 +35,7 @@ void main() {
         home: Scaffold(
           body: SingleChildScrollView(
             child: GraphCard(
-              snapshots: [lastWeek],
+              snapshots: [lastWeek, ...thisWeek],
               currentSeason: season,
               allSeasons: {season.id: season},
               currentRp: currentRp,
@@ -85,5 +90,35 @@ void main() {
 
     expect(find.textContaining('8,000'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  group('the chart area', () {
+    double chartHeight(WidgetTester tester) =>
+        tester.getSize(find.byType(LineChart)).height;
+
+    testWidgets('is short when the week has a single point', (tester) async {
+      // Only the live reading is in the current week.
+      await pump(tester, currentRp: 8100);
+
+      expect(chartHeight(tester), lessThan(60));
+    });
+
+    testWidgets('keeps its usual height once there is a line to draw', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        currentRp: 8300,
+        thisWeek: [
+          StatSnapshot(
+            timestamp: now.subtract(const Duration(hours: 5)),
+            rp: 8100,
+            seasonId: season.id,
+          ),
+        ],
+      );
+
+      expect(chartHeight(tester), 110);
+    });
   });
 }
