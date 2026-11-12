@@ -1179,6 +1179,7 @@ class _ShareAllButton extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => ShareCardScreen(
                   title: 'My records',
+                  offerStyle: legend != null,
                   cardBuilder: (showName) => RecordsShareCard(
                     scope: scope,
                     tiles: tiles,

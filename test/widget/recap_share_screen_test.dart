@@ -113,10 +113,12 @@ void main() {
     }
   });
 
-  testWidgets('starts the tiles at the same place however many there are', (
-    tester,
-  ) async {
+  testWidgets('starts the tiles at the same place however many there are '
+      'in the overlay style', (tester) async {
     await pump(tester);
+    // The poster's panel grows upward from the bottom, so its tiles move.
+    await tester.tap(find.text('Overlay'));
+    await tester.pump();
     final eight = tester.getTopLeft(tile('GAMES')).dy;
 
     await tester.tap(chip('Win rate'));

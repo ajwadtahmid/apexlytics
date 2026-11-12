@@ -24,9 +24,6 @@ import '../../../widgets/share_card.dart';
 
 Color _signed(num v) => AppTheme.signColor(v >= 0);
 
-/// The taller card the recap needs for up to ten figures.
-const double _kRecapHeight = 560;
-
 /// A period of ranked play in numbers: [recap] for [scope] ("S30 Split 2"). The
 /// player's name appears only when [playerName] is given; a UID never does.
 class RecapShareCard extends StatelessWidget {
@@ -141,11 +138,46 @@ class RecapShareCard extends StatelessWidget {
     final r = recap;
     final shown = tiles ?? defaultRecapTiles.toList();
     final note = showNote ? recapBestNote(r, shown) : null;
+    final badge = isPredator
+        ? kPredatorBadgeAsset
+        : rankAssetPathFromImageUrl(r.rankImg);
     return ShareCardFrame(
       label: '$scope recap',
       name: playerName,
       legend: r.bestLegend?.legend,
-      height: _kRecapHeight,
+      split: ShareCardSplit(
+        title: 'Recap',
+        subtitle: scope,
+        badge: RankBadge(assetPath: badge, size: 30),
+        headline: Column(
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${formatNumber(r.finalRp)} RP',
+                style: const TextStyle(
+                  color: AppTheme.accent,
+                  fontSize: 30,
+                  height: 1.1,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${formatSignedInt(r.netRp)} RP $periodPhrase',
+                style: TextStyle(
+                  color: _signed(r.netRp),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        stats: [for (final t in shown) ?_tile(t)],
+      ),
       // One line whatever the font, so the footer keeps its height.
       footer: note == null
           ? null
@@ -248,6 +280,14 @@ class RecordsShareCard extends StatelessWidget {
       label: '$scope records',
       name: playerName,
       legend: legend,
+      split: ShareCardSplit(
+        title: 'Records',
+        subtitle: scope,
+        stats: [
+          for (final (icon, label, value) in tiles)
+            ShareTile(icon: icon, label: label, value: value),
+        ],
+      ),
       child: Column(
         children: [
           const Spacer(),
@@ -309,66 +349,95 @@ class RecordShareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = valueColor ?? AppTheme.accent;
+    Widget figureAt(double size) => FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: size,
+              height: 1,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (unit != null) ...[
+            const SizedBox(width: AppTheme.sm),
+            Text(
+              unit!,
+              style: TextStyle(
+                color: AppTheme.muted,
+                fontSize: size * 0.37,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+    final chip = comparison == null
+        ? null
+        : Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.sm + 2,
+              vertical: AppTheme.xs,
+            ),
+            decoration: BoxDecoration(
+              color: color.withAlpha(30),
+              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+            ),
+            child: Text(
+              comparison!,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+    final tiles = [
+      for (final (icon, label, v) in stats)
+        ShareTile(icon: icon, label: label, value: v),
+    ];
     return ShareCardFrame(
       label: record,
       name: playerName,
       legend: legend,
       height: height,
+      split: ShareCardSplit(
+        title: record,
+        titleSize: 26,
+        subtitle: detail,
+        headline: Column(
+          children: [
+            Center(child: figureAt(40)),
+            if (chip != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.sm),
+                child: chip,
+              ),
+            if (visual != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.md),
+                child: visual,
+              ),
+          ],
+        ),
+        stats: tiles,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppTheme.sm),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 54,
-                    height: 1,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (unit != null) ...[
-                  const SizedBox(width: AppTheme.sm),
-                  Text(
-                    unit!,
-                    style: const TextStyle(
-                      color: AppTheme.muted,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (comparison != null)
+          figureAt(54),
+          if (chip != null)
             Padding(
               padding: const EdgeInsets.only(top: AppTheme.sm),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.sm + 2,
-                  vertical: AppTheme.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withAlpha(30),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                ),
-                child: Text(
-                  comparison!,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              child: chip,
             ),
           if (detail != null)
             Padding(
@@ -381,14 +450,11 @@ class RecordShareCard extends StatelessWidget {
               child: visual,
             ),
           const Spacer(),
-          if (stats.isNotEmpty)
+          if (tiles.isNotEmpty)
             Wrap(
               spacing: AppTheme.sm,
               runSpacing: AppTheme.sm,
-              children: [
-                for (final (icon, label, v) in stats)
-                  ShareTile(icon: icon, label: label, value: v),
-              ],
+              children: tiles,
             ),
         ],
       ),
@@ -398,9 +464,6 @@ class RecordShareCard extends StatelessWidget {
 
 /// Games shown as dots on a streak card, before the rest are summed up.
 const int _kMaxStreakDots = 30;
-
-/// The streak card's height: a little over 4:5, for its row of dots.
-const double _kStreakHeight = 500;
 
 /// The best win streak: its length in large type, a dot for every win, the RP
 /// it earned, and what happened across it. [matches] are its games, oldest
@@ -452,7 +515,6 @@ class StreakShareCard extends StatelessWidget {
       legend: top,
       playerName: playerName,
       visual: _WinDots(count: games),
-      height: _kStreakHeight,
       stats: [
         (StatIcons.totalKills, 'Kills', formatNumberOrNone(kills)),
         (StatIcons.totalDamage, 'Damage', formatNumberOrNone(damage)),

@@ -487,7 +487,7 @@ void main() {
       expect(find.text('LEGEND'), findsOneWidget);
     });
 
-    testWidgets('is a 4:5 card, the recap taller, tiles in two columns', (
+    testWidgets('is a 9:16 card, the recap too, tiles in two columns', (
       tester,
     ) async {
       await pump(
@@ -507,7 +507,7 @@ void main() {
         ),
       );
 
-      expect(tester.getSize(find.byType(ShareCardFrame)), const Size(360, 450));
+      expect(tester.getSize(find.byType(ShareCardFrame)), const Size(360, 640));
       final legend = tester.getTopLeft(find.text('LEGEND'));
       final map = tester.getTopLeft(find.text('MAP'));
       final rp = tester.getTopLeft(find.text('RP'));
@@ -522,7 +522,7 @@ void main() {
           body: RecapShareCard(recap: recap, scope: 'x'),
         ),
       );
-      expect(tester.getSize(find.byType(ShareCardFrame)), const Size(360, 560));
+      expect(tester.getSize(find.byType(ShareCardFrame)), const Size(360, 640));
     });
 
     testWidgets('fades the legend portrait in behind the card', (tester) async {
@@ -1086,6 +1086,157 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('No ranked games to recap yet.'), findsOneWidget);
+    });
+  });
+
+  group('the style of a card', () {
+    setUp(() => debugCanShareFiles = true);
+    tearDown(() => debugCanShareFiles = null);
+
+    Widget record({String? legend = 'Mad Maggie'}) => RecordShareCard(
+      record: 'Most Kills',
+      value: '14',
+      legend: legend,
+      comparison: '3x your average',
+      detail: 'Nov 5, 12:25 PM',
+      stats: const [
+        (Icons.person_outline, 'Legend', 'Mad Maggie'),
+        (Icons.map_outlined, 'Map', 'Olympus'),
+        (Icons.bolt, 'RP', '+40'),
+        (Icons.timeline, 'Damage', '2,066'),
+      ],
+    );
+
+    Future<void> openPanel(WidgetTester tester, {bool offerStyle = true}) =>
+        pump(
+          tester,
+          ShareCardScreen(
+            title: 'Most Kills',
+            offerStyle: offerStyle,
+            cardBuilder: (_) => record(),
+          ),
+        );
+
+    Size frame(WidgetTester tester) =>
+        tester.getSize(find.byType(ShareCardFrame));
+
+    Finder portrait() =>
+        find.byWidgetPredicate((w) => w is Image && w.fit == BoxFit.cover);
+
+    testWidgets('starts as the poster, and every style is one 9:16 card', (
+      tester,
+    ) async {
+      await openPanel(tester);
+
+      expect(find.text('Overlay'), findsOneWidget);
+      expect(find.text('Poster'), findsOneWidget);
+      expect(find.text('Split'), findsOneWidget);
+      expect(find.text('Size'), findsNothing);
+      expect(frame(tester), const Size(360, 640));
+
+      for (final style in ['Split', 'Overlay', 'Poster']) {
+        await tester.tap(find.text(style));
+        await tester.pump();
+        expect(frame(tester), const Size(360, 640), reason: style);
+      }
+    });
+
+    testWidgets('a card with no portrait offers no style', (tester) async {
+      await openPanel(tester, offerStyle: false);
+
+      expect(find.text('Poster'), findsNothing);
+      expect(find.text('Split'), findsNothing);
+    });
+
+    testWidgets('the poster shows the portrait over the whole card', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        Scaffold(
+          body: SingleChildScrollView(
+            child: ShareCardStyleScope(
+              style: ShareCardStyle.poster,
+              child: record(),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(portrait()), const Size(360 - 2, 640 - 2));
+      expect(find.text('14'), findsOneWidget);
+      expect(find.text('APEXLYTICS'), findsOneWidget);
+    });
+
+    testWidgets('the split puts a big title over the portrait and the '
+        'figures below it', (tester) async {
+      await pump(
+        tester,
+        Scaffold(
+          body: SingleChildScrollView(
+            child: ShareCardStyleScope(
+              style: ShareCardStyle.split,
+              child: record(),
+            ),
+          ),
+        ),
+      );
+
+      // The portrait is the top part only, under the title.
+      expect(tester.getSize(portrait()).height, lessThan(300));
+      final title = find.text('MOST KILLS');
+      expect(title, findsOneWidget);
+      expect(tester.getBottomLeft(title).dy, lessThan(300));
+      // The figures are below the line, in capitals as labels with big values.
+      expect(find.text('14'), findsOneWidget);
+      expect(find.text('LEGEND'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Mad Maggie')).dy,
+        greaterThan(tester.getBottomLeft(title).dy),
+      );
+      expect(find.text('APEXLYTICS'), findsOneWidget);
+    });
+
+    testWidgets('every style fits every kind of card without overflowing', (
+      tester,
+    ) async {
+      final cards = <Widget>[
+        record(),
+        const RecordsShareCard(
+          scope: 'S30',
+          legend: 'Axle',
+          tiles: [
+            (Icons.bolt, 'Best game', '+40 RP'),
+            (Icons.sports_kabaddi, 'Most kills', '14'),
+            (Icons.timeline, 'Best session', '+70 RP'),
+            (Icons.schedule, 'Longest session', '2h 15m'),
+            (Icons.bolt, 'Best day', '+90 RP'),
+            (Icons.timeline, 'Comeback', '+60 RP'),
+            (Icons.schedule, 'Win streak', '6 games'),
+            (Icons.bolt, 'Most damage', '2,300'),
+          ],
+        ),
+        StreakShareCard(matches: matches, playerName: 'Reptar'),
+        RecapShareCard(
+          recap: splitRecap(matches, metric: BestMetric.totalRp),
+          scope: 'S30 Split 2',
+          playerName: 'Reptar',
+          tiles: RecapTile.values,
+        ),
+      ];
+      for (final style in ShareCardStyle.values) {
+        for (final card in cards) {
+          await pump(
+            tester,
+            Scaffold(
+              body: SingleChildScrollView(
+                child: ShareCardStyleScope(style: style, child: card),
+              ),
+            ),
+          );
+          expect(tester.takeException(), isNull, reason: '$style');
+        }
+      }
     });
   });
 }

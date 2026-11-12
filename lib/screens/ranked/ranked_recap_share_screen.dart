@@ -53,6 +53,7 @@ class _RankedRecapShareScreenState
           padding: const EdgeInsets.all(AppTheme.md),
           children: [
             ShareCardPanel(
+              offerStyle: recap.bestLegend != null,
               cardBuilder: (showName) => RecapShareCard(
                 recap: recap,
                 scope: widget.scope,
