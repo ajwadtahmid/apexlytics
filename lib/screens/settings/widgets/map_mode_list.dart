@@ -131,6 +131,8 @@ class MapExpandTile extends StatelessWidget {
 
 /// Individual map row with a green/red indicator for notify state.
 class MapAlertTile extends StatelessWidget {
+  static const _minRowHeight = 44.0;
+
   final String name;
   final bool notify;
   final VoidCallback onTap;
@@ -149,37 +151,36 @@ class MapAlertTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       child: Padding(
-        padding: const EdgeInsets.only(
-          left: AppTheme.md,
-          top: AppTheme.sm,
-          bottom: AppTheme.sm,
-        ),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: AppTheme.shortAnimation,
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: AppTheme.sm),
-            Expanded(
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: notify ? AppTheme.textPrimary : AppTheme.muted,
+        padding: const EdgeInsets.only(left: AppTheme.md),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: _minRowHeight),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: AppTheme.shortAnimation,
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: AppTheme.sm),
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: notify ? AppTheme.textPrimary : AppTheme.muted,
+                  ),
                 ),
               ),
-            ),
-            Icon(
-              notify
-                  ? Icons.notifications_active_outlined
-                  : Icons.notifications_off_outlined,
-              size: 16,
-              color: color,
-            ),
-          ],
+              Icon(
+                notify
+                    ? Icons.notifications_active_outlined
+                    : Icons.notifications_off_outlined,
+                size: 16,
+                color: color,
+              ),
+            ],
+          ),
         ),
       ),
     );

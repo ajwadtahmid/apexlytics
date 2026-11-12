@@ -394,7 +394,7 @@ class _MapAlertsSheetContentState
             const SizedBox(height: AppTheme.xs),
             const Text(
               'Tap a mode to enable or disable it. '
-              'Green maps fire an alert; red maps are skipped.',
+              'Bell on = alert, bell off = skipped.',
               style: TextStyle(
                 color: AppTheme.muted,
                 fontSize: 13,

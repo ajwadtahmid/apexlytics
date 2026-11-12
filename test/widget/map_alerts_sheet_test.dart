@@ -6,7 +6,8 @@ import 'package:apexlytics/providers/map_provider.dart';
 import 'package:apexlytics/providers/notification_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/settings/map_alerts_sheet.dart';
-import 'package:apexlytics/services/notification_service.dart' show TestAlertResult;
+import 'package:apexlytics/services/notification_service.dart'
+    show TestAlertResult;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +39,8 @@ void main() {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         seasonalMapsProvider.overrideWith(_FakeSeasonalMaps.new),
-        if (sendTest != null) testAlertSenderProvider.overrideWithValue(sendTest),
+        if (sendTest != null)
+          testAlertSenderProvider.overrideWithValue(sendTest),
         // A reschedule asks for the rotation; nothing should leave the test.
         mapRotationProvider.overrideWith(
           (ref) async => throw Exception('no network in tests'),
@@ -86,6 +88,25 @@ void main() {
     // Stored as "all maps", so re-enabling shows every map ticked.
     expect(settings.favoriteRankedMapNames, isEmpty);
     expect(find.textContaining('Ranked alerts are off'), findsOneWidget);
+  });
+
+  testWidgets('each map row is at least 44 dp tall', (tester) async {
+    await openSheet(tester);
+
+    final row = find.ancestor(
+      of: find.text('Olympus'),
+      matching: find.byType(InkWell),
+    );
+    expect(tester.getSize(row.first).height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('the lead-in explains the bells, not the colours', (
+    tester,
+  ) async {
+    await openSheet(tester);
+
+    expect(find.textContaining('Bell on = alert'), findsOneWidget);
+    expect(find.textContaining('Green maps'), findsNothing);
   });
 
   testWidgets('unticking a map while others stay ticked changes nothing else', (
@@ -181,7 +202,10 @@ void main() {
       await tester.tap(button());
       await tester.pumpAndSettle();
 
-      expect(find.text('Notifications are off for Apexlytics.'), findsOneWidget);
+      expect(
+        find.text('Notifications are off for Apexlytics.'),
+        findsOneWidget,
+      );
       expect(find.text('Fix'), findsOneWidget);
     });
 
