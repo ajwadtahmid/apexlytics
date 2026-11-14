@@ -8,7 +8,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/settings/map_alerts_sheet.dart';
 import 'package:apexlytics/services/notification_service.dart'
     show TestAlertResult;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

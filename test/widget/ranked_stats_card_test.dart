@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_stats_card.dart';
@@ -23,15 +23,16 @@ void main() {
         ),
       );
 
-  testWidgets('shows a dash, not zeros, when no game reported kills or damage', (
-    tester,
-  ) async {
-    await pump(tester, [for (var i = 0; i < 3; i++) game(i, tracked: false)]);
+  testWidgets(
+    'shows a dash, not zeros, when no game reported kills or damage',
+    (tester) async {
+      await pump(tester, [for (var i = 0; i < 3; i++) game(i, tracked: false)]);
 
-    // Average and total, for both kills and damage.
-    expect(find.text(kNoReading), findsNWidgets(4));
-    expect(find.text('0.0'), findsNothing);
-  });
+      // Average and total, for both kills and damage.
+      expect(find.text(kNoReading), findsNWidgets(4));
+      expect(find.text('0.0'), findsNothing);
+    },
+  );
 
   testWidgets('shows the figures once games reported them', (tester) async {
     await pump(tester, [for (var i = 0; i < 3; i++) game(i, tracked: true)]);

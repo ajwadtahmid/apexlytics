@@ -7,7 +7,7 @@ import 'package:apexlytics/services/proxy_health.dart';
 import 'package:apexlytics/screens/home/server_status_page.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/status_dot.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

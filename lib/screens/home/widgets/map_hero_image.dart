@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../constants/map_constants.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/map_asset_image.dart';

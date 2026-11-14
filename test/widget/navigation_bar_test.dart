@@ -1,6 +1,6 @@
 import 'package:apexlytics/providers/navigation_provider.dart';
 import 'package:apexlytics/utils/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The bottom bar as the theme draws it: the palette's colours, labels that

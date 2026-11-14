@@ -9,7 +9,7 @@ import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/services/player_service.dart';
 import 'package:apexlytics/utils/formatting/search_utils.dart';
 import 'package:apexlytics/utils/refresh_cooldown.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

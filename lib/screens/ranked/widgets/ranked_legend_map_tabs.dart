@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../constants/map_constants.dart';
 import '../../../constants/stat_icons.dart';
 import '../../../models/ranked_match.dart';

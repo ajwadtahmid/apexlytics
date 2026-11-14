@@ -11,7 +11,7 @@ import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/control_pill.dart';
 import 'package:apexlytics/widgets/trend_window_picker.dart'
     show EntityTrendWindowPill;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

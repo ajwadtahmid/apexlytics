@@ -5,7 +5,7 @@ import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart'
     show RankedSplitBucket;
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

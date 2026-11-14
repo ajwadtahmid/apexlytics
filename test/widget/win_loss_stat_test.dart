@@ -1,12 +1,14 @@
 import 'package:apexlytics/widgets/win_loss_stat.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, int wins, int losses) =>
       tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: WinLossStat(wins: wins, losses: losses)),
+          home: Scaffold(
+            body: WinLossStat(wins: wins, losses: losses),
+          ),
         ),
       );
 

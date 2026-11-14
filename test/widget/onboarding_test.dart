@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -407,15 +407,9 @@ void main() {
       await next(tester, 2);
 
       expect(find.textContaining('by name or UID'), findsOneWidget);
-      expect(
-        find.textContaining('Switch needs a UID'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Switch needs a UID'), findsOneWidget);
       expect(find.text('Equip your trackers'), findsOneWidget);
-      expect(
-        find.textContaining('Apex Kills and Apex Damage'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Apex Kills and Apex Damage'), findsOneWidget);
       expect(find.text('Then watch your RP climb'), findsOneWidget);
       expect(
         find.textContaining('every ranked game, across the split'),
@@ -478,7 +472,9 @@ void main() {
         );
       }
       expect(
-        find.textContaining('Once games are recorded, tiles under the RP chart'),
+        find.textContaining(
+          'Once games are recorded, tiles under the RP chart',
+        ),
         findsOneWidget,
       );
     });
@@ -490,7 +486,9 @@ void main() {
       await next(tester, 5);
 
       expect(
-        find.text('Pick a split and week at the top, and everything follows it.'),
+        find.text(
+          'Pick a split and week at the top, and everything follows it.',
+        ),
         findsOneWidget,
       );
       for (final tab in ['Overview', 'Legends', 'Maps', 'Games']) {

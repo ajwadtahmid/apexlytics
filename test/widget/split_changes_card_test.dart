@@ -1,7 +1,7 @@
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/screens/ranked/widgets/split_changes_card.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers.dart';

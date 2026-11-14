@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../utils/theme.dart';
 
 /// A bundled map image covering its parent, decoded at its drawn width

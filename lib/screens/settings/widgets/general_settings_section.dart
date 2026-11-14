@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/api_constants.dart';
@@ -101,10 +101,7 @@ class _PlayerInfoContent extends ConsumerWidget {
           },
           child: Row(
             children: [
-              const Text(
-                'UID',
-                style: AppTheme.caption,
-              ),
+              const Text('UID', style: AppTheme.caption),
               const SizedBox(width: AppTheme.sm),
               Expanded(
                 child: Text(

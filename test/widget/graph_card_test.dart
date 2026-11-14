@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:apexlytics/models/season_meta.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/widgets/graph_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

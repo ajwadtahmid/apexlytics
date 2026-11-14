@@ -8,7 +8,7 @@ import 'package:apexlytics/widgets/control_pill.dart';
 import 'package:apexlytics/widgets/legend_trackers_sheet.dart';
 import 'package:apexlytics/widgets/legend_stats_section.dart';
 import 'package:apexlytics/widgets/player_stats_tabs.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

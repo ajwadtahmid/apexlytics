@@ -1,6 +1,6 @@
 import 'package:apexlytics/screens/ranked/widgets/recap_journey_chart.dart';
 import 'package:apexlytics/utils/ranked/recap_journey.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -7,7 +7,7 @@ import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/rp_pill.dart';
 import 'package:apexlytics/widgets/surface_card.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,12 +68,7 @@ void main() {
   });
 
   group('a game excluded on the page', () {
-    final first = buildMatch(
-      rp: 10,
-      kills: 7,
-      damage: 700,
-      start: 1782090000,
-    );
+    final first = buildMatch(rp: 10, kills: 7, damage: 700, start: 1782090000);
     final second = buildMatch(
       rp: 20,
       kills: 1,

@@ -7,7 +7,7 @@ import 'package:apexlytics/providers/storage_usage_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/backup_reminder_banner.dart';
 import 'package:apexlytics/screens/settings/widgets/cache_settings_section.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' show inMemoryDatabasePath;

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../utils/formatting/format.dart'
     show
         formatAvgDamage,
@@ -32,15 +32,12 @@ class RankedStatsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'STATS',
-            style: AppTheme.cardTitle,
-          ),
+          const Text('STATS', style: AppTheme.cardTitle),
           const SizedBox(height: AppTheme.sm),
           StatGrid(
             rows: [
               [
-                WinLossStat(wins: s.wins, losses: s.losses,),
+                WinLossStat(wins: s.wins, losses: s.losses),
                 StatDisplay(
                   label: 'Games',
                   centered: true,

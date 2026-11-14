@@ -1,5 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../utils/formatting/format.dart' show formatNumber;
 import '../../../utils/ranked/recap_journey.dart';
 import '../../../utils/theme.dart';

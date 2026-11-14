@@ -1,6 +1,6 @@
 import 'package:apexlytics/widgets/info_sheet.dart';
 import 'package:apexlytics/widgets/sheet_handle.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

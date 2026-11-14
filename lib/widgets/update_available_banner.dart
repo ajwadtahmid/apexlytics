@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:upgrader/upgrader.dart';
 
 import '../utils/theme.dart';
@@ -83,10 +83,7 @@ class _UpdateAvailableBannerState extends State<UpdateAvailableBanner> {
                   version == null
                       ? 'A new version is available'
                       : 'Version $version is available',
-                  style: const TextStyle(
-                    color: AppTheme.accent,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: AppTheme.accent, fontSize: 12),
                 ),
               ),
               InkWell(

@@ -1,5 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../models/season_meta.dart';
 import '../utils/formatting/snapshot_types.dart';
 import '../utils/formatting/season_utils.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../utils/formatting/format.dart' show formatSignedInt, plural;
 import '../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../utils/ranked/ranked_aggregates.dart';

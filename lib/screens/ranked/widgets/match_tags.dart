@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/format.dart' show formatSignedInt;
 import '../../../utils/theme.dart';
@@ -17,7 +17,10 @@ class _TagPill extends StatelessWidget {
     this.background,
     this.fontSize = 12,
     this.weight = FontWeight.bold,
-    this.padding = const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 2),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: AppTheme.sm,
+      vertical: 2,
+    ),
   });
 
   @override
@@ -127,10 +130,7 @@ const _fieldLabels = {
 List<MatchTagNote> matchTagNotes(RankedMatch m) {
   return [
     if (m.excluded)
-      const MatchTagNote(
-        'Excluded',
-        'Left out of every stat, trend and total.',
-      )
+      const MatchTagNote('Excluded', 'Left out of every stat, trend and total.')
     else if (m.isAutoExcluded)
       MatchTagNote(
         'Excluded',

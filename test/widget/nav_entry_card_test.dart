@@ -1,11 +1,12 @@
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
 import 'package:apexlytics/widgets/nav_entry_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget host(Widget child) =>
-      MaterialApp(home: Scaffold(body: Center(child: child)));
+  Widget host(Widget child) => MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 
   testWidgets('shows its title and icon and reports taps', (tester) async {
     var taps = 0;

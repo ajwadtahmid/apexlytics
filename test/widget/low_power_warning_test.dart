@@ -2,7 +2,7 @@ import 'package:apexlytics/providers/low_power_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/stats_refresh_section.dart';
 import 'package:apexlytics/widgets/low_power_warning.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

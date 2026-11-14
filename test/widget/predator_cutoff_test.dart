@@ -6,7 +6,7 @@ import 'package:apexlytics/screens/home/predator_page.dart';
 import 'package:apexlytics/screens/home/widgets/predator_section.dart';
 import 'package:apexlytics/utils/api_cache.dart' show ApiResult;
 import 'package:apexlytics/utils/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

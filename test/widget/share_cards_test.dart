@@ -12,7 +12,7 @@ import 'package:apexlytics/utils/share_image.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/rank_badge.dart';
 import 'package:apexlytics/widgets/share_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:share_plus/share_plus.dart';

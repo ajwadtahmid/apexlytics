@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/api_constants.dart';
 import '../constants/rank_constants.dart';
@@ -7,11 +7,7 @@ import '../providers/predator_provider.dart';
 import '../utils/formatting/format.dart';
 import '../utils/formatting/season_utils.dart' show splitContext;
 import '../utils/formatting/rank_utils.dart'
-    show
-        isApexPredatorRp,
-        rankIndex,
-        rankAssetPathByTier,
-        usablePredatorCutoff;
+    show isApexPredatorRp, rankIndex, rankAssetPathByTier, usablePredatorCutoff;
 import '../utils/theme.dart';
 import 'surface_card.dart';
 import 'rank_badge.dart';
@@ -126,10 +122,7 @@ class RankedInfoCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${formatNumber(curRp)} RP',
-                  style: AppTheme.captionSmall,
-                ),
+                Text('${formatNumber(curRp)} RP', style: AppTheme.captionSmall),
                 Text(
                   '${formatNumber(gap)} RP to $nextLabel',
                   style: TextStyle(
@@ -154,10 +147,7 @@ class RankedInfoCard extends ConsumerWidget {
             ),
           if (splitLabel.isNotEmpty) ...[
             const SizedBox(height: AppTheme.sm),
-            Text(
-              splitLabel,
-              style: AppTheme.captionSmall,
-            ),
+            Text(splitLabel, style: AppTheme.captionSmall),
           ],
         ],
       ),

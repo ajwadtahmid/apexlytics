@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../constants/legend_constants.dart';
 import '../models/player_stats.dart';
 import '../utils/formatting/format.dart';

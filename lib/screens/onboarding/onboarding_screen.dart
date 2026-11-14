@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../providers/navigation_provider.dart' show AppTab;
 import '../../providers/settings_provider.dart' show PlayerSettingsNotifier;

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../constants/weapon_constants.dart';
 import '../models/player_stats.dart';
 import '../utils/formatting/format.dart';
@@ -134,8 +134,7 @@ class _WeaponRow extends StatelessWidget {
               weapon.assetPath,
               fit: BoxFit.contain,
               alignment: Alignment.centerLeft,
-              cacheWidth: (64 * MediaQuery.devicePixelRatioOf(context))
-                  .ceil(),
+              cacheWidth: (64 * MediaQuery.devicePixelRatioOf(context)).ceil(),
               errorBuilder: (ctx, err, trace) => const SizedBox.shrink(),
             ),
           ),

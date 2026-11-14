@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../utils/bug_report.dart' show BugReportChannel;
 import '../utils/theme.dart';

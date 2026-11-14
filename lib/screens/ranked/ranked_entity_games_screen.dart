@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../models/ranked_match.dart';
 import '../../utils/theme.dart';
 import 'widgets/match_history_items.dart';

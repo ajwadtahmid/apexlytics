@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../models/ranked_match.dart';
 import '../../utils/ranked/ranked_aggregates.dart' show rankedOnly;
 import '../../utils/ranked/ranked_period.dart';

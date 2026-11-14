@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../models/map_rotation.dart';
 import '../../../utils/formatting/format.dart' show formatClock, formatTimeLeft;
 import '../../../utils/alert_silence.dart' show formatMuteEnd;

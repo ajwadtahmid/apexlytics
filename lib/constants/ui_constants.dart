@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../utils/theme.dart';
 
 /// Small muted dot for separating inline text, e.g. "Level 500 • Gold II".

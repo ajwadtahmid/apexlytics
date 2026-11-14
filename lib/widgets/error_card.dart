@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../utils/theme.dart';
 import 'surface_card.dart';
 
@@ -135,10 +135,7 @@ class ErrorCard extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
-                  const Text(
-                    'Failed to load',
-                    style: AppTheme.captionLarge,
-                  ),
+                  const Text('Failed to load', style: AppTheme.captionLarge),
                 ],
               ),
             ),
@@ -270,10 +267,7 @@ class ErrorCard extends StatelessWidget {
           if (onLearnMore != null)
             TextButton(
               onPressed: onLearnMore,
-              child: const Text(
-                'How does this work?',
-                style: AppTheme.caption,
-              ),
+              child: const Text('How does this work?', style: AppTheme.caption),
             ),
         ],
       ),

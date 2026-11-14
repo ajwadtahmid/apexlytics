@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:apexlytics/utils/formatting/season_utils.dart' show computeWeeks;
+import 'package:apexlytics/utils/formatting/season_utils.dart'
+    show computeWeeks;
 import 'package:apexlytics/utils/ranked/best_metric.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/season_meta.dart';
@@ -34,7 +35,7 @@ import 'package:apexlytics/screens/ranked/widgets/split_changes_card.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/widgets/graph_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;

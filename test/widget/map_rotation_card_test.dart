@@ -1,6 +1,6 @@
 import 'package:apexlytics/models/map_rotation.dart';
 import 'package:apexlytics/screens/home/widgets/map_rotation_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

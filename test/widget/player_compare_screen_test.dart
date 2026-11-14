@@ -1,7 +1,7 @@
 import 'package:apexlytics/models/player_stats.dart';
 import 'package:apexlytics/screens/search/player_compare_screen.dart';
 import 'package:apexlytics/widgets/legend_icon.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers.dart';

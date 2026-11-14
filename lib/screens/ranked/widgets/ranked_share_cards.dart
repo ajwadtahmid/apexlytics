@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../constants/legend_constants.dart' show canonicalLegendName;
 import '../../../constants/rank_constants.dart' show kPredatorBadgeAsset;
 import '../../../constants/stat_icons.dart';

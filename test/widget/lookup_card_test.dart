@@ -2,7 +2,7 @@ import 'package:apexlytics/constants/ui_strings.dart';
 import 'package:apexlytics/utils/lookup_form_state.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/lookup_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

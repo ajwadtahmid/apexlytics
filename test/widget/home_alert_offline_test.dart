@@ -15,7 +15,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/home/home_screen.dart';
 import 'package:apexlytics/services/notification_service.dart';
 import 'package:apexlytics/utils/api_cache.dart' show ApiResult;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../models/season_meta.dart';
 import '../utils/theme.dart';
 
@@ -20,7 +20,10 @@ class SeasonPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     if (seasons.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: AppTheme.xs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.sm,
+          vertical: AppTheme.xs,
+        ),
         decoration: BoxDecoration(
           color: AppTheme.surface2,
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
@@ -36,7 +39,10 @@ class SeasonPicker extends StatelessWidget {
     final hasChoice = seasons.length > 1;
 
     final label = Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: AppTheme.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.sm,
+        vertical: AppTheme.xs,
+      ),
       decoration: BoxDecoration(
         color: AppTheme.surface2,
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../constants/rank_constants.dart';
 import '../../../providers/predator_provider.dart';
 import '../../../providers/rank_goal_provider.dart';
 import '../../../providers/settings_provider.dart';
-import '../../../utils/formatting/format.dart' show formatNumber, formatSigned, formatSignedInt, kNoReading, plural;
+import '../../../utils/formatting/format.dart'
+    show formatNumber, formatSigned, formatSignedInt, kNoReading, plural;
 import '../../../utils/formatting/rank_utils.dart'
     show rankAssetPathByTier, rankAssetPathFromImageUrl, usablePredatorCutoff;
 import '../../../utils/ranked/ranked_aggregates.dart';
@@ -271,12 +272,7 @@ class _GoalFooter extends StatelessWidget {
     if (goal == null) {
       return Row(
         children: [
-          const Expanded(
-            child: Text(
-              'No goal set',
-              style: AppTheme.caption,
-            ),
-          ),
+          const Expanded(child: Text('No goal set', style: AppTheme.caption)),
           _GoalButton(hasGoal: false, onTap: () => _openGoalSheet(context)),
         ],
       );
@@ -493,10 +489,7 @@ Widget _estimateWidget(int rp, int? games, RankDivision target) {
   } else {
     spans = [
       TextSpan(text: '${formatNumber(rp)} RP ', style: white),
-      TextSpan(
-        text: '(~${plural(games, 'game')}) ',
-        style: muted,
-      ),
+      TextSpan(text: '(~${plural(games, 'game')}) ', style: muted),
       const TextSpan(text: 'to ', style: muted),
       TextSpan(
         text: target.label,

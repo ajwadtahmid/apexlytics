@@ -5,7 +5,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_summary_header.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -69,7 +69,9 @@ void main() {
     expect(find.text('No goal set'), findsOneWidget);
   });
 
-  testWidgets('a past week names itself and shows no sync hint', (tester) async {
+  testWidgets('a past week names itself and shows no sync hint', (
+    tester,
+  ) async {
     await pump(
       tester,
       scope: const RankedRpScope(label: 'RP at end of Week 1', live: false),

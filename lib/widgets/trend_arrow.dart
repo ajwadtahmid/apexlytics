@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../utils/theme.dart';
 
 /// Up / flat / down arrow for a change of [delta]. Exactly zero is flat; callers

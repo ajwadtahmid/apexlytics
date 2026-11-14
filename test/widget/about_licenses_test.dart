@@ -3,7 +3,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/settings/about_screen.dart';
 import 'package:apexlytics/utils/app_license.dart';
 import 'package:flutter/foundation.dart' show LicenseRegistry;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';

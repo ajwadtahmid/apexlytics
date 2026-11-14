@@ -1,6 +1,6 @@
 import 'package:apexlytics/utils/bug_report.dart';
 import 'package:apexlytics/widgets/bug_report_player_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

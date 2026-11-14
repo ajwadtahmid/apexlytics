@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/icon_text_row.dart';
 

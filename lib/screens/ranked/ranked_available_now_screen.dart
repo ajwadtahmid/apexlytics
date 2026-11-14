@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../models/player_stats.dart';
 import '../../models/season_meta.dart';
 import '../../utils/formatting/snapshot_types.dart';
