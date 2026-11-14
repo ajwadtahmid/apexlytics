@@ -50,7 +50,7 @@ jobs:
         with:
           # The version releases are verified with locally; bump it together
           # with the local toolchain, not whenever stable moves.
-          flutter-version: "3.47.9"
+          flutter-version: "3.50.0"
           channel: "stable"
           cache: true
 
@@ -99,7 +99,7 @@ jobs:
         with:
           # The version releases are verified with locally; bump it together
           # with the local toolchain, not whenever stable moves.
-          flutter-version: "3.47.9"
+          flutter-version: "3.50.0"
           channel: "stable"
           cache: true
 
@@ -165,7 +165,7 @@ jobs:
         with:
           # The version releases are verified with locally; bump it together
           # with the local toolchain, not whenever stable moves.
-          flutter-version: "3.47.9"
+          flutter-version: "3.50.0"
           channel: "stable"
           cache: true
 
@@ -241,7 +241,7 @@ jobs:
         with:
           # The version releases are verified with locally; bump it together
           # with the local toolchain, not whenever stable moves.
-          flutter-version: "3.47.9"
+          flutter-version: "3.50.0"
           channel: "stable"
           cache: true
 
