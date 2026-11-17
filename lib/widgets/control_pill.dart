@@ -34,7 +34,7 @@ class ControlPill extends StatelessWidget {
   });
 
   /// The least height the tappable area has, so a thumb can hit the pill.
-  static const double minHitHeight = 40;
+  static const double minHitHeight = 44;
 
   @override
   Widget build(BuildContext context) {

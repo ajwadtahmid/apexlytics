@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../utils/theme.dart';
 
 class StatDisplay extends StatelessWidget {
@@ -87,7 +88,7 @@ class StatDisplay extends StatelessWidget {
               footnote!,
               style: TextStyle(
                 color: footnoteColor ?? AppTheme.muted,
-                fontSize: compact ? 9 : 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),

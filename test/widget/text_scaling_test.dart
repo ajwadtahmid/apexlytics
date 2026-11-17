@@ -20,9 +20,8 @@ void main() {
         overrides: [await prefsOverride()],
         child: MaterialApp(
           builder: (context, app) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(scale)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
             child: app!,
           ),
           home: Scaffold(body: SingleChildScrollView(child: child)),
@@ -49,7 +48,9 @@ void main() {
     testWidgets('keeps its title beside the icon at the normal size', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(400, 800);
+      // The test font is far wider than a real one, so this takes a screen
+      // wide enough for 'Performance' to fit beside the icon in it.
+      tester.view.physicalSize = const Size(700, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await pump(tester, tile(), 1);
@@ -98,9 +99,8 @@ void main() {
     );
 
     double labelScale(WidgetTester tester) =>
-        MediaQuery.textScalerOf(
-          tester.element(find.text('Wildcards')),
-        ).scale(10) /
+        MediaQuery.textScalerOf(tester.element(find.text('Wildcards')))
+            .scale(10) /
         10;
 
     testWidgets('follows the text size up to 1.3x, then stops', (tester) async {

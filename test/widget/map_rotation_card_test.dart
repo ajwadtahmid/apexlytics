@@ -73,6 +73,45 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('when the end time does not fit beside the map name, it drops '
+        'under it', (tester) async {
+      // The test font is far wider than a real one, so this stands in for a
+      // large text size: 'Storm Point' and 'Ends at ...' cannot share a line.
+      tester.view.physicalSize = const Size(365, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final rotation = MapRotation(
+        battleRoyaleCurrent: mode('Olympus', remaining: 1800, minutes: 60),
+        battleRoyaleNext: mode('Storm Point', minutes: 60),
+        rankedCurrent: mode('Olympus', remaining: 1800, minutes: 60),
+        rankedNext: mode('Storm Point', minutes: 60),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: MapRotationCard(rotation: rotation),
+            ),
+          ),
+        ),
+      );
+
+      final name = find.text('Storm Point');
+      final ends = find.textContaining('Ends at');
+      expect(name, findsOneWidget);
+      // The name is one line, whole, and the end time is below it.
+      expect(
+        tester.getSize(name).height,
+        lessThan(tester.getSize(ends).height * 1.6),
+        reason: 'the name stays on one line',
+      );
+      expect(
+        tester.getTopLeft(ends).dy,
+        greaterThan(tester.getBottomLeft(name).dy - 1),
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('shows only the start time when the length is unknown', (
       tester,
     ) async {
@@ -158,6 +197,19 @@ void main() {
 
       expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
       expect(find.byIcon(Icons.notifications_active), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the mode pills are at least 44 dp tall to tap', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      final pill = find.ancestor(
+        of: find.text('Pubs'),
+        matching: find.byType(GestureDetector),
+      );
+      expect(tester.getSize(pill.first).height, greaterThanOrEqualTo(44));
       await tester.pumpWidget(const SizedBox());
     });
 

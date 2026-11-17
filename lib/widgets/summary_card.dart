@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../utils/theme.dart';
 
 class SummaryCard extends StatelessWidget {
@@ -49,7 +50,7 @@ class SummaryCard extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: AppTheme.captionLarge,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],

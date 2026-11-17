@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
+
 import '../../../models/map_rotation.dart';
 import '../../../utils/formatting/format.dart' show formatClock, formatTimeLeft;
 import '../../../utils/alert_silence.dart' show formatMuteEnd;
@@ -149,7 +151,8 @@ class _ModePicker extends StatelessWidget {
               onTap: () => onSelect(i),
               child: AnimatedContainer(
                 duration: AppTheme.shortAnimation,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                // 12 + the label + 12 is the 44 dp a thumb needs.
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: active ? AppTheme.accent : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppTheme.radiusFull),
@@ -487,20 +490,34 @@ class _NextMapRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppTheme.xs),
-        Row(
+        // The name and the end time share a line when they fit; at a large
+        // text size the end time drops under the name rather than squeezing it
+        // into a column a letter wide.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppTheme.sm,
+          runSpacing: AppTheme.xs,
           children: [
-            const Icon(Icons.arrow_forward, size: 14, color: AppTheme.muted),
-            const SizedBox(width: AppTheme.xs),
-            Expanded(
-              child: Text(
-                formatMapDisplay(next.map, next.eventName, isMixtape),
-                style: AppTheme.captionLarge,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.arrow_forward,
+                  size: 14,
+                  color: AppTheme.muted,
+                ),
+                const SizedBox(width: AppTheme.xs),
+                Flexible(
+                  child: Text(
+                    formatMapDisplay(next.map, next.eventName, isMixtape),
+                    style: AppTheme.captionLarge,
+                  ),
+                ),
+              ],
             ),
-            if (nextEnd != null) ...[
-              const SizedBox(width: AppTheme.sm),
+            if (nextEnd != null)
               Text('Ends at $nextEnd', style: AppTheme.caption),
-            ],
           ],
         ),
       ],

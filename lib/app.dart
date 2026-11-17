@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:material_ui/material_ui.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+
 import 'providers/auto_backup_provider.dart';
 import 'providers/map_provider.dart';
 import 'providers/navigation_provider.dart';
@@ -30,6 +32,7 @@ import 'utils/storage/former_profile_uids.dart';
 import 'utils/storage/ranked_history_store.dart';
 import 'utils/storage/rp_snapshot_storage.dart';
 import 'utils/theme.dart';
+import 'widgets/phone_orientation_lock.dart';
 
 class ApexLegendsApp extends StatelessWidget {
   const ApexLegendsApp({super.key});
@@ -40,6 +43,7 @@ class ApexLegendsApp extends StatelessWidget {
       title: 'Apexlytics',
       theme: AppTheme.materialTheme,
       home: const _AppShell(),
+      builder: (context, child) => PhoneOrientationLock(child: child!),
       debugShowCheckedModeBanner: false,
     );
   }

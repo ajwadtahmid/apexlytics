@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../constants/api_constants.dart';
 import '../providers/owner_provider.dart';
 import '../providers/settings_provider.dart';
@@ -221,11 +222,11 @@ class _ProfileManagerSheetState extends ConsumerState<ProfileManagerSheet> {
   }
 }
 
-/// Edit and Remove: 40 dp square tap areas side by side, so the icons sit
+/// Edit and Remove: 44 dp square tap areas side by side, so the icons sit
 /// close together and Remove, which asks first, is still a separate target.
 final _kActionStyle = IconButton.styleFrom(
-  minimumSize: const Size(40, 40),
-  fixedSize: const Size(40, 40),
+  minimumSize: const Size(44, 44),
+  fixedSize: const Size(44, 44),
   padding: EdgeInsets.zero,
   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
 );

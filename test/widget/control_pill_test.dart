@@ -105,4 +105,21 @@ void main() {
     expect(find.text('Set goal'), findsOneWidget);
     expect(find.text('Sort:'), findsNothing);
   });
+
+  testWidgets('the tappable area is at least 44 dp tall', (tester) async {
+    await pump(
+      tester,
+      ControlPill(icon: Icons.bolt, label: 'Damage', onTap: () {}),
+    );
+
+    final area = find.ancestor(
+      of: find.text('Damage'),
+      matching: find.byType(GestureDetector),
+    );
+    expect(
+      tester.getSize(area.first).height,
+      greaterThanOrEqualTo(ControlPill.minHitHeight),
+    );
+    expect(ControlPill.minHitHeight, greaterThanOrEqualTo(44));
+  });
 }

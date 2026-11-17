@@ -36,4 +36,43 @@ void main() {
 
     expect(find.text('Sessions'), findsNothing);
   });
+
+  testWidgets('a title that fits stays beside the icon', (tester) async {
+    await tester.pumpWidget(
+      host(NavEntryCard(icon: Icons.history, title: 'Sessions', onTap: () {})),
+    );
+
+    expect(
+      tester.getTopLeft(find.text('Sessions')).dx,
+      greaterThan(tester.getTopRight(find.byIcon(Icons.history)).dx),
+    );
+  });
+
+  testWidgets('a word too long for a half-width tile goes under the icon', (
+    tester,
+  ) async {
+    // 'Performance' is about 84 dp; a half-width tile on a 360 dp screen has
+    // about 82 dp beside the icon and chevron, so it would break mid-word.
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      host(
+        SizedBox(
+          width: 160,
+          child: NavEntryCard(
+            icon: Icons.history,
+            title: 'Performance Trends',
+            onTap: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getTopLeft(find.text('Performance Trends')).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(find.byIcon(Icons.history)).dy),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
