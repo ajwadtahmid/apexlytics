@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../providers/settings_provider.dart';
 import '../../../services/background_service.dart' show BackgroundService;
 import '../../../utils/formatting/format.dart' show timeAgo;
@@ -140,7 +141,7 @@ class _LastBackgroundRefreshRow extends ConsumerWidget {
               // Expected on iOS until the OS decides to run the task, and on Android
               // until the first 15-minute window elapses - so it is phrased as a
               // wait, not a failure.
-              'Waiting for first background refresh',
+              'Waiting for the first background refresh, which your phone runs on its own schedule',
               AppTheme.muted,
             ),
             (final ok, final at) => (

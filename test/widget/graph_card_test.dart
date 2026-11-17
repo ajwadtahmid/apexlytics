@@ -1,5 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:apexlytics/models/season_meta.dart';
+import 'package:apexlytics/utils/formatting/format.dart' show formatShortDate;
+import 'package:apexlytics/utils/formatting/season_utils.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/widgets/graph_card.dart';
 import 'package:material_ui/material_ui.dart';
@@ -121,4 +123,42 @@ void main() {
       expect(chartHeight(tester), 110);
     });
   });
+
+  group('a week with no line to draw', () {
+    testWidgets('says no games were recorded', (tester) async {
+      await pump(tester, currentRp: 8000);
+
+      expect(find.text('No games recorded this week'), findsOneWidget);
+    });
+
+    testWidgets('does not say it once there is a line', (tester) async {
+      await pump(
+        tester,
+        currentRp: 8300,
+        thisWeek: [
+          StatSnapshot(
+            timestamp: now.subtract(const Duration(hours: 5)),
+            rp: 8100,
+            seasonId: season.id,
+          ),
+        ],
+      );
+
+      expect(find.text('No games recorded this week'), findsNothing);
+    });
+  });
+
+  testWidgets(
+    'the week range ends on the last day, not the next week\'s first',
+    (tester) async {
+      await pump(tester, currentRp: 8000);
+
+      final weeks = computeWeeks(season);
+      final week = weeks[currentWeekIndex(weeks)];
+      final last = week.end.subtract(const Duration(days: 1));
+      final label = '${formatShortDate(week.start)} – ${formatShortDate(last)}';
+      expect(find.text(label), findsOneWidget);
+      expect(find.textContaining(formatShortDate(week.end)), findsNothing);
+    },
+  );
 }

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../constants/api_constants.dart';
 import '../../../providers/navigation_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -20,7 +21,7 @@ class GeneralSettingsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionLabel(label: 'Account', icon: Icons.person_outline),
+        const SectionLabel(label: 'Player', icon: Icons.person_outline),
         SettingsCard(
           child: isPlayerSet
               ? _PlayerInfoContent(

@@ -114,9 +114,8 @@ void main() {
         ],
         child: MaterialApp(
           builder: (context, app) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(textScale)),
             child: app!,
           ),
           home: Scaffold(
@@ -136,6 +135,7 @@ void main() {
   ) async {
     await pump(tester, [('Main', '1')]);
     expect(find.textContaining('Need at least two splits'), findsOneWidget);
+    expect(find.text('Nothing to compare yet'), findsOneWidget);
     expect(find.byType(PopupMenuButton<String>), findsNothing);
   });
 

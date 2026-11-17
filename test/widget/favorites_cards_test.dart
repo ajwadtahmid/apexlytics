@@ -247,6 +247,15 @@ void main() {
   });
 
   group('the section headers', () {
+    testWidgets('say how to remove a favorite, and what Clear clears', (
+      t,
+    ) async {
+      await pumpPane(t);
+
+      expect(find.textContaining('Swipe a favorite left'), findsOneWidget);
+      expect(find.bySemanticsLabel('Clear all favorites'), findsOneWidget);
+    });
+
     testWidgets('are titled with a quiet Clear at the end', (t) async {
       await pumpPane(t);
 

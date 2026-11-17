@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../utils/theme.dart';
 import '../../../widgets/icon_text_row.dart';
 
@@ -20,7 +21,7 @@ class MapModeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? AppTheme.green : AppTheme.red;
+    final color = enabled ? AppTheme.green : AppTheme.muted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
@@ -146,7 +147,7 @@ class MapAlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = notify ? AppTheme.green : AppTheme.red;
+    final color = notify ? AppTheme.green : AppTheme.muted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.radiusSm),

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
+
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/format.dart'
@@ -479,7 +480,7 @@ class _HighlightStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = onImage ? Colors.white60 : AppTheme.muted;
+    final labelColor = onImage ? Colors.white70 : AppTheme.muted;
     final valueColor = color ?? (onImage ? Colors.white : AppTheme.textPrimary);
     return Padding(
       padding: const EdgeInsets.only(right: AppTheme.sm + AppTheme.xs),

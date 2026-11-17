@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
+
 import '../models/season_meta.dart';
 import '../utils/formatting/snapshot_types.dart';
 import '../utils/formatting/season_utils.dart';
@@ -269,7 +270,10 @@ class _GraphCardState extends State<GraphCard> {
             children: [
               Flexible(
                 child: Text(
-                  '${formatShortDate(week.start)} – ${formatShortDate(week.end)}',
+                  // The week's end is the start of the next one; the label
+                  // shows its last day, as the week picker does.
+                  '${formatShortDate(week.start)} – '
+                  '${formatShortDate(week.end.subtract(const Duration(days: 1)))}',
                   style: AppTheme.captionSmall,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -296,6 +300,18 @@ class _GraphCardState extends State<GraphCard> {
                   )
                 : _buildChart(displaySnaps),
           ),
+          // One reading is a dot, not a line; say why rather than leave it
+          // looking broken.
+          if (displaySnaps.length == 1)
+            Padding(
+              padding: const EdgeInsets.only(top: AppTheme.xs),
+              child: Text(
+                delta == null || delta == 0
+                    ? 'No games recorded this week'
+                    : 'Not enough readings to draw a line yet',
+                style: AppTheme.caption,
+              ),
+            ),
 
           const SizedBox(height: AppTheme.md),
           const Divider(color: AppTheme.surface2, height: 1),

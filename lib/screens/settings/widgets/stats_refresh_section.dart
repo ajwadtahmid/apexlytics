@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../providers/low_power_provider.dart';
 import '../../../providers/navigation_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -193,6 +194,7 @@ class StatsRefreshSection extends ConsumerWidget {
     return _showPickerDialog(
       context: context,
       title: 'Default tab',
+      description: 'The tab Apexlytics opens on.',
       labels: [for (final t in tabs) t.label],
       currentIndex: currentIndex < 0 ? 0 : currentIndex,
       onSelect: (i) async {
@@ -216,6 +218,9 @@ class StatsRefreshSection extends ConsumerWidget {
     return _showPickerDialog(
       context: context,
       title: 'Stats update frequency',
+      description:
+          'How often your stats refresh. Apexlytics needs to stay open for '
+          'this to work.',
       labels: kStatsRefreshOptions.map(_refreshLabel).toList(),
       currentIndex: currentIndex < 0 ? 0 : currentIndex,
       onSelect: (i) async {
@@ -229,6 +234,7 @@ class StatsRefreshSection extends ConsumerWidget {
   static Future<void> _showPickerDialog({
     required BuildContext context,
     required String title,
+    String? description,
     required List<String> labels,
     required int currentIndex,
     required Future<void> Function(int index) onSelect,
@@ -238,32 +244,41 @@ class StatsRefreshSection extends ConsumerWidget {
       builder: (ctx) => SimpleDialog(
         backgroundColor: AppTheme.surface,
         title: Text(title),
-        children: labels.asMap().entries.map((entry) {
-          final selected = entry.key == currentIndex;
-          return SimpleDialogOption(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await onSelect(entry.key);
-            },
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    entry.value,
-                    style: TextStyle(
-                      color: selected ? AppTheme.accent : AppTheme.textPrimary,
-                      fontWeight: selected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+        children: [
+          if (description != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, AppTheme.sm),
+              child: Text(description, style: AppTheme.captionLarge),
+            ),
+          ...labels.asMap().entries.map((entry) {
+            final selected = entry.key == currentIndex;
+            return SimpleDialogOption(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await onSelect(entry.key);
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.value,
+                      style: TextStyle(
+                        color: selected
+                            ? AppTheme.accent
+                            : AppTheme.textPrimary,
+                        fontWeight: selected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
-                if (selected)
-                  const Icon(Icons.check, color: AppTheme.accent, size: 18),
-              ],
-            ),
-          );
-        }).toList(),
+                  if (selected)
+                    const Icon(Icons.check, color: AppTheme.accent, size: 18),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
 import '../../../providers/history_collapse_provider.dart';
@@ -945,7 +946,8 @@ class _MatchRow extends StatelessWidget {
                           Text(
                             // An em dash marks a stat upstream never reported,
                             // which is not the same as a scoreless game.
-                            '${match.kills ?? kNoReading} K · '
+                            '${match.kills ?? kNoReading} '
+                            '${match.kills == 1 ? 'kill' : 'kills'} · '
                             '${formatNumberOrNone(match.damage)} dmg',
                             style: AppTheme.captionSmall,
                           ),

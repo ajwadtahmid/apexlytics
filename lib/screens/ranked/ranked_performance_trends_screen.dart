@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/sessions_shown_provider.dart';
 import '../../widgets/trend_arrow.dart';
 import '../../utils/formatting/format.dart'
@@ -583,8 +584,8 @@ class _SparklineRow extends StatelessWidget {
               else if (trend == null || verdict == null)
                 TextSpan(
                   text: sessions.length < compare * 2
-                      ? 'Play at least ${compare * 2} sessions to see a '
-                            'trend.'
+                      ? 'A trend needs ${compare * 2} sessions; you have '
+                            '${sessions.length}.'
                       : 'Not enough games with $unit reported to show a '
                             'trend.',
                 )

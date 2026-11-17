@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/map_rotation.dart';
 import '../../providers/alert_mute_provider.dart';
 import '../../providers/map_provider.dart';
@@ -288,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     size: 22,
                   ),
                   title: 'Set up your player',
-                  subtitle: 'Add your account to see your stats',
+                  subtitle: 'Add your player to see your stats',
                   onTap: () => ref
                       .read(currentTabProvider.notifier)
                       .setTab(AppTab.stats),
@@ -361,6 +363,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               serverAsync.when(
                 data: (result) => ServerSummaryCard(
                   status: result.data,
+                  staleAt: result.staleAt,
                   onTap: () =>
                       context.pushPage(ServerStatusPage(status: result.data)),
                 ),

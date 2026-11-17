@@ -284,4 +284,27 @@ void main() {
       await unmount(tester, container);
     });
   });
+
+  group('the pickers in Settings', () {
+    testWidgets('say what the update frequency needs, and what the default '
+        'tab is', (tester) async {
+      final container = await pumpSectionFor(tester, keepAwake: true);
+
+      await tester.tap(find.text('Stats update frequency'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('needs to stay open for this to work'),
+        findsOneWidget,
+      );
+      await tester.tapAt(const Offset(5, 5)); // outside: closes it
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Default tab'));
+      await tester.pumpAndSettle();
+      expect(find.text('The tab Apexlytics opens on.'), findsOneWidget);
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      await unmount(tester, container);
+    });
+  });
 }

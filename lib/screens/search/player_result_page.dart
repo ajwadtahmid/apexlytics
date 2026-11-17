@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../constants/api_constants.dart';
 import '../../models/player_stats.dart';
 import '../../providers/api_provider.dart';
@@ -183,6 +184,7 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                 isFav ? Icons.star : Icons.star_border,
                 color: isFav ? AppTheme.accent : AppTheme.muted,
               ),
+              tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
               onPressed: () async {
                 try {
                   await ref
@@ -199,6 +201,12 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                           ),
                         ),
                       );
+                  if (context.mounted) {
+                    context.showMessage(
+                      isFav ? 'Removed from favorites' : 'Added to favorites',
+                      duration: const Duration(seconds: 2),
+                    );
+                  }
                 } on AppException catch (e) {
                   // At the favourites cap: say so rather than do nothing.
                   if (context.mounted) context.showError(e.message);
@@ -220,6 +228,7 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                 )
               : IconButton(
                   icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh',
                   onPressed: _refresh,
                 ),
         ],
@@ -235,7 +244,9 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
         ),
         error: (e, _) => ErrorCard(
           fullScreen: true,
-          icon: Icons.search_off,
+          // No connection is not "no such player": it gets its own icon and
+          // a Retry, and the back arrow stays in the app bar.
+          icon: isConnectionError(e) ? Icons.wifi_off : Icons.search_off,
           iconColor: AppTheme.red,
           iconSize: 48,
           message: friendlyError(e),
@@ -247,8 +258,10 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                   searchByUid: widget.searchByUid,
                 )
               : null,
-          actionLabel: 'Back',
-          onAction: () => Navigator.pop(context),
+          actionLabel: isConnectionError(e) ? 'Retry' : 'Back',
+          onAction: isConnectionError(e)
+              ? _refresh
+              : () => Navigator.pop(context),
         ),
       ),
     );

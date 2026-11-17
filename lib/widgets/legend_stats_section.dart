@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../constants/legend_constants.dart';
 import '../models/player_stats.dart';
 import '../utils/formatting/format.dart';
@@ -184,21 +185,31 @@ class _MoreHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 22,
+      width: 30,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.chevron_right, size: 22, color: AppTheme.muted),
           if (hidden > 0)
+            // '+2 more', stacked, so it reads as a count of what is behind the
+            // chevron and not as a stray number.
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                '+$hidden',
-                style: const TextStyle(
-                  color: AppTheme.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    '+$hidden',
+                    style: const TextStyle(
+                      color: AppTheme.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Text(
+                    'more',
+                    style: TextStyle(color: AppTheme.muted, fontSize: 11),
+                  ),
+                ],
               ),
             ),
         ],
@@ -207,7 +218,9 @@ class _MoreHint extends StatelessWidget {
   }
 }
 
-const double _kChipLabelSize = 9;
+/// The tracker names are small, but not below the 11 sp the rest of the app
+/// keeps to.
+const double _kChipLabelSize = 11;
 const double _kChipLabelLineHeight = 1.2;
 
 /// One tracker: its name over its value. The name has room for two lines and

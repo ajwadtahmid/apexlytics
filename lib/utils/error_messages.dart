@@ -1,6 +1,7 @@
 import 'dart:io' show FileSystemException;
 
 import 'package:dio/dio.dart';
+
 import 'app_logger.dart';
 
 class AppException implements Exception {
@@ -45,13 +46,33 @@ class MalformedResponseException extends AppException {
   const MalformedResponseException(super.message);
 }
 
+const _kTimedOutMessage =
+    'Request timed out. The server may be waking up — try again in a moment.';
+const _kNoConnectionMessage =
+    'No connection. Check your internet and try again.';
+
+/// Whether [error] is the device failing to reach the server (no network, or
+/// no answer in time), as opposed to the server answering with an error. Trying
+/// again is the sensible response to this one. The API service wraps a failed
+/// request in an [AppException] carrying [friendlyError]'s message, so that is
+/// recognised as well as the raw error.
+bool isConnectionError(Object? error) => switch (error) {
+  DioException(:final type) =>
+    type == DioExceptionType.connectionError ||
+        type == DioExceptionType.connectionTimeout ||
+        type == DioExceptionType.receiveTimeout,
+  AppException(:final message, :final status) =>
+    status == null &&
+        (message == _kNoConnectionMessage || message == _kTimedOutMessage),
+  _ => false,
+};
+
 String friendlyError(Object? error) {
   if (error is AppException) return error.message;
   if (error is FileSystemException) return _fileSystemMessage(error);
   if (error is DioException) {
     return switch (error.type) {
-      DioExceptionType.connectionTimeout || DioExceptionType.receiveTimeout =>
-        'Request timed out. The server may be waking up — try again in a moment.',
+      DioExceptionType.connectionTimeout || DioExceptionType.receiveTimeout => 'Request timed out. The server may be waking up — try again in a moment.',
       DioExceptionType.connectionError =>
         'No connection. Check your internet and try again.',
       // Only ApiService's own overall-deadline timer cancels a request today

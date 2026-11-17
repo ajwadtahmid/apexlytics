@@ -132,7 +132,7 @@ void main() {
     tester,
   ) async {
     await pump(tester, sessions([10, 20, 30]));
-    expect(find.textContaining('Play at least 10 sessions'), findsNWidgets(6));
+    expect(find.textContaining('A trend needs 10 sessions'), findsNWidgets(6));
     expect(find.textContaining('Improving'), findsNothing);
   });
 
@@ -195,7 +195,7 @@ void main() {
       find.textContaining('Not enough games with damage reported'),
       findsOneWidget,
     );
-    expect(find.textContaining('Play at least 10 sessions'), findsNothing);
+    expect(find.textContaining('A trend needs 10 sessions'), findsNothing);
     expect(find.textContaining('Improving', findRichText: true), findsNothing);
   });
 
@@ -463,7 +463,7 @@ void main() {
       expect(find.text('Sessions shown'), findsNothing);
       expect(points(tester), 6);
       expect(
-        find.textContaining('Play at least 10 sessions'),
+        find.textContaining('A trend needs 10 sessions'),
         findsNWidgets(6),
       );
     });

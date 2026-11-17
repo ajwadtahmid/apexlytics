@@ -113,7 +113,10 @@ void main() {
         hasBackgroundTask: true,
       );
 
-      expect(find.text('Waiting for first background refresh'), findsOneWidget);
+      expect(
+        find.textContaining('Waiting for the first background refresh'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('says alerts need the app open on a computer', (tester) async {

@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
+
 import '../../models/ranked_match.dart';
 import '../../utils/formatting/format.dart'
     show
@@ -118,7 +119,18 @@ class _RankedSessionDetailScreenState extends State<RankedSessionDetailScreen> {
                 _LegendResults(results: legends),
               ],
               const SizedBox(height: AppTheme.lg),
-              Text('GAMES · ${_session.games}', style: AppTheme.cardTitle),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'GAMES · ${_session.games}',
+                      style: AppTheme.cardTitle,
+                    ),
+                  ),
+                  // The chart above runs oldest to newest; this list does not.
+                  const Text('Newest first', style: AppTheme.caption),
+                ],
+              ),
             ],
           ),
         ),

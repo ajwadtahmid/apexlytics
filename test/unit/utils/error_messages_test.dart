@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
+
 import 'package:apexlytics/utils/error_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,7 +33,10 @@ void main() {
 
     test('any other file error still gets a specific, actionable message', () {
       expect(friendlyError(failure(2)), contains('Try a different location'));
-      expect(friendlyError(failure(null)), contains('Try a different location'));
+      expect(
+        friendlyError(failure(null)),
+        contains('Try a different location'),
+      );
     });
 
     test('never includes the path, which can carry the user\'s name', () {
@@ -49,5 +54,50 @@ void main() {
       friendlyError(const MalformedResponseException('Unexpected response.')),
       'Unexpected response.',
     );
+  });
+
+  group('isConnectionError', () {
+    DioException dio(DioExceptionType type) => DioException(
+      requestOptions: RequestOptions(path: '/x'),
+      type: type,
+    );
+
+    test('is true when the device could not reach the server', () {
+      expect(isConnectionError(dio(DioExceptionType.connectionError)), isTrue);
+      expect(
+        isConnectionError(dio(DioExceptionType.connectionTimeout)),
+        isTrue,
+      );
+      expect(isConnectionError(dio(DioExceptionType.receiveTimeout)), isTrue);
+    });
+
+    test('is false when the server answered, or for anything else', () {
+      expect(isConnectionError(dio(DioExceptionType.badResponse)), isFalse);
+      expect(
+        isConnectionError(const AppException('Player not found')),
+        isFalse,
+      );
+      expect(isConnectionError(null), isFalse);
+    });
+
+    test('recognises the service\'s wrapped version of it too', () {
+      expect(
+        isConnectionError(
+          AppException(friendlyError(dio(DioExceptionType.connectionError))),
+        ),
+        isTrue,
+      );
+      expect(
+        isConnectionError(
+          AppException(friendlyError(dio(DioExceptionType.receiveTimeout))),
+        ),
+        isTrue,
+      );
+      // A server's own answer is not.
+      expect(
+        isConnectionError(const AppException('Rate limit', status: 429)),
+        isFalse,
+      );
+    });
   });
 }

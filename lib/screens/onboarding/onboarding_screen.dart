@@ -28,7 +28,8 @@ class _OnboardingPage {
   /// Where in the tab, shown after its name ("Overview").
   final String? section;
 
-  /// The icon when there is no [tab].
+  /// The icon fronting the slide. Without one the [tab]'s icon is used; a
+  /// slide gives its own when several are about the same tab.
   final IconData? icon;
   final String title;
 
@@ -60,7 +61,7 @@ class _OnboardingPage {
     this.notificationAccess = false,
   });
 
-  IconData get displayIcon => tab?.activeIcon ?? icon ?? Icons.insights;
+  IconData get displayIcon => icon ?? tab?.activeIcon ?? Icons.insights;
 
   /// "STATS TAB" or "STATS TAB · OVERVIEW"; null for a slide with no tab.
   String? get tabLabel => tab == null
@@ -96,6 +97,7 @@ const _pages = <_OnboardingPage>[
   ),
   _OnboardingPage(
     tab: AppTab.stats,
+    icon: Icons.person_add_alt_1,
     title: 'Set up your player',
     body:
         'Open the Stats tab and add your player by name or UID (Nintendo '
@@ -136,6 +138,7 @@ const _pages = <_OnboardingPage>[
   _OnboardingPage(
     tab: AppTab.stats,
     section: 'Overview',
+    icon: Icons.timeline,
     title: 'Your ranked history',
     body:
         'Once games are recorded, tiles under the RP chart open the tools that '
@@ -166,6 +169,7 @@ const _pages = <_OnboardingPage>[
   ),
   _OnboardingPage(
     tab: AppTab.stats,
+    icon: Icons.view_week_outlined,
     title: 'The four tabs, one split',
     body: 'Pick a split and week at the top, and everything follows it.',
     points: [

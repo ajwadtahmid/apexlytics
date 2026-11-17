@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/ranked_match.dart';
 import '../../models/season_meta.dart';
 import '../../providers/ranked_provider.dart';
@@ -200,13 +201,31 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
         bucketB != null &&
         (!sameProfile || realA.length >= 2);
     const needMore = Padding(
-      padding: EdgeInsets.symmetric(vertical: AppTheme.lg),
-      child: Center(
-        child: Text(
-          'Need at least two splits with recorded history to compare.',
-          textAlign: TextAlign.center,
-          style: AppTheme.captionLarge,
-        ),
+      padding: EdgeInsets.symmetric(
+        vertical: AppTheme.xl,
+        horizontal: AppTheme.lg,
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.compare_arrows, size: 40, color: AppTheme.muted),
+          SizedBox(height: AppTheme.md),
+          Text(
+            'Nothing to compare yet',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: AppTheme.xs),
+          Text(
+            'Need at least two splits with recorded history to compare. '
+            'Compare sets two splits side by side.',
+            textAlign: TextAlign.center,
+            style: AppTheme.captionLarge,
+          ),
+        ],
       ),
     );
     if (!multi && !canCompare) return needMore;

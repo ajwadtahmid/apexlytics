@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:material_ui/material_ui.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../constants/api_constants.dart';
 import '../../models/player_stats.dart';
 import '../../providers/api_provider.dart';
@@ -67,6 +68,12 @@ class FavoritesPane extends ConsumerWidget {
       await ref
           .read(searchStateProvider.notifier)
           .toggleFavorite(player.withSnapshot(shown));
+      if (context.mounted) {
+        context.showMessage(
+          'Added to favorites',
+          duration: const Duration(seconds: 2),
+        );
+      }
     } on AppException catch (e) {
       if (context.mounted) context.showMessage(e.message);
     }
@@ -166,7 +173,16 @@ class FavoritesPane extends ConsumerWidget {
             _ListHeader(
               icon: Icons.star,
               label: 'Favorites',
+              clearLabel: 'Clear all favorites',
               onClear: () => _confirmClear(context, ref),
+            ),
+            // How to take one off: a swipe is not something a list shows.
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.sm),
+              child: Text(
+                'Swipe a favorite left to remove it, or press and hold for more.',
+                style: AppTheme.captionSmall,
+              ),
             ),
             ...favorites.map(
               (r) => Padding(
@@ -192,6 +208,7 @@ class FavoritesPane extends ConsumerWidget {
             _ListHeader(
               icon: Icons.history,
               label: 'Recent',
+              clearLabel: 'Clear recent searches',
               onClear: () =>
                   ref.read(searchStateProvider.notifier).clearRecents(),
             ),
@@ -218,9 +235,13 @@ class _ListHeader extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onClear;
+
+  /// What the button clears, for a screen reader; the text says only "Clear".
+  final String clearLabel;
   const _ListHeader({
     required this.icon,
     required this.label,
+    required this.clearLabel,
     required this.onClear,
   });
 
@@ -237,7 +258,11 @@ class _ListHeader extends StatelessWidget {
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        child: const Text('Clear', style: AppTheme.caption),
+        child: Text(
+          'Clear',
+          style: AppTheme.caption,
+          semanticsLabel: clearLabel,
+        ),
       ),
     );
   }

@@ -368,7 +368,8 @@ void main() {
 
       await next(tester); // Set up your player
       expect(find.text('STATS TAB'), findsOneWidget);
-      expect(find.byIcon(AppTab.stats.activeIcon), findsOneWidget);
+      // Three slides are about the Stats tab, so each wears its own icon.
+      expect(find.byIcon(Icons.person_add_alt_1), findsOneWidget);
 
       await next(tester); // How recording works: about no one tab
       expect(find.textContaining(' TAB'), findsNothing);
