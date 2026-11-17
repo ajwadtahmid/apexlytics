@@ -183,8 +183,8 @@ void main() {
 
       expect(find.byType(ShareTile), findsNWidgets(8));
       final rows = [
-        ['GAMES', 'PEAK RP'],
-        ['KILLS', 'DAMAGE'],
+        ['GAMES', 'KILLS'],
+        ['DAMAGE', 'PEAK RP'],
         ['BEST SESSION', 'TIME PLAYED'],
         ['BEST LEGEND', 'BEST MAP'],
       ];
@@ -758,6 +758,56 @@ void main() {
       expect(captured, isNotNull);
     });
 
+    testWidgets('the card preview leaves the controls and Share on screen', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        ShareCardScreen(
+          title: 'Most Kills',
+          cardBuilder: (_) =>
+              const RecordShareCard(record: 'Most Kills', value: '14'),
+        ),
+      );
+      tester.view.physicalSize = const Size(411, 800);
+      await tester.pump();
+
+      final card = tester.getSize(
+        find
+            .ancestor(
+              of: find.byType(RecordShareCard),
+              matching: find.byType(FittedBox),
+            )
+            .first,
+      );
+      expect(card.height, lessThanOrEqualTo(800 * 0.45 + 0.5));
+      final share = tester.getRect(find.text('Share'));
+      expect(share.bottom, lessThanOrEqualTo(800));
+      expect(find.text('Style'), findsOneWidget);
+      expect(tester.getRect(find.text('Style')).bottom, lessThan(800));
+    });
+
+    testWidgets('Share stays at the bottom while the options scroll', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        ShareCardScreen(
+          title: 'Most Kills',
+          cardBuilder: (_) =>
+              const RecordShareCard(record: 'Most Kills', value: '14'),
+        ),
+      );
+      tester.view.physicalSize = const Size(411, 500);
+      await tester.pump();
+      final before = tester.getRect(find.text('Share'));
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pump();
+
+      expect(tester.getRect(find.text('Share')), before);
+    });
+
     testWidgets('a failed share says so instead of crashing', (tester) async {
       await pump(
         tester,
@@ -1195,6 +1245,103 @@ void main() {
         greaterThan(tester.getBottomLeft(title).dy),
       );
       expect(find.text('APEXLYTICS'), findsOneWidget);
+    });
+
+    testWidgets('RP figures on the records card are green for a gain and red '
+        'for a loss', (tester) async {
+      await pump(
+        tester,
+        const Scaffold(
+          body: RecordsShareCard(
+            scope: 'S30',
+            tiles: [
+              (Icons.bolt, 'Most RP Gained', '+40 RP'),
+              (Icons.timeline, 'Best Day', '-12 RP'),
+              (Icons.sports_kabaddi, 'Most Kills', '14'),
+            ],
+          ),
+        ),
+      );
+
+      Color? colorOf(String text) =>
+          tester.widget<Text>(find.text(text)).style?.color;
+      expect(colorOf('+40 RP'), AppTheme.green);
+      expect(colorOf('-12 RP'), AppTheme.red);
+      expect(colorOf('14'), isNot(AppTheme.green));
+    });
+
+    testWidgets('the split puts the record on the larger line, with the date '
+        'under the figure', (tester) async {
+      await pump(
+        tester,
+        Scaffold(
+          body: SingleChildScrollView(
+            child: ShareCardStyleScope(
+              style: ShareCardStyle.split,
+              child: record(),
+            ),
+          ),
+        ),
+      );
+
+      // The small line above says what kind of card it is.
+      expect(find.text('RECORD'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('RECORD')).dy,
+        lessThan(tester.getTopLeft(find.text('MOST KILLS')).dy),
+      );
+      // Both lines are at the top left, over the portrait.
+      expect(
+        tester.getTopLeft(find.text('RECORD')).dx,
+        tester.getTopLeft(find.text('MOST KILLS')).dx,
+      );
+      // The date is under the figure, below the line.
+      expect(
+        tester.getTopLeft(find.text('Nov 5, 12:25 PM')).dy,
+        greaterThan(tester.getTopLeft(find.text('14')).dy),
+      );
+      // A legend and a map are names: they share a row, last.
+      expect(
+        tester.getTopLeft(find.text('LEGEND')).dy,
+        tester.getTopLeft(find.text('MAP')).dy,
+      );
+    });
+
+    testWidgets('the split lays the recap figures out three to a row, then '
+        'the best legend and map', (tester) async {
+      await pump(
+        tester,
+        Scaffold(
+          body: SingleChildScrollView(
+            child: ShareCardStyleScope(
+              style: ShareCardStyle.split,
+              child: RecapShareCard(
+                recap: splitRecap(matches, metric: BestMetric.totalRp),
+                scope: 'S30',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final rows = [
+        ['GAMES', 'KILLS', 'DAMAGE'],
+        ['PEAK RP', 'BEST SESSION', 'TIME PLAYED'],
+        ['BEST LEGEND', 'BEST MAP'],
+      ];
+      double? previousTop;
+      for (final row in rows) {
+        final tops = [for (final l in row) tester.getTopLeft(find.text(l))];
+        for (var i = 1; i < tops.length; i++) {
+          expect(tops[i].dy, tops[0].dy, reason: '$row share a row');
+          expect(tops[i].dx, greaterThan(tops[i - 1].dx), reason: '$row');
+        }
+        if (previousTop != null) {
+          // Room between the rows, so the figures do not look squeezed.
+          expect(tops[0].dy - previousTop, greaterThan(60), reason: '$row');
+        }
+        previousTop = tops[0].dy;
+      }
     });
 
     testWidgets('every style fits every kind of card without overflowing', (

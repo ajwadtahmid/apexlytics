@@ -1,12 +1,13 @@
 import 'split_recap.dart';
 
 /// A figure the recap card can show as a tile. The card lists them in this
-/// order, two to a row.
+/// order: the game's own figures, then the split's, then the best legend and
+/// map.
 enum RecapTile {
   games('Games'),
-  peakRp('Peak RP'),
   kills('Kills'),
   damage('Damage'),
+  peakRp('Peak RP'),
   bestSession('Best session'),
   timePlayed('Time played'),
   bestLegend('Best legend'),

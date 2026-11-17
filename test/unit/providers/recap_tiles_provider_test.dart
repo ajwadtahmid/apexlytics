@@ -56,9 +56,9 @@ void main() {
     expect(container.read(recapTilesProvider), contains(RecapTile.winRate));
     expect(prefs.getStringList(PrefsKeys.recapTiles), [
       'games',
-      'peakRp',
       'kills',
       'damage',
+      'peakRp',
       'bestSession',
       'timePlayed',
       'bestLegend',

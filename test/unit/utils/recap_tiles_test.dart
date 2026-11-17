@@ -30,12 +30,12 @@ void main() {
     ),
   ], metric: BestMetric.totalRp);
 
-  test('the tiles are in the card\'s order, two to a row', () {
+  test('the tiles are in the card\'s order: game figures, split figures, then names', () {
     expect(RecapTile.values, [
       RecapTile.games,
-      RecapTile.peakRp,
       RecapTile.kills,
       RecapTile.damage,
+      RecapTile.peakRp,
       RecapTile.bestSession,
       RecapTile.timePlayed,
       RecapTile.bestLegend,

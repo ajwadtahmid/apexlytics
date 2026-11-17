@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../utils/app_logger.dart';
 import '../utils/notifications.dart';
 import '../utils/share_image.dart';
@@ -39,8 +40,8 @@ class ShareCardStyleScope extends InheritedWidget {
   bool updateShouldNotify(ShareCardStyleScope old) => style != old.style;
 }
 
-/// What a card gives the [ShareCardStyle.split] layout: a big [title] over the
-/// portrait with a [subtitle] under it, then in the panel below an optional
+/// What a card gives the [ShareCardStyle.split] layout: a small [title] over the
+/// portrait with a larger [subtitle] under it, both at the top left, then in the panel below an optional
 /// [badge] beside the player's name, an optional [headline], and the [stats]
 /// as centred figures.
 class ShareCardSplit {
@@ -49,12 +50,8 @@ class ShareCardSplit {
   final Widget? badge;
   final Widget? headline;
   final List<ShareTile> stats;
-
-  /// The title's size; a long one, like a record's name, asks for less.
-  final double titleSize;
   const ShareCardSplit({
     required this.title,
-    this.titleSize = 38,
     this.subtitle,
     this.badge,
     this.headline,
@@ -174,13 +171,13 @@ class ShareCardFrame extends StatelessWidget {
             right: 0,
             top: 0,
             bottom: 0,
-            width: 250,
+            width: 290,
             child: ShaderMask(
               blendMode: BlendMode.dstIn,
               shaderCallback: (rect) => LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Colors.transparent, Colors.white.withAlpha(150)],
+                colors: [Colors.transparent, Colors.white.withAlpha(200)],
                 stops: const [0, 0.65],
               ).createShader(rect),
               child: _portrait(art, const Alignment(0.2, -1)),
@@ -302,7 +299,7 @@ class ShareCardFrame extends StatelessWidget {
   /// orange line, on a soft orange glow, the player's name and the figures,
   /// centred. The figures shrink together if there are too many to fit.
   Widget _split(String art, ShareCardSplit s) {
-    const artHeight = 250.0;
+    const artHeight = 290.0;
     final who = name;
     return Column(
       children: [
@@ -336,18 +333,18 @@ class ShareCardFrame extends StatelessWidget {
                       child: Text(
                         s.title.toUpperCase(),
                         maxLines: 1,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: s.titleSize,
+                          fontSize: 12,
                           height: 1,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.2,
                         ),
                       ),
                     ),
                     if (s.subtitle != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: AppTheme.xs),
+                        padding: const EdgeInsets.only(top: 3),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
@@ -356,9 +353,10 @@ class ShareCardFrame extends StatelessWidget {
                             maxLines: 1,
                             style: const TextStyle(
                               color: AppTheme.accent,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
+                              fontSize: 17,
+                              height: 1,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.4,
                             ),
                           ),
                         ),
@@ -494,12 +492,17 @@ class ShareTile extends StatelessWidget {
   final String label;
   final String value;
   final Color? color;
+
+  /// A name rather than a figure (a legend, a map): in the Split layout it
+  /// gets half the width, where figures share it three to a row.
+  final bool wide;
   const ShareTile({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
     this.color,
+    this.wide = false,
   });
 
   /// Two tiles side by side across the card's padding and its 1 px border, with
@@ -528,11 +531,16 @@ class ShareTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.captionSmall,
+                // A longer name ('Biggest Comeback') shrinks to the tile
+                // rather than being cut.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    style: AppTheme.captionSmall,
+                  ),
                 ),
                 Text(
                   value,
@@ -559,65 +567,105 @@ class _SplitStats extends StatelessWidget {
   final List<ShareTile> stats;
   const _SplitStats({required this.stats});
 
-  Widget _cell(ShareTile t) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(t.icon, size: 15, color: AppTheme.accent),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                t.label.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppTheme.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                ),
+  /// Room between rows of figures, enough that stacked icons and labels do not
+  /// crowd the row above.
+  static const double _rowGap = 22;
+
+  /// One figure: its icon over its label over its value, so a label has the
+  /// width of a third of the card. A wide tile (a name) keeps the icon beside
+  /// its label.
+  Widget _cell(ShareTile t, {required bool stacked}) {
+    final icon = Icon(t.icon, size: 15, color: AppTheme.accent);
+    final label = Text(
+      t.label.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        color: AppTheme.muted,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.6,
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (stacked) ...[
+            icon,
+            const SizedBox(height: 2),
+            // A long label ('Longest session') shrinks to its third rather
+            // than being cut.
+            FittedBox(fit: BoxFit.scaleDown, child: label),
+          ] else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                icon,
+                const SizedBox(width: 5),
+                Flexible(child: label),
+              ],
+            ),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              t.value,
+              maxLines: 1,
+              style: TextStyle(
+                color: t.color ?? Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            t.value,
-            maxLines: 1,
-            style: TextStyle(
-              color: t.color ?? Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// A row of up to [perRow] tiles. A short last row is centred, not pushed
+  /// to the left: each tile counts for two parts of the width, and the gaps on
+  /// both sides make up the rest.
+  Widget _row(List<ShareTile> tiles, int perRow) {
+    final gap = perRow - tiles.length;
+    return Row(
+      // Top-aligned, so a value that shrinks to fit does not pull its label out
+      // of line with the others in the row.
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (gap > 0) Spacer(flex: gap),
+        for (final t in tiles)
+          Expanded(flex: 2, child: _cell(t, stacked: perRow == 3)),
+        if (gap > 0) Spacer(flex: gap),
       ],
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final figures = [
+      for (final t in stats)
+        if (!t.wide) t,
+    ];
+    final names = [
+      for (final t in stats)
+        if (t.wide) t,
+    ];
+    final rows = <Widget>[
+      for (var i = 0; i < figures.length; i += 3)
+        _row(figures.sublist(i, (i + 3).clamp(0, figures.length)), 3),
+      for (var i = 0; i < names.length; i += 2)
+        _row(names.sublist(i, (i + 2).clamp(0, names.length)), 2),
+    ];
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (var i = 0; i < stats.length; i += 2) ...[
-          if (i > 0) const SizedBox(height: AppTheme.md),
-          Row(
-            children: [
-              Expanded(child: _cell(stats[i])),
-              if (i + 1 < stats.length)
-                Expanded(child: _cell(stats[i + 1]))
-              else
-                const Spacer(),
-            ],
-          ),
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: _rowGap),
+          rows[i],
         ],
       ],
     );
@@ -648,6 +696,11 @@ class ShareCardPanel extends StatefulWidget {
   /// choice of what goes on the card.
   final Widget? controls;
 
+  /// Keeps the Share button at the bottom of the screen and scrolls the rest
+  /// above it. The panel then fills the height it is given, so it goes where
+  /// that height is bounded (a screen body), not in a list.
+  final bool pinShare;
+
   const ShareCardPanel({
     super.key,
     required this.cardBuilder,
@@ -656,6 +709,7 @@ class ShareCardPanel extends StatefulWidget {
     this.onShare,
     this.onSave,
     this.controls,
+    this.pinShare = false,
   });
 
   @override
@@ -701,23 +755,37 @@ class _ShareCardPanelState extends State<ShareCardPanel> {
   @override
   Widget build(BuildContext context) {
     final canShare = canShareFiles;
-    return Column(
+    final shareButton = FilledButton.icon(
+      onPressed: _sharing ? null : (canShare ? _share : _save),
+      icon: Icon(canShare ? Icons.ios_share : Icons.save_alt, size: 18),
+      label: Text(canShare ? 'Share' : 'Save image'),
+    );
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Scaled down on a narrow screen; the shared image is the card at its
+        // Scaled down to fit a width and to at most [_kPreviewScreenShare] of
+        // the screen's height, so the style choice and the options show
+        // without scrolling past the card. The shared image is the card at its
         // own size either way.
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: RepaintBoundary(
-            key: _boundary,
-            // The card looks the same whatever text size the phone uses.
-            child: MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.noScaling),
-              child: ShareCardStyleScope(
-                style: _style,
-                child: widget.cardBuilder(_showName),
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight:
+                  MediaQuery.sizeOf(context).height * _kPreviewScreenShare,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: RepaintBoundary(
+                key: _boundary,
+                // The card looks the same whatever text size the phone uses.
+                child: MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.noScaling),
+                  child: ShareCardStyleScope(
+                    style: _style,
+                    child: widget.cardBuilder(_showName),
+                  ),
+                ),
               ),
             ),
           ),
@@ -764,15 +832,35 @@ class _ShareCardPanelState extends State<ShareCardPanel> {
             value: _showName,
             onChanged: (v) => setState(() => _showName = v),
           ),
-        FilledButton.icon(
-          onPressed: _sharing ? null : (canShare ? _share : _save),
-          icon: Icon(canShare ? Icons.ios_share : Icons.save_alt, size: 18),
-          label: Text(canShare ? 'Share' : 'Save image'),
+        if (!widget.pinShare) shareButton,
+      ],
+    );
+    if (!widget.pinShare) return body;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(AppTheme.md),
+            children: [body],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.md,
+            AppTheme.sm,
+            AppTheme.md,
+            AppTheme.md,
+          ),
+          child: shareButton,
         ),
       ],
     );
   }
 }
+
+/// How much of the screen's height the card preview may take.
+const _kPreviewScreenShare = 0.45;
 
 class _LookLabel extends StatelessWidget {
   final String text;
@@ -810,17 +898,13 @@ class ShareCardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.md),
-          children: [
-            ShareCardPanel(
-              cardBuilder: cardBuilder,
-              offerNameToggle: offerNameToggle,
-              offerStyle: offerStyle,
-              onShare: onShare,
-              onSave: onSave,
-            ),
-          ],
+        child: ShareCardPanel(
+          pinShare: true,
+          cardBuilder: cardBuilder,
+          offerNameToggle: offerNameToggle,
+          offerStyle: offerStyle,
+          onShare: onShare,
+          onSave: onSave,
         ),
       ),
     );

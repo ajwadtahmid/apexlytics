@@ -418,17 +418,17 @@ void main() {
       await tester.pumpAndSettle();
 
       for (final label in [
-        'BEST GAME',
+        'MOST RP GAINED',
         'MOST KILLS',
         'MOST DAMAGE',
         'BEST SESSION',
         'LONGEST SESSION',
-        'WIN STREAK',
+        'BEST WIN STREAK',
       ]) {
         expect(tile(label), findsOneWidget, reason: label);
       }
       // These games never dipped and came back, and the day is the session.
-      expect(tile('COMEBACK'), findsNothing);
+      expect(tile('BIGGEST COMEBACK'), findsNothing);
       expect(tile('BEST DAY'), findsNothing);
     });
 
@@ -449,7 +449,7 @@ void main() {
       await tester.tap(find.text('Share all my records'));
       await tester.pumpAndSettle();
 
-      expect(tile('COMEBACK'), findsOneWidget);
+      expect(tile('BIGGEST COMEBACK'), findsOneWidget);
     });
 
     testWidgets('can hide the name', (tester) async {

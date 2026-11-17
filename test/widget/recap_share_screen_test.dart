@@ -97,8 +97,8 @@ void main() {
     await pump(tester);
 
     final rows = [
-      ['GAMES', 'PEAK RP'],
-      ['KILLS', 'DAMAGE'],
+      ['GAMES', 'KILLS'],
+      ['DAMAGE', 'PEAK RP'],
       ['BEST SESSION', 'TIME PLAYED'],
       ['BEST LEGEND', 'BEST MAP'],
     ];

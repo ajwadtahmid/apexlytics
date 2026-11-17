@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../constants/map_constants.dart';
 import '../../constants/stat_icons.dart';
 import '../../models/player_stats.dart';
@@ -349,9 +350,9 @@ class RankedPersonalBestScreen extends ConsumerWidget {
 
 /// [formatShortDateTime] with a non-breaking space before AM or PM, so the
 /// line cannot wrap and leave it on a line of its own.
-String _whenPlayed(DateTime t) => formatShortDateTime(
-  t,
-).replaceFirstMapped(RegExp(r' (AM|PM)$'), (m) => '\u00A0${m[1]}');
+String _whenPlayed(DateTime t) =>
+    formatShortDateTime(t)
+        .replaceFirstMapped(RegExp(r' (AM|PM)$'), (m) => '\u00A0${m[1]}');
 
 /// How a split's record compares with the best over every split: that it is the
 /// all-time best, or what the all-time best is. Null with nothing to compare.
@@ -561,7 +562,7 @@ class _RecordCard extends StatelessWidget {
                   style: TextStyle(
                     color: value == null
                         ? AppTheme.muted
-                        : AppTheme.textPrimary,
+                        : AppTheme.rpTextColor(value!) ?? AppTheme.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -732,7 +733,10 @@ class _SessionRecordCard extends StatelessWidget {
                 Text(
                   value ?? 'No data yet',
                   style: TextStyle(
-                    color: s == null ? AppTheme.muted : AppTheme.textPrimary,
+                    color: s == null
+                        ? AppTheme.muted
+                        : AppTheme.rpTextColor(value ?? '') ??
+                              AppTheme.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1047,7 +1051,8 @@ Widget _comebackCard(
   );
 }
 
-/// The tiles of the card of all records: one for each record the period has.
+/// The tiles of the card of all records: one for each record the period has,
+/// named as on the page.
 List<(IconData icon, String label, String value)> _recordTiles({
   required PersonalRecords records,
   required RankedSession? bestSession,
@@ -1061,41 +1066,41 @@ List<(IconData icon, String label, String value)> _recordTiles({
     if (records.bestRpGame != null)
       (
         StatIcons.totalRp,
-        'Best game',
+        'Most RP Gained',
         '${formatSignedInt(records.bestRpGame!.effectiveRpChange)} RP',
       ),
     if (kills != null)
-      (StatIcons.totalKills, 'Most kills', formatNumber(kills)),
+      (StatIcons.totalKills, 'Most Kills', formatNumber(kills)),
     if (damage != null)
-      (StatIcons.totalDamage, 'Most damage', formatNumber(damage)),
+      (StatIcons.totalDamage, 'Most Damage', formatNumber(damage)),
     if (bestSession != null)
       (
         Icons.timeline,
-        'Best session',
+        'Best Session',
         '${formatSignedInt(bestSession.netRp)} RP',
       ),
     if (day != null)
       (
         Icons.calendar_today_outlined,
-        'Best day',
+        'Best Day',
         '${formatSignedInt(day.netRp)} RP',
       ),
     if (longest != null)
       (
         StatIcons.time,
-        'Longest session',
+        'Longest Session',
         formatDuration(longest.duration.inSeconds),
       ),
     if (comeback != null)
       (
         Icons.trending_up,
-        'Comeback',
+        'Biggest Comeback',
         '${formatSignedInt(comeback.recovered)} RP',
       ),
     if (records.bestWinStreak > 0)
       (
         StatIcons.winStreak,
-        'Win streak',
+        'Best Win Streak',
         plural(records.bestWinStreak, 'game'),
       ),
   ];
@@ -1138,8 +1143,8 @@ class _SummaryRecordCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                  style: TextStyle(
+                    color: AppTheme.rpTextColor(value) ?? AppTheme.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),

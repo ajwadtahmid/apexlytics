@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../constants/legend_constants.dart' show canonicalLegendName;
 import '../../../constants/rank_constants.dart' show kPredatorBadgeAsset;
 import '../../../constants/stat_icons.dart';
@@ -108,6 +109,7 @@ class RecapShareCard extends StatelessWidget {
                 icon: Icons.person_outline,
                 label: 'Best legend',
                 value: r.bestLegend!.legend,
+                wide: true,
               );
       case RecapTile.bestMap:
         return r.bestMap == null
@@ -116,6 +118,7 @@ class RecapShareCard extends StatelessWidget {
                 icon: Icons.map_outlined,
                 label: 'Best map',
                 value: r.bestMap!.displayName,
+                wide: true,
               );
       case RecapTile.winRate:
         return ShareTile(
@@ -285,7 +288,12 @@ class RecordsShareCard extends StatelessWidget {
         subtitle: scope,
         stats: [
           for (final (icon, label, value) in tiles)
-            ShareTile(icon: icon, label: label, value: value),
+            ShareTile(
+              icon: icon,
+              label: label,
+              value: value,
+              color: AppTheme.rpTextColor(value),
+            ),
         ],
       ),
       child: Column(
@@ -296,7 +304,12 @@ class RecordsShareCard extends StatelessWidget {
             runSpacing: AppTheme.sm,
             children: [
               for (final (icon, label, value) in tiles)
-                ShareTile(icon: icon, label: label, value: value),
+                ShareTile(
+                  icon: icon,
+                  label: label,
+                  value: value,
+                  color: AppTheme.rpTextColor(value),
+                ),
             ],
           ),
         ],
@@ -348,7 +361,7 @@ class RecordShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = valueColor ?? AppTheme.accent;
+    final color = valueColor ?? AppTheme.rpTextColor(value) ?? AppTheme.accent;
     Widget figureAt(double size) => FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -401,7 +414,14 @@ class RecordShareCard extends StatelessWidget {
           );
     final tiles = [
       for (final (icon, label, v) in stats)
-        ShareTile(icon: icon, label: label, value: v),
+        ShareTile(
+          icon: icon,
+          label: label,
+          value: v,
+          color: AppTheme.rpTextColor(v),
+          // A legend and a map are names, which take half the width in Split.
+          wide: label == 'Legend' || label == 'Map',
+        ),
     ];
     return ShareCardFrame(
       label: record,
@@ -409,9 +429,10 @@ class RecordShareCard extends StatelessWidget {
       legend: legend,
       height: height,
       split: ShareCardSplit(
-        title: record,
-        titleSize: 26,
-        subtitle: detail,
+        // The record is what the card is about, so it is the larger line;
+        // its date and context go under the figure.
+        title: 'Record',
+        subtitle: record,
         headline: Column(
           children: [
             Center(child: figureAt(40)),
@@ -419,6 +440,15 @@ class RecordShareCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: AppTheme.sm),
                 child: chip,
+              ),
+            if (detail != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppTheme.sm),
+                child: Text(
+                  detail!,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.captionLarge,
+                ),
               ),
             if (visual != null)
               Padding(
