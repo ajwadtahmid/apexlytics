@@ -102,3 +102,104 @@ List<Rect?> placeLabels({
 
   return [for (var i = 0; i < centers.length; i++) place(i)];
 }
+
+/// A label and where it ended up. [moved] is true when it could not sit beside
+/// its dot and was put in free space, so the chart draws a line back to it.
+class PlacedLabel {
+  final Rect rect;
+  final bool moved;
+  const PlacedLabel(this.rect, {required this.moved});
+}
+
+/// Every label placed, none left off. Each goes beside its dot where there is
+/// room (as [placeLabels]); one that cannot is put in the nearest free space
+/// inside [bounds] instead, and marked [PlacedLabel.moved] so a leader line can
+/// join it to its dot. Only if the area is full does a label overlap another,
+/// next to its own dot.
+List<PlacedLabel> placeAllLabels({
+  required List<Offset> centers,
+  required List<Size> sizes,
+  required Rect bounds,
+  double radius = 7,
+  double gap = 3,
+  double step = 6,
+}) {
+  final first = placeLabels(
+    centers: centers,
+    sizes: sizes,
+    bounds: bounds,
+    radius: radius,
+    gap: gap,
+  );
+  final dots = [
+    for (final c in centers) Rect.fromCircle(center: c, radius: radius + 2),
+  ];
+  final placed = <Rect>[for (final r in first) ?r];
+  final out = <PlacedLabel>[];
+  for (var i = 0; i < centers.length; i++) {
+    final beside = first[i];
+    if (beside != null) {
+      out.add(PlacedLabel(beside, moved: false));
+      continue;
+    }
+    final size = sizes[i];
+    Rect? best;
+    var bestDistance = double.infinity;
+    for (var y = bounds.top; y + size.height <= bounds.bottom; y += step) {
+      for (var x = bounds.left; x + size.width <= bounds.right; x += step) {
+        final r = Rect.fromLTWH(x, y, size.width, size.height);
+        if (dots.any(r.overlaps) ||
+            placed.any((p) => p.inflate(2).overlaps(r))) {
+          continue;
+        }
+        final d = (r.center - centers[i]).distance;
+        if (d < bestDistance) {
+          best = r;
+          bestDistance = d;
+        }
+      }
+    }
+    // No free space at all: keep it by its dot, over whatever is there.
+    best ??= Rect.fromLTWH(
+      (centers[i].dx + radius + gap).clamp(
+        bounds.left,
+        (bounds.right - size.width).clamp(bounds.left, double.infinity),
+      ),
+      (centers[i].dy - size.height / 2).clamp(
+        bounds.top,
+        (bounds.bottom - size.height).clamp(bounds.top, double.infinity),
+      ),
+      size.width,
+      size.height,
+    );
+    placed.add(best);
+    out.add(PlacedLabel(best, moved: true));
+  }
+  return out;
+}
+
+/// The dots within [reach] of [tap], nearest first: what a tap on a crowd of
+/// dots could mean.
+List<int> dotsNear(Offset tap, List<Offset> centers, {required double reach}) {
+  final near = [
+    for (var i = 0; i < centers.length; i++)
+      if ((centers[i] - tap).distance <= reach) i,
+  ];
+  near.sort(
+    (a, b) =>
+        (centers[a] - tap).distance.compareTo((centers[b] - tap).distance),
+  );
+  return near;
+}
+
+/// Where a leader line from a dot at [center] (radius [radius]) meets the label
+/// at [label]: from the dot's edge to the nearest point of the label.
+(Offset, Offset) leaderLine(Offset center, Rect label, double radius) {
+  final end = Offset(
+    center.dx.clamp(label.left, label.right),
+    center.dy.clamp(label.top, label.bottom),
+  );
+  final d = end - center;
+  final start = d.distance == 0 ? center : center + d / d.distance * radius;
+  return (start, end);
+}

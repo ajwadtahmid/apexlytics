@@ -65,6 +65,11 @@ class PrefsKeys {
   static const pickRateShowAll = 'pick_rate_show_all';
   static const pickRateOwnAverage = 'pick_rate_own_average';
 
+  /// Whether the Pick Rate chart stretches the low end of its share axis (a
+  /// square-root scale) so rarely played legends do not pile up. Device-only:
+  /// not backed up.
+  static const pickRateSpreadOut = 'pick_rate_spread_out';
+
   /// Whether the Pick Rate page was last left on its table. Device-only: not
   /// backed up.
   static const pickRateTable = 'pick_rate_table';

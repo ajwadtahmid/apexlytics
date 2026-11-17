@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'best_metric.dart';
 import 'ranked_aggregates.dart';
 
@@ -135,4 +137,45 @@ bool _moreGames(LegendBreakdown a, LegendBreakdown b) =>
 bool _better(LegendBreakdown a, LegendBreakdown b) {
   final c = a.avgRpPerGame.compareTo(b.avgRpPerGame);
   return c != 0 ? c > 0 : _moreGames(a, b);
+}
+
+/// The RP axis of the Pick Rate chart: from a little under the lowest of
+/// [values] (or the [baseline] line, if that is lower) to a little over the
+/// highest, in whole [step]s so both ends land on a labelled tick. Never less
+/// than a range of 20 RP, so a player with one legend still gets a readable
+/// chart.
+({double min, double max, double step}) pickRateRpRange(
+  List<double> values, {
+  required double baseline,
+}) {
+  var lo = baseline, hi = baseline;
+  for (final v in values) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  final pad = ((hi - lo) * 0.12).clamp(5.0, double.infinity);
+  lo -= pad;
+  hi += pad;
+  if (hi - lo < 20) {
+    final mid = (hi + lo) / 2;
+    lo = mid - 10;
+    hi = mid + 10;
+  }
+  final step = niceAxisStep(hi - lo, ticks: 6);
+  return (
+    min: (lo / step).floor() * step,
+    max: (hi / step).ceil() * step,
+    step: step,
+  );
+}
+
+/// A round axis step (1, 2 or 5 times a power of ten) that gives about [ticks]
+/// marks over [range].
+double niceAxisStep(double range, {required int ticks}) {
+  final raw = range / ticks;
+  final magnitude = math.pow(10, (math.log(raw) / math.ln10).floor());
+  for (final m in const [1, 2, 5]) {
+    if (m * magnitude >= raw) return (m * magnitude).toDouble();
+  }
+  return (10 * magnitude).toDouble();
 }

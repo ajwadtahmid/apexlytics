@@ -35,6 +35,7 @@ const _excludedKeys = {
   PrefsKeys.trendSessionsShown,
   PrefsKeys.pickRateShowAll,
   PrefsKeys.pickRateOwnAverage,
+  PrefsKeys.pickRateSpreadOut,
   PrefsKeys.pickRateTable,
   PrefsKeys.legendSort,
   PrefsKeys.legendSortReversed,

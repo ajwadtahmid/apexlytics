@@ -3,6 +3,7 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_pick_rate_screen.dart';
+import 'package:apexlytics/utils/ranked/pick_rate_quadrants.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
@@ -131,11 +132,27 @@ void main() {
       final yStep = data.titlesData.leftTitles.sideTitles.interval!;
       final xStep = data.titlesData.bottomTitles.sideTitles.interval!;
       expect(data.maxY % yStep, 0);
-      expect(data.minY, -data.maxY);
+      expect(data.minY % yStep, 0);
       expect(data.maxX % xStep, 0);
-      // The widest dot is on the chart, and not by a lot.
+      // Every dot is on the chart, and not by a lot.
       expect(data.maxY, greaterThanOrEqualTo(307));
       expect(data.maxY, lessThan(307 * 2));
+      expect(data.minY, lessThanOrEqualTo(-150));
+      expect(data.minY, greaterThanOrEqualTo(-150 * 2));
+    });
+
+    testWidgets('do not leave the lower half empty when every legend gains '
+        'RP', (tester) async {
+      await pump(tester, [
+        ..._games('Alter', 30, 12),
+        ..._games('Bangalore', 10, 30),
+        ..._games('Wraith', 10, 20),
+      ]);
+
+      final data = chart(tester);
+      // The lowest tick is only just below zero, not a mirror of the top.
+      expect(data.minY, lessThan(0));
+      expect(data.minY.abs(), lessThan(data.maxY / 2));
     });
   });
 
@@ -516,6 +533,23 @@ void main() {
       expect(prefs.getBool(PrefsKeys.pickRateShowAll), isTrue);
     });
 
+    testWidgets('Share axis spreads the low end by default, and Even undoes '
+        'it', (tester) async {
+      await pump(tester, custom);
+      // 'Spread out': a position is the square root of the share.
+      final data = chart(tester);
+      expect(data.maxX, data.maxX.roundToDouble());
+      expect(data.titlesData.bottomTitles.sideTitles.interval, 1);
+      expect(find.textContaining('stretched at the low end'), findsOneWidget);
+
+      await openSheet(tester);
+      expect(find.text('Share axis'), findsOneWidget);
+      await tester.tap(find.text('Even'));
+      await tester.pumpAndSettle();
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(PrefsKeys.pickRateSpreadOut), isFalse);
+    });
+
     testWidgets('Above my average moves the line and is kept', (tester) async {
       await pump(tester, custom);
       expect(find.textContaining('and 0 RP per game'), findsOneWidget);
@@ -648,7 +682,7 @@ void main() {
 
       expect(find.text('Pick Rate'), findsWidgets);
       expect(find.textContaining('Each dot is a legend'), findsOneWidget);
-      expect(find.textContaining('hidden gem'), findsOneWidget);
+      expect(find.textContaining('Hidden gem:'), findsOneWidget);
       expect(find.textContaining('choose All in Customize'), findsOneWidget);
     });
 
@@ -658,6 +692,130 @@ void main() {
       final tune = tester.getCenter(find.byIcon(Icons.tune));
       final info = tester.getCenter(find.byIcon(Icons.info_outline));
       expect(info.dx, greaterThan(tune.dx));
+    });
+  });
+
+  group('the key', () {
+    testWidgets('names the four groups on the page, and the info sheet says '
+        'what each is', (tester) async {
+      await pump(tester, matches);
+
+      for (final name in ['Core', 'Comfort trap', 'Hidden gem', 'Bench']) {
+        expect(find.text(name), findsWidgets, reason: name);
+      }
+      // The meanings are not on the page...
+      expect(find.textContaining('Played a lot'), findsNothing);
+      // ...they are in the info sheet.
+      await tester.tap(find.byIcon(Icons.info_outline));
+      await tester.pumpAndSettle();
+      for (final line in [
+        'Core: the green circle: played a lot, and gains RP.',
+        'Comfort trap: the orange triangle: played a lot, but loses RP.',
+        'Hidden gem: the blue diamond: played less, but gains RP.',
+        'Bench: the grey square: played less, and loses RP.',
+      ]) {
+        expect(find.text(line), findsOneWidget, reason: line);
+      }
+    });
+
+    testWidgets('puts a dot on the chart for each legend, about 14 dp across', (
+      tester,
+    ) async {
+      await pump(tester, matches);
+
+      final spots = chart(tester).scatterSpots;
+      expect(spots, isNotEmpty);
+      for (final spot in spots) {
+        expect(spot.dotPainter.getSize(spot).width, 14);
+      }
+    });
+  });
+
+  group('pickRateRpRange', () {
+    test('fits the data with ticks at both ends', () {
+      final r = pickRateRpRange([12, 30, 20], baseline: 0);
+      expect(r.min % r.step, 0);
+      expect(r.max % r.step, 0);
+      expect(r.min, lessThan(0));
+      expect(r.max, greaterThanOrEqualTo(30));
+    });
+
+    test('includes losses and the baseline', () {
+      final r = pickRateRpRange([-40, 10], baseline: 25);
+      expect(r.min, lessThanOrEqualTo(-40));
+      expect(r.max, greaterThanOrEqualTo(25));
+    });
+
+    test('is never narrower than a readable range', () {
+      final r = pickRateRpRange([5], baseline: 0);
+      expect(r.max - r.min, greaterThanOrEqualTo(20));
+    });
+  });
+
+  group('a tap among several dots', () {
+    testWidgets('asks which legend was meant', (tester) async {
+      // Two legends with the same share of games and the same RP sit on top
+      // of each other; a third is elsewhere.
+      await pump(tester, [
+        ..._games('Alter', 10, 20),
+        ..._games('Bangalore', 10, 20),
+        ..._games('Wraith', 30, -5),
+      ]);
+
+      final data = chart(tester);
+      final box = tester.getRect(find.byType(ScatterChart));
+      final spot = data.scatterSpots.first;
+      // The plot's own margins: 32 dp on the left, 22 below.
+      final plot = Rect.fromLTRB(
+        box.left + 32,
+        box.top,
+        box.right,
+        box.bottom - 22,
+      );
+      final at = Offset(
+        plot.left + spot.x / data.maxX * plot.width,
+        plot.bottom -
+            (spot.y - data.minY) / (data.maxY - data.minY) * plot.height,
+      );
+
+      await tester.tapAt(at);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Which legend?'), findsOneWidget);
+      expect(find.text('Alter'), findsWidgets);
+      expect(find.text('Bangalore'), findsWidgets);
+
+      await tester.tap(find.text('Bangalore').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Which legend?'), findsNothing);
+      expect(find.text('Pick rate'), findsOneWidget); // its card is open
+    });
+
+    testWidgets('selects the dot straight away when only one is near', (
+      tester,
+    ) async {
+      await pump(tester, matches);
+
+      final data = chart(tester);
+      final box = tester.getRect(find.byType(ScatterChart));
+      final spot = data.scatterSpots.last;
+      final plot = Rect.fromLTRB(
+        box.left + 32,
+        box.top,
+        box.right,
+        box.bottom - 22,
+      );
+      final at = Offset(
+        plot.left + spot.x / data.maxX * plot.width,
+        plot.bottom -
+            (spot.y - data.minY) / (data.maxY - data.minY) * plot.height,
+      );
+
+      await tester.tapAt(at);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Which legend?'), findsNothing);
+      expect(find.text('Pick rate'), findsOneWidget);
     });
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../constants/prefs_keys.dart';
 import 'settings_provider.dart' show sharedPreferencesProvider;
 
@@ -13,20 +14,27 @@ class PickRateOptions {
   /// Show the table instead of the chart.
   final bool tableView;
 
+  /// Stretch the low end of the share axis (a square-root scale), so legends
+  /// played a little do not pile up. On unless the player turns it off.
+  final bool spreadOut;
+
   const PickRateOptions({
     this.showAll = false,
     this.useOwnAverage = false,
     this.tableView = false,
+    this.spreadOut = true,
   });
 
   PickRateOptions copyWith({
     bool? showAll,
     bool? useOwnAverage,
     bool? tableView,
+    bool? spreadOut,
   }) => PickRateOptions(
     showAll: showAll ?? this.showAll,
     useOwnAverage: useOwnAverage ?? this.useOwnAverage,
     tableView: tableView ?? this.tableView,
+    spreadOut: spreadOut ?? this.spreadOut,
   );
 }
 
@@ -43,6 +51,7 @@ class PickRateOptionsNotifier extends Notifier<PickRateOptions> {
       showAll: prefs.getBool(PrefsKeys.pickRateShowAll) ?? false,
       useOwnAverage: prefs.getBool(PrefsKeys.pickRateOwnAverage) ?? false,
       tableView: prefs.getBool(PrefsKeys.pickRateTable) ?? false,
+      spreadOut: prefs.getBool(PrefsKeys.pickRateSpreadOut) ?? true,
     );
   }
 
@@ -58,6 +67,13 @@ class PickRateOptionsNotifier extends Notifier<PickRateOptions> {
     await ref
         .read(sharedPreferencesProvider)
         .setBool(PrefsKeys.pickRateOwnAverage, value);
+  }
+
+  Future<void> setSpreadOut(bool value) async {
+    state = state.copyWith(spreadOut: value);
+    await ref
+        .read(sharedPreferencesProvider)
+        .setBool(PrefsKeys.pickRateSpreadOut, value);
   }
 
   Future<void> setTableView(bool value) async {

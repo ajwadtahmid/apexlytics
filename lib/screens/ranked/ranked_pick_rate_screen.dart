@@ -1,8 +1,10 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/ranked_match.dart';
 import '../../providers/best_metric_provider.dart';
 import '../../providers/pick_rate_options_provider.dart';
@@ -79,6 +81,76 @@ extension on PickRateQuadrant {
   };
 }
 
+/// A different shape for each quadrant as well as a different colour, so the
+/// four can be told apart without seeing colour.
+enum _DotShape { circle, triangle, diamond, square }
+
+extension on PickRateQuadrant {
+  _DotShape get shape => switch (this) {
+    PickRateQuadrant.core => _DotShape.circle,
+    PickRateQuadrant.trap => _DotShape.triangle,
+    PickRateQuadrant.hiddenGem => _DotShape.diamond,
+    PickRateQuadrant.bench => _DotShape.square,
+  };
+
+  /// What the group is, for the info sheet: its look and what it means.
+  String get meaning => switch (this) {
+    PickRateQuadrant.core => 'the green circle: played a lot, and gains RP',
+    PickRateQuadrant.trap => 'the orange triangle: played a lot, but loses RP',
+    PickRateQuadrant.hiddenGem => 'the blue diamond: played less, but gains RP',
+    PickRateQuadrant.bench => 'the grey square: played less, and loses RP',
+  };
+}
+
+Path _shapePath(_DotShape shape, Offset c, double r) => switch (shape) {
+  _DotShape.circle => (Path()..addOval(Rect.fromCircle(center: c, radius: r))),
+  _DotShape.square =>
+    (Path()..addRect(Rect.fromCircle(center: c, radius: r * 0.85))),
+  _DotShape.diamond =>
+    (Path()
+      ..moveTo(c.dx, c.dy - r * 1.1)
+      ..lineTo(c.dx + r * 1.1, c.dy)
+      ..lineTo(c.dx, c.dy + r * 1.1)
+      ..lineTo(c.dx - r * 1.1, c.dy)
+      ..close()),
+  _DotShape.triangle =>
+    (Path()
+      ..moveTo(c.dx, c.dy - r * 1.1)
+      ..lineTo(c.dx + r * 1.05, c.dy + r * 0.85)
+      ..lineTo(c.dx - r * 1.05, c.dy + r * 0.85)
+      ..close()),
+};
+
+/// The dot of one legend: its quadrant's shape and colour.
+class _QuadrantDotPainter extends FlDotPainter {
+  final PickRateQuadrant quadrant;
+  const _QuadrantDotPainter(this.quadrant);
+
+  /// 14 dp across. Small enough that a cluster of rarely played legends does not
+  /// pile up; the tap area around it is much larger (see the touch threshold).
+  static const double radius = 7;
+
+  @override
+  void draw(Canvas canvas, FlSpot spot, Offset offsetInCanvas) {
+    canvas.drawPath(
+      _shapePath(quadrant.shape, offsetInCanvas, radius),
+      Paint()..color = quadrant.color,
+    );
+  }
+
+  @override
+  Size getSize(FlSpot spot) => const Size.square(radius * 2);
+
+  @override
+  Color get mainColor => quadrant.color;
+
+  @override
+  FlDotPainter lerp(FlDotPainter a, FlDotPainter b, double t) => b;
+
+  @override
+  List<Object?> get props => [quadrant];
+}
+
 /// The pick rate that counts as "high": what each legend in the pool would have
 /// if the pool's games were split evenly.
 ///
@@ -125,6 +197,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
   bool get _useOwnAverageBaseline =>
       ref.watch(pickRateOptionsProvider).useOwnAverage;
   bool get _tableView => ref.watch(pickRateOptionsProvider).tableView;
+  bool get _spreadOut => ref.watch(pickRateOptionsProvider).spreadOut;
   LegendBreakdown? _selected;
 
   /// Each looked-up legend's maps, kept so reselecting it doesn't ask again.
@@ -276,13 +349,15 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     final rpBaseline = _useOwnAverageBaseline
         ? widget.summary.avgRpPerGame
         : 0.0;
-    final maxAbsRp = pool
-        .map((l) => l.avgRpPerGame.abs())
-        .fold(10.0, (a, b) => a > b ? a : b);
-    // Bounds are whole steps, so the axis ends on a labelled tick instead of
-    // a stray number crowding the last one.
-    final yStep = niceAxisStep(maxAbsRp * 2.2, ticks: 8);
-    final yBound = (maxAbsRp * 1.1 / yStep).ceil() * yStep;
+    // The RP axis runs from a little under the lowest dot (or the baseline) to
+    // a little over the highest, so a player whose legends all gain RP does not
+    // get a chart that is half empty below zero.
+    final rpRange = pickRateRpRange([
+      for (final l in pool) l.avgRpPerGame,
+    ], baseline: rpBaseline);
+    final yStep = rpRange.step;
+    final yMin = rpRange.min;
+    final yMax = rpRange.max;
     // Pick rate rarely approaches 100% once a player rotates between more than
     // one legend, so a fixed 0–100 domain leaves most of the chart empty.
     // Scale to the widest pick rate actually in the pool instead, same as the
@@ -290,22 +365,28 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     final maxPickRatePct = pickRateOf.values
         .map((r) => r * 100)
         .fold(10.0, (a, b) => a > b ? a : b);
-    final xStep = niceAxisStep(maxPickRatePct * 1.1, ticks: 6);
-    final xBound = (maxPickRatePct * 1.1 / xStep).ceil() * xStep;
+    // On the spread-out axis a position is the square root of the share, so
+    // legends played a little are not squeezed against the left edge. Its ticks
+    // are the perfect squares (0, 1, 4, 9, 16 ... %), a whole step apart.
+    final spread = _spreadOut;
+    double axisX(double percent) => spread ? math.sqrt(percent) : percent;
+    final xStep = spread ? 1.0 : niceAxisStep(maxPickRatePct * 1.1, ticks: 6);
+    final xBound = spread
+        ? math.sqrt(maxPickRatePct * 1.1).ceilToDouble()
+        : (maxPickRatePct * 1.1 / xStep).ceil() * xStep;
 
     final spots = [
       for (final l in pool)
         ScatterSpot(
-          pickRateOf[l.legend]! * 100,
+          axisX(pickRateOf[l.legend]! * 100),
           l.avgRpPerGame,
-          dotPainter: FlDotCirclePainter(
-            radius: 7,
-            color: quadrantOf(
+          dotPainter: _QuadrantDotPainter(
+            quadrantOf(
               pickRateOf[l.legend]!,
               l.avgRpPerGame,
               equalShareRate,
               rpBaseline,
-            ).color,
+            ),
           ),
         ),
     ];
@@ -319,9 +400,8 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     // Most-played first, so they get the best spots for their labels.
     final byGames = [for (final i in List.generate(pool.length, (i) => i)) i]
       ..sort((a, b) => pool[b].games.compareTo(pool[a].games));
-    final textScaler = MediaQuery.textScalerOf(
-      context,
-    ).clamp(maxScaleFactor: 1.3);
+    final textScaler = MediaQuery.textScalerOf(context)
+        .clamp(maxScaleFactor: 1.3);
     final labelStyle = Theme.of(context).textTheme.bodySmall!;
 
     return SingleChildScrollView(
@@ -336,98 +416,155 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
           const Text('Avg RP per game', style: AppTheme.captionSmall),
           const SizedBox(height: AppTheme.xs),
           SizedBox(
-            height: 260,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CustomPaint(
-                  painter: _GuidesPainter(
-                    xBound: xBound,
-                    yBound: yBound,
-                    splitX: equalShareRate * 100,
-                    splitY: rpBaseline,
-                  ),
-                ),
-                ScatterChart(
-                  ScatterChartData(
-                    minX: 0,
-                    maxX: xBound,
-                    minY: -yBound,
-                    maxY: yBound,
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    scatterSpots: spots,
-                    titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: yStep,
-                          reservedSize: _Plot.left,
-                          getTitlesWidget: (value, _) => Text(
-                            value.toStringAsFixed(0),
-                            style: const TextStyle(
-                              color: AppTheme.muted,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: xStep,
-                          reservedSize: _Plot.bottom,
-                          getTitlesWidget: (value, _) => Text(
-                            '${value.toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              color: AppTheme.muted,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    scatterTouchData: ScatterTouchData(
-                      handleBuiltInTouches: false,
-                      touchCallback: (event, response) {
-                        if (event is! FlTapUpEvent) return;
-                        final index = response?.touchedSpot?.spotIndex;
-                        if (index == null) return;
-                        _select(pool[index]);
-                      },
-                    ),
-                  ),
-                ),
-                IgnorePointer(
-                  child: CustomPaint(
-                    painter: _LabelsPainter(
-                      names: [for (final l in pool) l.legend],
-                      points: [
-                        for (final l in pool)
-                          Offset(pickRateOf[l.legend]! * 100, l.avgRpPerGame),
-                      ],
-                      order: byGames,
-                      selected: _selected?.legend,
+            // Tall enough that legends with different RP stand clear of each
+            // other.
+            height: 340,
+            child: LayoutBuilder(
+              builder: (context, box) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  CustomPaint(
+                    painter: _GuidesPainter(
                       xBound: xBound,
-                      yBound: yBound,
-                      textScaler: textScaler,
-                      style: labelStyle,
+                      yMin: yMin,
+                      yMax: yMax,
+                      splitX: axisX(equalShareRate * 100),
+                      splitY: rpBaseline,
                     ),
                   ),
-                ),
-              ],
+                  ScatterChart(
+                    ScatterChartData(
+                      minX: 0,
+                      maxX: xBound,
+                      minY: yMin,
+                      maxY: yMax,
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      scatterSpots: spots,
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: yStep,
+                            reservedSize: _Plot.left,
+                            getTitlesWidget: (value, _) => Text(
+                              value.toStringAsFixed(0),
+                              style: const TextStyle(
+                                color: AppTheme.muted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: xStep,
+                            reservedSize: _Plot.bottom,
+                            getTitlesWidget: (value, _) => Text(
+                              '${(spread ? value * value : value).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                color: AppTheme.muted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      scatterTouchData: ScatterTouchData(
+                        // A dot is 14 dp across; with this a tap within about
+                        // 44 dp of its centre counts as on it.
+                        touchSpotThreshold: 15,
+                        handleBuiltInTouches: false,
+                        touchCallback: (event, response) {
+                          if (event is! FlTapUpEvent) return;
+                          // A tap that could mean more than one dot asks which.
+                          final plot = _Plot(box.biggest, xBound, yMin, yMax);
+                          final centers = [
+                            for (final l in pool)
+                              plot.at(
+                                axisX(pickRateOf[l.legend]! * 100),
+                                l.avgRpPerGame,
+                              ),
+                          ];
+                          // fl_chart reports the tap relative to the plot, without
+                          // the room the axis numbers take on the left.
+                          final near = dotsNear(
+                            event.localPosition + const Offset(_Plot.left, 0),
+                            centers,
+                            // Only dots really near the tap: ones a thumb's width away are
+                            // left out, so the list is the ones that overlap or touch.
+                            reach: _QuadrantDotPainter.radius + 13,
+                          );
+                          if (near.length > 1) {
+                            unawaited(
+                              _showLegendChooser(
+                                context,
+                                legends: [for (final i in near) pool[i]],
+                                quadrant: (l) => quadrantOf(
+                                  pickRateOf[l.legend]!,
+                                  l.avgRpPerGame,
+                                  equalShareRate,
+                                  rpBaseline,
+                                ),
+                                pickRate: (l) => pickRateOf[l.legend]!,
+                                onPick: _select,
+                              ),
+                            );
+                            return;
+                          }
+                          final index = near.isNotEmpty
+                              ? near.first
+                              : response?.touchedSpot?.spotIndex;
+                          if (index == null) return;
+                          _select(pool[index]);
+                        },
+                      ),
+                    ),
+                  ),
+                  IgnorePointer(
+                    child: CustomPaint(
+                      painter: _LabelsPainter(
+                        names: [for (final l in pool) l.legend],
+                        points: [
+                          for (final l in pool)
+                            Offset(
+                              axisX(pickRateOf[l.legend]! * 100),
+                              l.avgRpPerGame,
+                            ),
+                        ],
+                        order: byGames,
+                        selected: _selected?.legend,
+                        xBound: xBound,
+                        yMin: yMin,
+                        yMax: yMax,
+                        textScaler: textScaler,
+                        style: labelStyle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const Center(
             child: Text('Share of your games', style: AppTheme.captionSmall),
           ),
           const SizedBox(height: AppTheme.sm),
+          if (spread) ...[
+            const Text(
+              'The share axis is stretched at the low end (0, 1, 4, 9, 16 ...%), '
+              'so rarely played legends spread out.',
+              style: AppTheme.captionSmall,
+            ),
+            const SizedBox(height: 2),
+          ],
           Text(
             'Dashed lines: an even share of games '
             '(${formatPercent(equalShareRate, decimals: 0)}) and '
@@ -445,18 +582,6 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
   }
 }
 
-/// A round axis step (1, 2 or 5 times a power of ten) that gives about [ticks]
-/// marks over [range].
-@visibleForTesting
-double niceAxisStep(double range, {required int ticks}) {
-  final raw = range / ticks;
-  final magnitude = math.pow(10, (math.log(raw) / math.ln10).floor());
-  for (final m in const [1, 2, 5]) {
-    if (m * magnitude >= raw) return (m * magnitude).toDouble();
-  }
-  return (10 * magnitude).toDouble();
-}
-
 /// Where the chart's plot area sits inside its box, and how data maps onto it:
 /// the box less the room the axis numbers take on the left and bottom. The
 /// guides and labels are painted on their own layers, so they need the same
@@ -467,15 +592,16 @@ class _Plot {
 
   final Rect rect;
   final double xBound;
-  final double yBound;
+  final double yMin;
+  final double yMax;
 
-  _Plot(Size size, this.xBound, this.yBound)
+  _Plot(Size size, this.xBound, this.yMin, this.yMax)
     : rect = Rect.fromLTRB(left, 0, size.width, size.height - bottom);
 
   /// Pixel position of pick rate [x] (percent) and RP per game [y].
   Offset at(double x, double y) => Offset(
     rect.left + x / xBound * rect.width,
-    rect.bottom - (y + yBound) / (2 * yBound) * rect.height,
+    rect.bottom - (y - yMin) / (yMax - yMin) * rect.height,
   );
 }
 
@@ -483,20 +609,22 @@ class _Plot {
 /// the even share of games ([splitX], percent) and the RP baseline ([splitY]).
 class _GuidesPainter extends CustomPainter {
   final double xBound;
-  final double yBound;
+  final double yMin;
+  final double yMax;
   final double splitX;
   final double splitY;
 
   const _GuidesPainter({
     required this.xBound,
-    required this.yBound,
+    required this.yMin,
+    required this.yMax,
     required this.splitX,
     required this.splitY,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final plot = _Plot(size, xBound, yBound);
+    final plot = _Plot(size, xBound, yMin, yMax);
     final r = plot.rect;
     final x = plot.at(splitX, 0).dx.clamp(r.left, r.right);
     final y = plot.at(0, splitY).dy.clamp(r.top, r.bottom);
@@ -529,21 +657,25 @@ class _GuidesPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GuidesPainter old) =>
       old.xBound != xBound ||
-      old.yBound != yBound ||
+      old.yMin != yMin ||
+      old.yMax != yMax ||
       old.splitX != splitX ||
       old.splitY != splitY;
 }
 
-/// Over the dots: each legend's name beside its dot, on a side that doesn't
-/// run into another dot or label. [points] are pick rate (percent) and RP per
-/// game; [order] is the legends most worth labelling first.
+/// Over the dots: each legend's name beside its dot, or, when it cannot sit
+/// beside it, in free space with a line to it. [points] are pick rate (on the
+/// chart's own axis) and RP per game; [order] is the legends most worth
+/// labelling first, and is the order labels are placed in, whatever is
+/// selected.
 class _LabelsPainter extends CustomPainter {
   final List<String> names;
   final List<Offset> points;
   final List<int> order;
   final String? selected;
   final double xBound;
-  final double yBound;
+  final double yMin;
+  final double yMax;
   final TextScaler textScaler;
 
   /// The screen's text style, so the names use the same font as everything else.
@@ -555,41 +687,72 @@ class _LabelsPainter extends CustomPainter {
     required this.order,
     required this.selected,
     required this.xBound,
-    required this.yBound,
+    required this.yMin,
+    required this.yMax,
     required this.textScaler,
     required this.style,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final plot = _Plot(size, xBound, yBound);
-    final texts = [
-      for (final i in order)
-        TextPainter(
-          text: TextSpan(
-            text: names[i],
-            style: style.copyWith(
-              color: names[i] == selected
-                  ? AppTheme.textPrimary
-                  : AppTheme.textPrimary.withValues(alpha: 0.8),
-              fontSize: 11,
-              fontWeight: names[i] == selected
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          textScaler: textScaler,
-          maxLines: 1,
-        )..layout(),
+    final plot = _Plot(size, xBound, yMin, yMax);
+    // Every dot is named, always in the same order, so choosing a legend never
+    // moves a name: placement does not depend on the selection.
+    final named = order;
+    TextPainter text(int i, {required bool bold}) => TextPainter(
+      text: TextSpan(
+        text: names[i],
+        style: style.copyWith(
+          color: bold
+              ? AppTheme.textPrimary
+              : AppTheme.textPrimary.withValues(alpha: 0.8),
+          fontSize: 11,
+          fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    // Laid out the same for everyone; the selected one is only drawn heavier,
+    // from the same corner.
+    final texts = [for (final i in named) text(i, bold: false)];
+    final centers = [
+      for (final i in named) plot.at(points[i].dx, points[i].dy),
     ];
-    final spots = placeLabels(
-      centers: [for (final i in order) plot.at(points[i].dx, points[i].dy)],
+    final spots = placeAllLabels(
+      centers: centers,
       sizes: [for (final t in texts) t.size],
-      bounds: Offset.zero & size,
+      // Inside the plot, so a name never lands on the axis numbers.
+      bounds: plot.rect,
     );
-    for (final (k, rect) in spots.indexed) {
-      if (rect != null) texts[k].paint(canvas, rect.topLeft);
+    // A name that could not sit beside its dot is joined to it by a line.
+    final line = Paint()
+      ..color = AppTheme.muted.withValues(alpha: 0.9)
+      ..strokeWidth = 1.2;
+    // The selected legend's line is drawn like its name: bright and heavier.
+    final selectedLine = Paint()
+      ..color = AppTheme.textPrimary
+      ..strokeWidth = 2;
+    void leader(int k, Paint paint) {
+      final (from, to) = leaderLine(
+        centers[k],
+        spots[k].rect,
+        _QuadrantDotPainter.radius,
+      );
+      canvas.drawLine(from, to, paint);
+    }
+
+    for (final (k, spot) in spots.indexed) {
+      if (spot.moved && names[named[k]] != selected) leader(k, line);
+    }
+    for (final (k, spot) in spots.indexed) {
+      if (names[named[k]] == selected) {
+        if (spot.moved) leader(k, selectedLine);
+        text(named[k], bold: true).paint(canvas, spot.rect.topLeft);
+      } else {
+        texts[k].paint(canvas, spot.rect.topLeft);
+      }
     }
   }
 
@@ -599,7 +762,8 @@ class _LabelsPainter extends CustomPainter {
       old.points != points ||
       old.selected != selected ||
       old.xBound != xBound ||
-      old.yBound != yBound ||
+      old.yMin != yMin ||
+      old.yMax != yMax ||
       old.textScaler != textScaler ||
       old.style != style;
 }
@@ -696,10 +860,9 @@ void _showInfoSheet(BuildContext context) => showInfoSheet(
     'Each dot is a legend: further right means you play it more, '
         'higher means it earns more RP per game.',
     'The dashed lines mark an even share of your games and the RP '
-        'line (0, or your average in Customize). Core is played a '
-        'lot and gains RP, a comfort trap is played a lot but loses '
-        'RP, a hidden gem is played less but gains, and bench is '
-        'played less and loses.',
+        'line (0, or your average in Customize). They split the chart '
+        'into four groups, each with its own shape and colour:',
+    for (final q in PickRateQuadrant.values) '${q.label}: ${q.meaning}.',
     'Legends with under $kMinGamesForInsight games are left out '
         'until you choose All in Customize.',
     'Tap a dot, or a row in the table, to see that legend. Tap its '
@@ -794,6 +957,18 @@ class _CustomizeSheet extends ConsumerWidget {
               onChanged: (i) => notifier.setUseOwnAverage(i == 1),
               note: _goodNote(options.useOwnAverage, pool),
             ),
+            const SizedBox(height: AppTheme.lg),
+            _Setting(
+              title: 'Share axis',
+              options: const ['Even', 'Spread out'],
+              selected: options.spreadOut ? 1 : 0,
+              onChanged: (i) => notifier.setSpreadOut(i == 1),
+              note: options.spreadOut
+                  ? 'The left end is stretched (0, 1, 4, 9, 16 ...%), so '
+                        'legends you play a little do not pile up.'
+                  : 'Evenly spaced, so distances mean the same everywhere, '
+                        'but rarely played legends sit close together.',
+            ),
           ],
         ),
       ),
@@ -844,6 +1019,59 @@ class _Setting extends StatelessWidget {
   }
 }
 
+/// Asks which of [legends] a tap meant, when it landed among several dots.
+Future<void> _showLegendChooser(
+  BuildContext context, {
+  required List<LegendBreakdown> legends,
+  required PickRateQuadrant Function(LegendBreakdown) quadrant,
+  required double Function(LegendBreakdown) pickRate,
+  required ValueChanged<LegendBreakdown> onPick,
+}) => showModalBottomSheet<void>(
+  context: context,
+  builder: (ctx) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.md,
+        AppTheme.sm,
+        AppTheme.md,
+        AppTheme.sm,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Which legend?', style: AppTheme.cardTitle),
+          const SizedBox(height: 2),
+          for (final l in legends)
+            ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              contentPadding: EdgeInsets.zero,
+              minVerticalPadding: 2,
+              leading: SizedBox(
+                width: 20,
+                height: 20,
+                child: CustomPaint(painter: _KeyShapePainter(quadrant(l))),
+              ),
+              title: Text(l.legend),
+              subtitle: Text(
+                '${formatPercent(pickRate(l), decimals: 0)} of your games at '
+                '${formatSigned(l.avgRpPerGame)} RP per game',
+                style: AppTheme.caption,
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                onPick(l);
+              },
+            ),
+        ],
+      ),
+    ),
+  ),
+);
+
+/// The four groups side by side, each its shape, its colour and its name. What
+/// they mean is in the info sheet, so the key takes one line.
 class _QuadrantKey extends StatelessWidget {
   const _QuadrantKey();
 
@@ -866,19 +1094,30 @@ class _KeyChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: quadrant.color,
-            shape: BoxShape.circle,
-          ),
+        SizedBox(
+          width: 14,
+          height: 14,
+          child: CustomPaint(painter: _KeyShapePainter(quadrant)),
         ),
         const SizedBox(width: AppTheme.xs),
         Text(quadrant.label, style: AppTheme.captionSmall),
       ],
     );
   }
+}
+
+class _KeyShapePainter extends CustomPainter {
+  final PickRateQuadrant quadrant;
+  const _KeyShapePainter(this.quadrant);
+
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawPath(
+    _shapePath(quadrant.shape, size.center(Offset.zero), 5.5),
+    Paint()..color = quadrant.color,
+  );
+
+  @override
+  bool shouldRepaint(_KeyShapePainter old) => old.quadrant != quadrant;
 }
 
 class _SelectedDetail extends StatelessWidget {
