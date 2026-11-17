@@ -33,10 +33,15 @@ class RankedSplitBucket {
   final String displayName; // "S29 Split 1" or "Unknown"
   final SeasonMeta? season; // null for the "Unknown" bucket
 
+  /// How many ranked games the bucket holds, when the picker was built from
+  /// counts; 0 when it was not (Lifetime, or a split with none yet).
+  final int games;
+
   const RankedSplitBucket({
     required this.id,
     required this.displayName,
     this.season,
+    this.games = 0,
   });
 }
 
@@ -59,12 +64,12 @@ List<RankedSplitBucket> buildSplitBuckets(
   DateTime? now,
 }) {
   final real = <RankedSplitBucket>[];
-  var hasUnknown = false;
+  var unknownGames = 0;
 
   for (final entry in rankedCounts.entries) {
     if (entry.value <= 0) continue;
     if (entry.key == kUnknownSplitId) {
-      hasUnknown = true;
+      unknownGames = entry.value;
       continue;
     }
     real.add(
@@ -81,6 +86,7 @@ List<RankedSplitBucket> buildSplitBuckets(
             seasons[entry.key]?.displayName ??
             SeasonMeta.parseDisplayName(entry.key),
         season: seasons[entry.key],
+        games: entry.value,
       ),
     );
   }
@@ -113,9 +119,13 @@ List<RankedSplitBucket> buildSplitBuckets(
     return sa == null ? 1 : -1; // splits with known metadata first
   });
 
-  if (hasUnknown) {
+  if (unknownGames > 0) {
     real.add(
-      const RankedSplitBucket(id: kUnknownSplitId, displayName: 'Unknown'),
+      RankedSplitBucket(
+        id: kUnknownSplitId,
+        displayName: 'Unknown',
+        games: unknownGames,
+      ),
     );
   }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../constants/prefs_keys.dart';
 import '../../constants/legend_constants.dart' show canonicalLegendName;
 import '../../constants/map_constants.dart' show canonicalMapKey;
@@ -30,6 +32,7 @@ import 'ranked_pick_rate_screen.dart';
 import 'ranked_sessions_list_screen.dart';
 import 'ranked_performance_trends_screen.dart';
 import 'widgets/split_end_backup_nudge.dart';
+import 'widgets/unknown_season_note.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
 import 'widgets/ranked_highlight_cards.dart';
 import 'widgets/ranked_info_sheet.dart';
@@ -675,6 +678,8 @@ class _OverviewTab extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppTheme.md),
         children: [
+          if (data.view.effectiveSplitId == kUnknownSplitId)
+            UnknownSeasonNote(games: data.view.filtered.length),
           SplitEndBackupNudge(splits: data.view.splits),
           const SectionLabel(label: 'Your account', icon: Icons.person_outline),
           PlayerInfoCard(stats: stats),

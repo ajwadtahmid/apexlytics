@@ -267,11 +267,88 @@ class _SplitListState extends State<_SplitList> {
             onSelected: widget.onSelected,
           ),
         for (final other in g.others)
-          _Row(
-            title: other.displayName,
-            selected: widget.selectedId == other.id,
-            onTap: () => widget.onSelected(other.id),
+          if (other.id != kUnknownSplitId)
+            _Row(
+              title: other.displayName,
+              selected: widget.selectedId == other.id,
+              onTap: () => widget.onSelected(other.id),
+            ),
+        // Games the app could not place in a season: rare, so a quiet line at
+        // the foot of the list, not a choice to match the real seasons.
+        for (final other in g.others)
+          if (other.id == kUnknownSplitId)
+            _UnknownSeasonLink(
+              games: other.games,
+              selected: widget.selectedId == other.id,
+              onTap: () => widget.onSelected(other.id),
+            ),
+      ],
+    );
+  }
+}
+
+/// "Games with no season · 12 ›": the way to the games the app could not place
+/// in a season. Small and muted, under a hairline, but still a full-height
+/// target.
+class _UnknownSeasonLink extends StatelessWidget {
+  final int games;
+  final bool selected;
+  final VoidCallback onTap;
+  const _UnknownSeasonLink({
+    required this.games,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppTheme.accent : AppTheme.muted;
+    final label = games > 0
+        ? 'Games with no season · $games'
+        : 'Games with no season';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: AppTheme.sm),
+        const Divider(height: 1, color: AppTheme.surface2),
+        Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          excludeSemantics: true,
+          onTap: onTap,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            onTap: onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      selected ? Icons.check : Icons.chevron_right,
+                      size: 18,
+                      color: color,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
+        ),
       ],
     );
   }
