@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
+
 import '../models/player_stats.dart';
 
 class AppTheme {
@@ -34,6 +35,18 @@ class AppTheme {
   /// Green for a gain, red for a loss. Callers pass their own test for what
   /// counts as positive (some treat 0 as a gain, others don't).
   static Color signColor(bool positive) => positive ? green : red;
+
+  static final _signedRp = RegExp(r'^([+\-\u2212]?)(\d[\d,]*)( RP)?$');
+
+  /// The colour of a figure shown as RP: green for a gain or zero, red for a
+  /// loss. Null when [text] is not RP: it needs a sign ('+40', '-12') or the
+  /// unit ('0 RP'), so a plain count such as '14' is left alone.
+  static Color? rpTextColor(String text) {
+    final m = _signedRp.firstMatch(text.trim());
+    if (m == null || (m[1]!.isEmpty && m[3] == null)) return null;
+    final loss = m[1] == '-' || m[1] == '\u2212';
+    return signColor(!loss || int.parse(m[2]!.replaceAll(',', '')) == 0);
+  }
 
   /// Muted caption text at the three sizes the app uses.
   static const captionSmall = TextStyle(color: muted, fontSize: 11);
@@ -174,6 +187,18 @@ class AppTheme {
       dragHandleColor: muted,
       dragHandleSize: Size(36, 4),
     ),
+    // Snackbars use the palette's dark surface and float above the navigation
+    // bar. The default is a light bar, which on this dark app is glaring and
+    // leaves the orange action at about 2.6:1; here it is 4.7:1.
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: surface2,
+      contentTextStyle: const TextStyle(color: textPrimary),
+      actionTextColor: accent,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radiusMd),
+      ),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: surface2,
@@ -205,6 +230,8 @@ class AppTheme {
       labelColor: accent,
       unselectedLabelColor: muted,
       indicatorColor: accent,
+      // The default divider is a bright line across the dark header.
+      dividerColor: surface2,
     ),
   );
 }

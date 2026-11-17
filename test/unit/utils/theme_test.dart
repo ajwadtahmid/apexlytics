@@ -41,4 +41,43 @@ void main() {
       expect(theme.colorScheme.onPrimary, AppTheme.onAccent);
     });
   });
+
+  group('snackbars', () {
+    final bar = AppTheme.materialTheme.snackBarTheme;
+
+    test('use the dark surface and float above the navigation bar', () {
+      expect(bar.backgroundColor, AppTheme.surface2);
+      expect(bar.behavior, SnackBarBehavior.floating);
+    });
+
+    test('keep the action and the text readable on that surface', () {
+      expect(
+        _contrast(bar.actionTextColor!, bar.backgroundColor!),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(bar.contentTextStyle!.color!, bar.backgroundColor!),
+        greaterThanOrEqualTo(4.5),
+      );
+    });
+  });
+
+  group('rpTextColor', () {
+    test('is green for a gain or zero and red for a loss', () {
+      expect(AppTheme.rpTextColor('+623'), AppTheme.green);
+      expect(AppTheme.rpTextColor('+1,215 RP'), AppTheme.green);
+      expect(AppTheme.rpTextColor('0 RP'), AppTheme.green);
+      expect(AppTheme.rpTextColor('+0'), AppTheme.green);
+      expect(AppTheme.rpTextColor('-38 RP'), AppTheme.red);
+      expect(AppTheme.rpTextColor('\u221238'), AppTheme.red);
+    });
+
+    test('leaves anything that is not an RP figure alone', () {
+      expect(AppTheme.rpTextColor('14'), isNull);
+      expect(AppTheme.rpTextColor('2,300'), isNull);
+      expect(AppTheme.rpTextColor('3h 14m'), isNull);
+      expect(AppTheme.rpTextColor('4 games'), isNull);
+      expect(AppTheme.rpTextColor('Mad Maggie'), isNull);
+    });
+  });
 }
