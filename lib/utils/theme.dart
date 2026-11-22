@@ -71,6 +71,11 @@ class AppTheme {
   static const orange = Color(0xFFffa657);
   static const shimmerHighlight = Color(0xFF2d3a4a);
 
+  /// The colours of the profiles in a comparison: the first (the player on
+  /// screen) is the accent, then [blue], then [indigo].
+  static const indigo = Color(0xFF8c8cff);
+  static const profileColors = [accent, blue, indigo];
+
   /// Gradient scrim overlays for hero images behind card content.
   static const cardScrimTop = Color(0x22000000);
   static const cardScrimBottom = Color(0xE60D1117);

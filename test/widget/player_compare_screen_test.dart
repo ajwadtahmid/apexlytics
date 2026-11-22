@@ -1,5 +1,8 @@
 import 'package:apexlytics/models/player_stats.dart';
+import 'package:apexlytics/screens/ranked/widgets/compare_row.dart'
+    show CompareKey;
 import 'package:apexlytics/screens/search/player_compare_screen.dart';
+import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/legend_icon.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,6 +84,20 @@ void main() {
       expect(find.text('Rival'), findsWidgets); // the card and the key
       // Rank, RP and RP needed (150 against 650) all favour you.
       expect(find.text('You lead on 3 of 3 stats'), findsOneWidget);
+    });
+
+    testWidgets('you are orange on the left and they are blue, as on every '
+        'comparison page', (tester) async {
+      await pump(tester);
+
+      final keys = tester
+          .widgetList<CompareKey>(find.byType(CompareKey))
+          .map((k) => k.color);
+      expect(keys, [AppTheme.accent, AppTheme.blue]);
+      expect(
+        tester.getTopLeft(find.text('Me')).dx,
+        lessThan(tester.getTopLeft(find.text('Rival').first).dx),
+      );
     });
 
     testWidgets('shows the gap on the rows, counted in divisions for rank', (

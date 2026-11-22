@@ -97,6 +97,11 @@ class RankedCompareScreen extends StatelessWidget {
 ///
 /// A selector at the top switches between comparing two splits (the default),
 /// and two legends or two maps within [matches], the screen's own period.
+///
+/// The profile on screen is always the left side, in orange, and only its split
+/// can change. The right side, in blue, is the one to change: another split, or
+/// another profile. The change shown is the left minus the right, green where
+/// the left leads, as on the player comparison.
 class RankedCompareBody extends ConsumerStatefulWidget {
   final String uid;
   final List<RankedSplitBucket> splits;
@@ -123,9 +128,9 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
   String? _splitAId;
   String? _splitBId;
 
-  /// Whose games the Comparing side shows; null is the profile on screen. The
-  /// Current side is always the profile on screen.
-  String? _uidA;
+  /// Whose games the right side shows; null is the profile on screen. The left
+  /// side is always the profile on screen.
+  String? _uidB;
 
   /// The real, named splits [uid] has games in, newest first. The profile on
   /// screen's come from the page; another profile's are read from its history.
@@ -165,8 +170,8 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
   }
 
   /// The split in [real] with [id], else the one at [index] (clamped): A
-  /// defaults to the split before the current one, B to the current one, since
-  /// splits sort newest-first.
+  /// defaults to the current split, B to the one before it, since splits sort
+  /// newest-first.
   RankedSplitBucket? _pick(
     List<RankedSplitBucket> real,
     String? id,
@@ -187,13 +192,13 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
         if (p.isSet) p,
     ];
     final multi = profiles.length > 1;
-    final uidA = _uidA ?? widget.uid;
-    final uidB = widget.uid;
+    final uidA = widget.uid;
+    final uidB = _uidB ?? widget.uid;
     final sameProfile = uidA == uidB;
     final realA = _splitsFor(uidA);
     final realB = _splitsFor(uidB);
-    final bucketA = _pick(realA, _splitAId, 1);
-    final bucketB = _pick(realB, _splitBId, 0);
+    final bucketA = _pick(realA, _splitAId, 0);
+    final bucketB = _pick(realB, _splitBId, 1);
 
     // Two splits of one profile need two splits; two profiles need one each.
     final canCompare =
@@ -245,13 +250,13 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
           onChangedA: (id) => setState(() => _splitAId = id),
           onChangedB: (id) => setState(() => _splitBId = id),
           profiles: multi ? {for (final p in profiles) p.uid: p.name} : null,
-          profileA: uidA,
-          nameB: multi ? nameOf(uidB) : null,
+          profileB: uidB,
+          nameA: multi ? nameOf(uidA) : null,
           // Another profile starts on the split you are looking at, so the
           // first thing you see is the two of you over the same split.
-          onProfileA: (uid) => setState(() {
-            _uidA = uid == widget.uid ? null : uid;
-            _splitAId = uid == widget.uid ? null : bucketB?.id;
+          onProfileB: (uid) => setState(() {
+            _uidB = uid == widget.uid ? null : uid;
+            _splitBId = uid == widget.uid ? null : bucketA?.id;
           }),
         ),
         const SizedBox(height: AppTheme.md),
@@ -291,11 +296,11 @@ class _SplitPicker extends StatelessWidget {
   /// Saved profiles by UID, or null with just one, when there is nothing to
   /// choose between and the labels stay plain.
   final Map<String, String>? profiles;
-  final String profileA;
+  final String profileB;
 
   /// The profile on screen, named on the fixed Current side; null with one.
-  final String? nameB;
-  final ValueChanged<String> onProfileA;
+  final String? nameA;
+  final ValueChanged<String> onProfileB;
 
   const _SplitPicker({
     required this.splitsA,
@@ -305,27 +310,29 @@ class _SplitPicker extends StatelessWidget {
     required this.onChangedA,
     required this.onChangedB,
     required this.profiles,
-    required this.profileA,
-    required this.nameB,
-    required this.onProfileA,
+    required this.profileB,
+    required this.nameA,
+    required this.onProfileB,
   });
 
   @override
   Widget build(BuildContext context) {
     final left = _LabeledDropdown(
-      label: 'Comparing',
+      label: nameA == null ? 'Current' : 'Current · $nameA',
       splits: splitsA,
       value: selectedA,
       onChanged: onChangedA,
-      profiles: profiles,
-      profile: profileA,
-      onProfile: onProfileA,
+      color: kCompareColorA,
     );
     final right = _LabeledDropdown(
-      label: nameB == null ? 'Current' : 'Current · $nameB',
+      label: 'Comparing',
       splits: splitsB,
       value: selectedB,
       onChanged: onChangedB,
+      profiles: profiles,
+      profile: profileB,
+      onProfile: onProfileB,
+      color: kCompareColorB,
     );
     // At a larger text size two dropdowns side by side cut off the very thing
     // being chosen, so they stack.
@@ -377,11 +384,15 @@ class _LabeledDropdown extends StatelessWidget {
   final String profile;
   final ValueChanged<String>? onProfile;
 
+  /// The side's colour, as a small key beside the label.
+  final Color color;
+
   const _LabeledDropdown({
     required this.label,
     required this.splits,
     required this.value,
     required this.onChanged,
+    required this.color,
     this.profiles,
     this.profile = '',
     this.onProfile,
@@ -396,7 +407,10 @@ class _LabeledDropdown extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: AppTheme.xs, left: 2),
           child: names == null
-              ? Text(label.toUpperCase(), style: _kLabelStyle)
+              ? _Keyed(
+                  color: color,
+                  child: Text(label.toUpperCase(), style: _kLabelStyle),
+                )
               : PopupMenuButton<String>(
                   tooltip: 'Choose profile',
                   color: AppTheme.surface,
@@ -411,6 +425,8 @@ class _LabeledDropdown extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      _KeySwatch(color),
+                      const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           '${label.toUpperCase()} · '
@@ -432,6 +448,38 @@ class _LabeledDropdown extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A label with its side's colour beside it.
+class _Keyed extends StatelessWidget {
+  final Color color;
+  final Widget child;
+  const _Keyed({required this.color, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _KeySwatch(color),
+      const SizedBox(width: 6),
+      Flexible(child: child),
+    ],
+  );
+}
+
+class _KeySwatch extends StatelessWidget {
+  final Color color;
+  const _KeySwatch(this.color);
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 8,
+    height: 8,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(2),
+    ),
+  );
 }
 
 class _SplitDropdown extends StatelessWidget {
@@ -551,11 +599,12 @@ class _CompareBody extends ConsumerWidget {
         // What changed from one split to the next means nothing between two
         // people.
         if (uidA == uidB) ...[
+          // From the earlier split (on the right) to the one on the left.
           SplitChangesCard(
-            legendsA: a.legends,
-            legendsB: b.legends,
-            mapsA: a.maps,
-            mapsB: b.maps,
+            legendsA: b.legends,
+            legendsB: a.legends,
+            mapsA: b.maps,
+            mapsB: a.maps,
           ),
           const SizedBox(height: AppTheme.md),
         ],
@@ -564,6 +613,7 @@ class _CompareBody extends ConsumerWidget {
           nameB: nameB,
           a: hourSlots(a.timeOfDay),
           b: hourSlots(b.timeOfDay),
+          movedFromSecond: true,
         ),
         const SizedBox(height: AppTheme.md),
         RankedSlotChart.days(
@@ -571,6 +621,7 @@ class _CompareBody extends ConsumerWidget {
           nameB: nameB,
           a: weekdaySlots(a.dayOfWeek),
           b: weekdaySlots(b.dayOfWeek),
+          movedFromSecond: true,
         ),
       ],
     );
@@ -664,8 +715,9 @@ class _SummarySection extends StatelessWidget {
                 'Games',
                 '${a.summary.games}',
                 '${b.summary.games}',
-                delta: (b.summary.games - a.summary.games).toDouble(),
+                delta: (a.summary.games - b.summary.games).toDouble(),
                 integerDelta: true,
+                deltaFromFirst: true,
                 // How many games were played is a fact, not a score: no colour,
                 // no leader.
                 neutral: true,
@@ -679,48 +731,55 @@ class _SummarySection extends StatelessWidget {
                     ? kNoReading
                     : gamesPerDayB.toStringAsFixed(1),
                 delta: (gamesPerDayA != null && gamesPerDayB != null)
-                    ? gamesPerDayB - gamesPerDayA
+                    ? gamesPerDayA - gamesPerDayB
                     : null,
+                deltaFromFirst: true,
                 neutral: true,
               ),
               CompareRow(
                 'Net RP',
                 formatSignedInt(a.summary.netRp),
                 formatSignedInt(b.summary.netRp),
-                delta: (b.summary.netRp - a.summary.netRp).toDouble(),
+                delta: (a.summary.netRp - b.summary.netRp).toDouble(),
                 integerDelta: true,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'RP/day',
                 rpPerDayA == null ? kNoReading : formatSigned(rpPerDayA),
                 rpPerDayB == null ? kNoReading : formatSigned(rpPerDayB),
                 delta: (rpPerDayA != null && rpPerDayB != null)
-                    ? rpPerDayB - rpPerDayA
+                    ? rpPerDayA - rpPerDayB
                     : null,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg RP',
                 formatSigned(a.summary.avgRpPerGame),
                 formatSigned(b.summary.avgRpPerGame),
-                delta: b.summary.avgRpPerGame - a.summary.avgRpPerGame,
+                delta: a.summary.avgRpPerGame - b.summary.avgRpPerGame,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Win rate',
                 formatPercent(a.summary.winRate),
                 formatPercent(b.summary.winRate),
-                delta: (b.summary.winRate - a.summary.winRate) * 100,
+                delta: (a.summary.winRate - b.summary.winRate) * 100,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg Kills',
                 formatAvgKills(a.summary.avgKills),
                 formatAvgKills(b.summary.avgKills),
                 delta: _diff(a.summary.avgKills, b.summary.avgKills),
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg Damage',
                 formatAvgDamage(a.summary.avgDamage),
                 formatAvgDamage(b.summary.avgDamage),
                 delta: _diff(a.summary.avgDamage, b.summary.avgDamage),
+                deltaFromFirst: true,
               ),
             ],
           ),
@@ -730,5 +789,5 @@ class _SummarySection extends StatelessWidget {
   }
 }
 
-/// [b] minus [a], or null when either side has no reading to compare.
-double? _diff(double? a, double? b) => a == null || b == null ? null : b - a;
+/// [a] minus [b], or null when either side has no reading to compare.
+double? _diff(double? a, double? b) => a == null || b == null ? null : a - b;

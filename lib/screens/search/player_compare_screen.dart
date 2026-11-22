@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../constants/api_constants.dart';
 import '../../constants/legend_constants.dart' show legendDisplayName;
 import '../../models/player_stats.dart';
@@ -25,9 +26,10 @@ class PlayerCompareScreen extends StatefulWidget {
   State<PlayerCompareScreen> createState() => _PlayerCompareScreenState();
 }
 
-/// The reader's side is the accent, the other player's the muted one.
-const _kYou = AppTheme.accent;
-const _kThem = AppTheme.muted;
+/// The reader's side is orange, the other player's blue: the colours of every
+/// comparison page.
+const _kYou = kCompareColorA;
+const _kThem = kCompareColorB;
 
 class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
   late final List<LegendOption> _options = legendOptions(
@@ -46,8 +48,6 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
     decimals: l.decimals,
     invert: l.invert,
     deltaFromFirst: true,
-    colorA: _kYou,
-    colorB: _kThem,
   );
 
   CompareTable _table(List<CompareLine> lines, {bool showKey = true}) =>
@@ -55,8 +55,6 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
         nameA: 'You',
         nameB: widget.them.name,
         firstIsYou: true,
-        colorA: _kYou,
-        colorB: _kThem,
         showKey: showKey,
         rows: [for (final l in lines) _row(l)],
       );

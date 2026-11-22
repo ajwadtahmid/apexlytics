@@ -135,6 +135,35 @@ void main() {
     expect(chip.a, lessThan(0.5));
   });
 
+  testWidgets('the leading value is outlined in its side\'s colour, the other '
+      'is not', (tester) async {
+    await pump(tester, const CompareRow('Win rate', '40%', '55%', delta: 15));
+
+    BoxDecoration decorationOf(String text) =>
+        tester
+                .widget<Container>(
+                  find
+                      .ancestor(
+                        of: find.text(text),
+                        matching: find.byType(Container),
+                      )
+                      .first,
+                )
+                .decoration
+            as BoxDecoration;
+
+    expect(decorationOf('55%').border!.top.color, kCompareColorB);
+    expect(decorationOf('40%').border!.top.color, Colors.transparent);
+  });
+
+  testWidgets('the first side is the accent and the second is blue', (
+    tester,
+  ) async {
+    expect(kCompareColorA, AppTheme.accent);
+    expect(kCompareColorB, AppTheme.blue);
+    expect(AppTheme.profileColors.take(2), [kCompareColorA, kCompareColorB]);
+  });
+
   testWidgets('a level or neutral row has no chip', (tester) async {
     await pump(tester, const CompareRow('Games', '9', '12'));
 

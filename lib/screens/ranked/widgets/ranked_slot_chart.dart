@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
+
 import '../../../utils/formatting/format.dart' show formatSigned, plural;
 import '../../../utils/ranked/ranked_aggregates.dart' show kMinGamesForInsight;
 import '../../../utils/ranked/slots.dart';
@@ -35,6 +36,10 @@ class RankedSlotChart extends StatefulWidget {
   final List<Slot> a;
   final List<Slot>? b;
 
+  /// True when the second period is the earlier one (the bars keep their
+  /// order), so the "moved from … to …" lines read from the second to the first.
+  final bool movedFromSecond;
+
   /// The slots to chart, in order, one column each.
   final List<int> axis;
   final String Function(int slot) label;
@@ -55,6 +60,7 @@ class RankedSlotChart extends StatefulWidget {
     required this.label,
     required this.labelled,
     required this.barWidth,
+    this.movedFromSecond = false,
   }) : assert(b == null || (nameA != null && nameB != null));
 
   /// Only the hours played, so a player who is never on at night doesn't get a
@@ -65,6 +71,7 @@ class RankedSlotChart extends StatefulWidget {
     String? nameB,
     required List<Slot> a,
     List<Slot>? b,
+    bool movedFromSecond = false,
   }) {
     final axis = hourAxis([...a, ...?b].map((s) => s.slot));
     final n = axis.length;
@@ -78,6 +85,7 @@ class RankedSlotChart extends StatefulWidget {
       nameB: nameB,
       a: a,
       b: b,
+      movedFromSecond: movedFromSecond,
       axis: axis,
       label: _hourLabel,
       labelled: (i) => i % (n > 12 ? 3 : (n > 6 ? 2 : 1)) == 0,
@@ -93,6 +101,7 @@ class RankedSlotChart extends StatefulWidget {
     String? nameB,
     required List<Slot> a,
     List<Slot>? b,
+    bool movedFromSecond = false,
   }) => RankedSlotChart(
     key: key,
     title: 'Performance by Day',
@@ -101,6 +110,7 @@ class RankedSlotChart extends StatefulWidget {
     nameB: nameB,
     a: a,
     b: b,
+    movedFromSecond: movedFromSecond,
     axis: const [1, 2, 3, 4, 5, 6, 7],
     label: (d) => _weekdays[d - 1],
     labelled: (_) => true,
@@ -154,8 +164,8 @@ class _RankedSlotChartState extends State<RankedSlotChart> {
               slotVerdict(
                 what: w.what,
                 label: w.label,
-                a: w.a,
-                b: other,
+                a: w.movedFromSecond ? other : w.a,
+                b: w.movedFromSecond ? w.a : other,
                 best: best,
               ),
           ].whereType<String>().toList();

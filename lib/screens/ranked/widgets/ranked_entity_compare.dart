@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../constants/map_constants.dart' show isUnknownMapKey;
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/format.dart'
@@ -149,32 +150,37 @@ class _RankedEntityCompareState extends State<RankedEntityCompare> {
                 'Net RP',
                 formatSignedInt(a.totalRp),
                 formatSignedInt(b.totalRp),
-                delta: (b.totalRp - a.totalRp).toDouble(),
+                delta: (a.totalRp - b.totalRp).toDouble(),
                 integerDelta: true,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg RP',
                 formatSigned(a.avgRp),
                 formatSigned(b.avgRp),
-                delta: b.avgRp - a.avgRp,
+                delta: a.avgRp - b.avgRp,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Win rate',
                 formatPercent(a.winRate),
                 formatPercent(b.winRate),
-                delta: (b.winRate - a.winRate) * 100,
+                delta: (a.winRate - b.winRate) * 100,
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg Kills',
                 formatAvgKills(a.avgKills),
                 formatAvgKills(b.avgKills),
                 delta: _diff(a.avgKills, b.avgKills),
+                deltaFromFirst: true,
               ),
               CompareRow(
                 'Avg Damage',
                 formatAvgDamage(a.avgDamage),
                 formatAvgDamage(b.avgDamage),
                 delta: _diff(a.avgDamage, b.avgDamage),
+                deltaFromFirst: true,
               ),
             ],
           ),
@@ -192,8 +198,8 @@ class _RankedEntityCompareState extends State<RankedEntityCompare> {
   }
 }
 
-/// [b] minus [a], or null when either side has no reading to compare.
-double? _diff(double? a, double? b) => a == null || b == null ? null : b - a;
+/// [a] minus [b], or null when either side has no reading to compare.
+double? _diff(double? a, double? b) => a == null || b == null ? null : a - b;
 
 class _Dropdown extends StatelessWidget {
   final List<_Stats> options;

@@ -73,9 +73,9 @@ void main() {
       expect(find.text('-40'), findsOneWidget);
       expect(find.text('+20.0'), findsOneWidget);
       expect(find.text('-10.0'), findsOneWidget);
-      // Avg kills 3.0 vs 1.0, and the change from first to second.
+      // Avg kills 3.0 vs 1.0, and the first's lead over the second.
       expect(find.text('3.0'), findsOneWidget);
-      expect(find.text('-2.0'), findsOneWidget);
+      expect(find.text('+2.0'), findsOneWidget);
     });
 
     testWidgets('choosing another legend updates the table', (tester) async {
@@ -89,8 +89,9 @@ void main() {
       await tester.tap(find.text('Wraith · 2 games').last);
       await tester.pumpAndSettle();
 
-      // Wraith's two games netted +60, and she has no kills or damage readings.
-      expect(find.text('+60'), findsOneWidget);
+      // Wraith's two games netted +60, which is also how far ahead Axle's +120
+      // is; she has no kills or damage readings.
+      expect(find.text('+60'), findsNWidgets(2));
       expect(find.text('—'), findsWidgets);
     });
 

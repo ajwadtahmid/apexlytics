@@ -151,18 +151,37 @@ void main() {
     'the two sides sit side by side, and stack at a large text size',
     (tester) async {
       await pump(tester, [('Main', '1'), ('Alt', '2')]);
-      final left = tester.getTopLeft(find.text('COMPARING · MAIN'));
-      final right = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      // Yours stays on the left; the one to change is on the right.
+      final left = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      final right = tester.getTopLeft(find.text('COMPARING · MAIN'));
       expect(right.dy, closeTo(left.dy, 3));
       expect(right.dx, greaterThan(left.dx));
 
       await pump(tester, [('Main', '1'), ('Alt', '2')], textScale: 1.5);
-      final top = tester.getTopLeft(find.text('COMPARING · MAIN'));
-      final below = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      final top = tester.getTopLeft(find.text('CURRENT · MAIN'));
+      final below = tester.getTopLeft(find.text('COMPARING · MAIN'));
       expect(below.dy, greaterThan(top.dy));
       expect(below.dx, closeTo(top.dx, 2));
     },
   );
+
+  testWidgets('only the right side can change profile, yours stays put', (
+    tester,
+  ) async {
+    await pump(tester, [('Main', '1'), ('Alt', '2')]);
+
+    final picker = find.byType(PopupMenuButton<String>);
+    expect(picker, findsOneWidget);
+    // It is the picker on the right, beside the Comparing label.
+    expect(
+      tester.getTopLeft(picker).dx,
+      greaterThan(tester.getTopLeft(find.text('CURRENT · MAIN')).dx),
+    );
+    expect(
+      find.descendant(of: picker, matching: find.text('COMPARING · MAIN')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('a profile with no UID yet is not offered', (tester) async {
     await pump(tester, [('Main', '1'), ('Pending', '')]);

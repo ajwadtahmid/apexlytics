@@ -48,6 +48,25 @@ void main() {
     expect(find.text('12 AM'), findsNothing);
   });
 
+  testWidgets('the best hour moves from the first period to the second, or '
+      'the other way round when the second is the earlier one', (tester) async {
+    // A's best hour is 9 PM, B's is 11 PM.
+    await pump(tester, hours());
+    expect(find.text('Best hour moved from 9 PM to 11 PM'), findsOneWidget);
+
+    await pump(
+      tester,
+      RankedSlotChart.hours(
+        nameA: 'Split 2',
+        nameB: 'Split 1',
+        a: b,
+        b: a,
+        movedFromSecond: true,
+      ),
+    );
+    expect(find.text('Best hour moved from 9 PM to 11 PM'), findsOneWidget);
+  });
+
   testWidgets('a late night runs across midnight on one axis', (tester) async {
     await pump(
       tester,

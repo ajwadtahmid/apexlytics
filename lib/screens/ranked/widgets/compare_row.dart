@@ -1,14 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
+
 import '../../../utils/formatting/format.dart'
     show formatSigned, formatSignedInt, plural;
 import '../../../utils/theme.dart';
 
 /// The colours of the first and second thing in a comparison, in its table and
-/// its charts.
-const kCompareColorA = AppTheme.muted;
-const kCompareColorB = AppTheme.accent;
+/// its charts: the profile on screen (or you) is orange, the other one blue, as
+/// on every comparison page.
+const kCompareColorA = AppTheme.accent;
+const kCompareColorB = AppTheme.blue;
 
 /// A colour swatch and a name, to say which side is which.
 class CompareKey extends StatelessWidget {
@@ -43,8 +45,8 @@ class CompareKey extends StatelessWidget {
 }
 
 /// One row of a comparison table: a label, the two values and the change from
-/// the first to the second, coloured good or bad. The better value is bold in a
-/// chip tinted with its side's colour.
+/// the first to the second, coloured good or bad. The better value is bold and
+/// outlined in its side's colour.
 ///
 /// For a head-to-head where the first side is the reader (a player against
 /// another), set [deltaFromFirst]: the change is then the first minus the
@@ -75,8 +77,8 @@ class CompareRow extends StatelessWidget {
   /// of the "leads on" count.
   final bool neutral;
 
-  /// The tint of each side's leading chip. The defaults are the colours of the
-  /// ranked Compare page.
+  /// The outline of each side's leading value. The defaults are the colours
+  /// every comparison page uses.
   final Color colorA;
   final Color colorB;
 
@@ -168,7 +170,7 @@ class CompareRow extends StatelessWidget {
   }
 }
 
-/// A value; the leading one is bold in a chip tinted with its side's [color].
+/// A value; the leading one is bold and outlined in its side's [color].
 class _Value extends StatelessWidget {
   final String text;
   final Color color;
@@ -182,8 +184,14 @@ class _Value extends StatelessWidget {
       fit: BoxFit.scaleDown,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        // An outline over a faint fill, not a solid tint: the value stays in its
+        // own colour and reads the same on either side.
         decoration: BoxDecoration(
-          color: leads ? color.withValues(alpha: 0.22) : null,
+          color: leads ? color.withValues(alpha: 0.08) : null,
+          border: Border.all(
+            color: leads ? color : Colors.transparent,
+            width: 1.5,
+          ),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         ),
         child: Text(
@@ -255,12 +263,11 @@ class CompareTable extends StatelessWidget {
                       '${a > b && firstIsYou ? 'lead' : 'leads'} on '
                       '${a > b ? a : b} of ${plural(decided, 'stat')}',
             style: TextStyle(
-              // The leading side's colour, so it ties back to the key above. The
-              // muted default would be hard to read as text, so it stays white.
+              // The leading side's colour, so it ties back to the key above.
               color: a == b
                   ? AppTheme.textPrimary
                   : a > b
-                  ? (colorA == kCompareColorA ? AppTheme.textPrimary : colorA)
+                  ? colorA
                   : colorB,
               fontSize: 13,
               fontWeight: FontWeight.w600,
