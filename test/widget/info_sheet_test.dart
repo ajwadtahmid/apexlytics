@@ -8,6 +8,7 @@ void main() {
     WidgetTester t, {
     required List<String> lines,
     double textScale = 1,
+    String? warning,
   }) async {
     t.view.physicalSize = const Size(400, 700);
     t.view.devicePixelRatio = 1;
@@ -15,16 +16,19 @@ void main() {
     await t.pumpWidget(
       MaterialApp(
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () =>
-                  showInfoSheet(context, title: 'How to read', lines: lines),
+              onPressed: () => showInfoSheet(
+                context,
+                title: 'How to read',
+                lines: lines,
+                warning: warning,
+              ),
               child: const Text('open'),
             ),
           ),
@@ -50,6 +54,28 @@ void main() {
       t.getTopLeft(find.text('First point.')).dy,
       lessThan(t.getTopLeft(find.text('Second point.')).dy),
     );
+  });
+
+  testWidgets('puts a warning in a box between the title and the lines', (
+    t,
+  ) async {
+    await open(t, lines: ['First point.'], warning: 'Mind this limit.');
+
+    expect(find.text('Mind this limit.'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+    expect(
+      t.getTopLeft(find.text('How to read')).dy,
+      lessThan(t.getTopLeft(find.text('Mind this limit.')).dy),
+    );
+    expect(
+      t.getTopLeft(find.text('Mind this limit.')).dy,
+      lessThan(t.getTopLeft(find.text('First point.')).dy),
+    );
+  });
+
+  testWidgets('has no warning box unless one is given', (t) async {
+    await open(t, lines: ['First point.']);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
   });
 
   testWidgets('scrolls, rather than overflowing, when the text is long', (

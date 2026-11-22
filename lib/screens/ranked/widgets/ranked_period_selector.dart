@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../providers/ranked_provider.dart';
 import '../../../utils/ranked/ranked_period.dart';
 import '../../../utils/theme.dart';
@@ -71,6 +72,29 @@ Widget _pillButton({
     child: _thumbSized(pill),
   ),
 );
+
+/// The header pill as a button, for a page that offers the same season or week
+/// choice without driving the Stats page's own selection.
+class RankedPeriodButton extends StatelessWidget {
+  final String label;
+
+  /// What a screen reader says, which may say more than [label] does.
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  const RankedPeriodButton({
+    super.key,
+    required this.label,
+    required this.semanticsLabel,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => _pillButton(
+    pill: _HeaderPill(label: label, dropdown: true),
+    label: semanticsLabel,
+    onTap: onTap,
+  );
+}
 
 /// Split selector: a compact pill that opens the list of available splits.
 /// Drives [rankedPeriodProvider].
