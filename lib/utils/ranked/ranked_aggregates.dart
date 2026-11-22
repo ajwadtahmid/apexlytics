@@ -87,12 +87,16 @@ class RankedAgg {
 
   void addAllRows(Iterable<Map<String, Object?>> rows) => rows.forEach(addRow);
 
-  RankedSummary toSummary({int currentRp = 0, String latestRankImg = ''}) =>
-      games == 0
+  RankedSummary toSummary({
+    int currentRp = 0,
+    String latestRankImg = '',
+    int? ladderRp,
+  }) => games == 0
       ? RankedSummary.empty
       : RankedSummary(
           games: games,
           netRp: rp,
+          ladderRp: ladderRp,
           currentRp: currentRp,
           latestRankImg: latestRankImg,
           totalKills: kills,
@@ -150,6 +154,13 @@ class RankedAgg {
 class RankedSummary {
   final int games;
   final int netRp; // Σ rpChange across the window
+
+  /// How far the ladder moved over the window: the RP after the newest game
+  /// less the RP before the oldest. It is the real climb, and it differs from
+  /// [netRp] when a game moved RP without being counted (or its own figure
+  /// does not match the running total). Null when it cannot be derived, as
+  /// for the Lifetime aggregates, which then show [netRp].
+  final int? ladderRp;
   final int currentRp; // cumulativeRp of the most recent match
   final String latestRankImg;
   final int totalKills;
@@ -168,6 +179,7 @@ class RankedSummary {
   const RankedSummary({
     required this.games,
     required this.netRp,
+    this.ladderRp,
     required this.currentRp,
     required this.latestRankImg,
     required this.totalKills,
@@ -178,6 +190,10 @@ class RankedSummary {
     required this.wins,
     required this.losses,
   });
+
+  /// The RP gained over the window as the player would count it: the ladder's
+  /// movement when known, else the sum of the games.
+  int get gainRp => ladderRp ?? netRp;
 
   double get avgRpPerGame => games == 0 ? 0 : netRp / games;
   // Null, not 0, when no game reported the tracker: a zero would read as a
@@ -245,13 +261,16 @@ RankedSummary summarize(
     if (m.endTime.isAfter(newest.endTime)) newest = m;
   }
   final agg = RankedAgg();
+  var oldest = matches.first;
   for (final m in matches) {
     agg.add(m);
     if (m.endTime.isAfter(newest.endTime)) newest = m;
+    if (m.endTime.isBefore(oldest.endTime)) oldest = m;
   }
   return agg.toSummary(
     currentRp: newest.cumulativeRp,
     latestRankImg: newest.rankImg,
+    ladderRp: newest.cumulativeRp - (oldest.cumulativeRp - oldest.rpChange),
   );
 }
 

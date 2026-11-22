@@ -42,7 +42,7 @@ class ClimbTag extends StatelessWidget {
     ),
     child: Text(
       text,
-      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
     ),
   );
 }

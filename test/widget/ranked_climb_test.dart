@@ -163,6 +163,39 @@ void main() {
     });
   });
 
+  group('a split that is over', () {
+    // A newer split exists, so the one shown is over.
+    testWidgets('says where it finished, not what is left to climb', (
+      tester,
+    ) async {
+      await pump(tester, shown: view(id: earlier));
+      expect(find.textContaining('Finished the split in Gold III'), findsOne);
+      expect(find.textContaining('RP to Gold II'), findsNothing);
+    });
+
+    testWidgets('the newest split is still climbing', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('Finished the split'), findsNothing);
+      expect(find.textContaining('RP to Gold II'), findsOneWidget);
+    });
+  });
+
+  group('the games behind a move', () {
+    testWidgets('open that game\'s own page when tapped', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Reached Gold'));
+      await settle(tester);
+      await tester.tap(find.textContaining('Game 1 ·').first);
+      await settle(tester);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_MatchDetailSheet',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('the tabs', () {
     testWidgets('open on Timeline, with Divisions second', (tester) async {
       await pump(tester);
@@ -243,7 +276,7 @@ void main() {
       await tester.tap(find.text('Reached Gold'));
       await settle(tester);
       expect(find.text('THIS MOVED YOU'), findsOneWidget);
-      expect(find.textContaining('SINCE THE LAST MOVE'), findsOneWidget);
+      expect(find.textContaining('SINCE THE SPLIT BEGAN'), findsOneWidget);
     });
 
     testWidgets('say so when nothing has moved', (tester) async {

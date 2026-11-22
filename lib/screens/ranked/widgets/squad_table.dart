@@ -69,11 +69,20 @@ class SquadTable extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
+                          width: 10,
+                          height: 10,
+                          decoration: ShapeDecoration(
                             color: c.color,
-                            borderRadius: BorderRadius.circular(2),
+                            shape: switch (i) {
+                              0 => RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              1 => const CircleBorder(),
+                              _ => const StarBorder.polygon(
+                                sides: 4,
+                                pointRounding: 0.15,
+                              ),
+                            },
                           ),
                         ),
                         const SizedBox(width: 4),

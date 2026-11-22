@@ -18,6 +18,7 @@ import '../../../widgets/map_asset_image.dart';
 import '../../../widgets/sheet_handle.dart';
 import '../../../widgets/surface_card.dart';
 import 'climb_parts.dart';
+import 'match_detail_sheet.dart';
 
 /// Every promotion and demotion of the split, newest first, as it happened,
 /// under a card of the ups and downs and the best and worst runs. A change of
@@ -25,7 +26,10 @@ import 'climb_parts.dart';
 /// chip leaves those out. Tapping a move opens the games that caused it.
 class ClimbMoves extends StatefulWidget {
   final RankClimb climb;
-  const ClimbMoves({super.key, required this.climb});
+
+  /// Called after a game opened from a move is edited, so the page can reload.
+  final VoidCallback? onEdited;
+  const ClimbMoves({super.key, required this.climb, this.onEdited});
 
   @override
   State<ClimbMoves> createState() => _ClimbMovesState();
@@ -80,11 +84,21 @@ class _ClimbMovesState extends State<ClimbMoves> {
         m.crossesTier
             ? _TierRow(
                 move: m,
-                onTap: () => showClimbGamesSheet(context, climb, m),
+                onTap: () => showClimbGamesSheet(
+                  context,
+                  climb,
+                  m,
+                  onEdited: widget.onEdited,
+                ),
               )
             : _DivisionRow(
                 move: m,
-                onTap: () => showClimbGamesSheet(context, climb, m),
+                onTap: () => showClimbGamesSheet(
+                  context,
+                  climb,
+                  m,
+                  onEdited: widget.onEdited,
+                ),
               ),
       );
     }
@@ -266,7 +280,7 @@ class _Rail extends StatelessWidget {
 }
 
 String _stretch(int games, int rp, Duration time) =>
-    '${plural(games, 'game')} · ${formatDuration(time.inSeconds)} · '
+    '${plural(games, 'game')} over ${formatDuration(time.inSeconds)} · '
     '${formatSignedInt(rp)} RP';
 
 /// A change of tier: the headline of the timeline.
@@ -385,25 +399,32 @@ class _DivisionRow extends StatelessWidget {
             Expanded(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 44),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${move.up ? 'Up' : 'Down'} to ${to.label}',
-                          style: TextStyle(color: color, fontSize: 12),
-                        ),
-                        TextSpan(
-                          text:
-                              '  ${formatShortDate(move.at)} · game ${move.game}'
-                              '  ${plural(move.gamesSincePrev, 'game')} since '
-                              'the last move',
-                          style: AppTheme.captionSmall,
-                        ),
-                      ],
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${move.up ? 'Up' : 'Down'} to ${to.label}',
+                            style: TextStyle(color: color, fontSize: 13),
+                          ),
+                          Text(
+                            '${formatShortDate(move.at)} · game ${move.game} · '
+                            '${plural(move.gamesSincePrev, 'game')} after the '
+                            'last move',
+                            style: AppTheme.captionSmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: AppTheme.muted,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -486,7 +507,12 @@ class _StartRow extends StatelessWidget {
 
 /// The games that caused [move]: the last ten since the move before it, the
 /// one that moved the player outlined.
-void showClimbGamesSheet(BuildContext context, RankClimb climb, RankMove move) {
+void showClimbGamesSheet(
+  BuildContext context,
+  RankClimb climb,
+  RankMove move, {
+  VoidCallback? onEdited,
+}) {
   final games = climb.gamesBetween(move.prevGame, move.game);
   final shown = games.length > 10 ? games.sublist(games.length - 10) : games;
   final to = kRankLadder[move.to];
@@ -494,6 +520,11 @@ void showClimbGamesSheet(BuildContext context, RankClimb climb, RankMove move) {
   final title = move.crossesTier
       ? (move.up ? 'Reached ${to.tier}' : 'Dropped back to ${to.tier}')
       : '${move.up ? 'Up' : 'Down'} to ${to.label}';
+  // What the count runs from: the move before, by where it left the player.
+  final before = climb.moves.where((m) => m.game == move.prevGame).firstOrNull;
+  final since = before == null
+      ? 'SINCE THE SPLIT BEGAN'
+      : 'SINCE ${kRankLadder[before.to].label.toUpperCase()}';
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -540,9 +571,9 @@ void showClimbGamesSheet(BuildContext context, RankClimb climb, RankMove move) {
               const SizedBox(height: AppTheme.sm),
               Text(
                 games.length > shown.length
-                    ? 'THE LAST ${shown.length} OF ${games.length} GAMES SINCE '
-                          'THE LAST MOVE'
-                    : '${plural(shown.length, 'GAME')} SINCE THE LAST MOVE',
+                    ? 'THE LAST ${shown.length} OF ${games.length} GAMES '
+                          '$since'
+                    : '${plural(shown.length, 'GAME')} $since',
                 style: AppTheme.cardTitle,
               ),
               const SizedBox(height: AppTheme.xs),
@@ -555,6 +586,20 @@ void showClimbGamesSheet(BuildContext context, RankClimb climb, RankMove move) {
                         number: climb.games.indexOf(g) + 1,
                         game: g,
                         decisive: identical(g, move.match),
+                        onTap: () async {
+                          final list = shown.reversed.toList();
+                          final edited = await showMatchDetailSheet(
+                            sheetContext,
+                            matches: list,
+                            index: list.indexOf(g),
+                          );
+                          if (edited == null) return;
+                          // The list is stale now: close it and reload.
+                          if (sheetContext.mounted) {
+                            Navigator.of(sheetContext).pop();
+                          }
+                          onEdited?.call();
+                        },
                       ),
                   ],
                 ),
@@ -571,10 +616,12 @@ class _GameLine extends StatelessWidget {
   final int number;
   final RankedMatch game;
   final bool decisive;
+  final VoidCallback onTap;
   const _GameLine({
     required this.number,
     required this.game,
     required this.decisive,
+    required this.onTap,
   });
 
   @override
@@ -583,73 +630,83 @@ class _GameLine extends StatelessWidget {
     final kills = game.kills;
     final damage = game.damage;
     final end = game.endTime;
-    return Container(
-      margin: const EdgeInsets.only(top: AppTheme.sm),
-      padding: const EdgeInsets.all(AppTheme.sm),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(top: AppTheme.sm),
+      child: Material(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        border: Border.all(
-          color: decisive ? AppTheme.accent : AppTheme.surface2,
-        ),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: asset == null
-                  ? const ColoredBox(color: AppTheme.surface2)
-                  : MapAssetImage(asset: asset),
-            ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          side: BorderSide(
+            color: decisive ? AppTheme.accent : AppTheme.surface2,
           ),
-          const SizedBox(width: AppTheme.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.sm),
+            child: Row(
               children: [
-                Wrap(
-                  spacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        LegendIcon(legendName: game.legend, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${game.legend} · ${battleRoyaleMapName(game.mapKey)}',
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    if (decisive)
-                      const ClimbTag('THIS MOVED YOU', AppTheme.accent),
-                  ],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: asset == null
+                        ? const ColoredBox(color: AppTheme.surface2)
+                        : MapAssetImage(asset: asset),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              LegendIcon(legendName: game.legend, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${game.legend} · ${battleRoyaleMapName(game.mapKey)}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          if (decisive)
+                            const ClimbTag('THIS MOVED YOU', AppTheme.accent),
+                        ],
+                      ),
+                      Text(
+                        [
+                          'Game $number',
+                          '${formatShortDate(end)}, ${formatClock(end)}',
+                          if (kills != null) plural(kills, 'kill'),
+                          if (damage != null) '${formatNumber(damage)} dmg',
+                        ].join(' · '),
+                        style: AppTheme.captionSmall,
+                      ),
+                    ],
+                  ),
                 ),
                 Text(
-                  [
-                    'Game $number',
-                    '${formatShortDate(end)}, ${formatClock(end)}',
-                    if (kills != null) plural(kills, 'kill'),
-                    if (damage != null) '${formatNumber(damage)} dmg',
-                  ].join(' · '),
-                  style: AppTheme.captionSmall,
+                  formatSignedInt(game.rpChange),
+                  style: TextStyle(
+                    color: AppTheme.signColor(game.rpChange >= 0),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
           ),
-          Text(
-            formatSignedInt(game.rpChange),
-            style: TextStyle(
-              color: AppTheme.signColor(game.rpChange >= 0),
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

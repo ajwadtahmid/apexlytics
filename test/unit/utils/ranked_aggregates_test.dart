@@ -4,6 +4,7 @@ import 'package:apexlytics/constants/map_constants.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_items.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
+
 import '../../helpers.dart';
 
 void main() {
@@ -203,48 +204,45 @@ void main() {
     expect(r.bestKillsGame?.kills, 1, reason: 'its kills are left out too');
   });
 
-  test(
-    'a reset game (implausible RP) is left out of games and win rate alike',
-    () {
-      final withResets = rankedOnly([
-        match(
-          legend: 'Axle',
-          mapKey: 'olympus_rotation',
-          rpChange: 40,
-          cumulativeRp: 40,
-          kills: 1,
-          damage: 100,
-          startOffset: 0,
-        ),
-        match(
-          legend: 'Axle',
-          mapKey: 'olympus_rotation',
-          rpChange: -20,
-          cumulativeRp: 20,
-          kills: 1,
-          damage: 100,
-          startOffset: 60,
-        ),
-        // End-of-split reset artifact: |rp| >= 1000 is excluded automatically, so
-        // rankedOnly drops it and it counts toward neither games nor win rate.
-        match(
-          legend: 'Axle',
-          mapKey: 'olympus_rotation',
-          rpChange: -1500,
-          cumulativeRp: 0,
-          kills: 0,
-          damage: 0,
-          startOffset: 120,
-        ),
-      ]);
-      final s = summarize(withResets);
-      expect(s.games, 2);
-      expect(s.wins, 1);
-      expect(s.losses, 1);
-      expect(s.decidedGames, s.games, reason: 'every counted game is decided');
-      expect(s.winRate, closeTo(0.5, 0.001));
-    },
-  );
+  test('a reset game (implausible RP) is left out of games and win rate alike', () {
+    final withResets = rankedOnly([
+      match(
+        legend: 'Axle',
+        mapKey: 'olympus_rotation',
+        rpChange: 40,
+        cumulativeRp: 40,
+        kills: 1,
+        damage: 100,
+        startOffset: 0,
+      ),
+      match(
+        legend: 'Axle',
+        mapKey: 'olympus_rotation',
+        rpChange: -20,
+        cumulativeRp: 20,
+        kills: 1,
+        damage: 100,
+        startOffset: 60,
+      ),
+      // End-of-split reset artifact: |rp| >= 1000 is excluded automatically, so
+      // rankedOnly drops it and it counts toward neither games nor win rate.
+      match(
+        legend: 'Axle',
+        mapKey: 'olympus_rotation',
+        rpChange: -1500,
+        cumulativeRp: 0,
+        kills: 0,
+        damage: 0,
+        startOffset: 120,
+      ),
+    ]);
+    final s = summarize(withResets);
+    expect(s.games, 2);
+    expect(s.wins, 1);
+    expect(s.losses, 1);
+    expect(s.decidedGames, s.games, reason: 'every counted game is decided');
+    expect(s.winRate, closeTo(0.5, 0.001));
+  });
 
   test('winRate is 0 when there are no decided games', () {
     expect(summarize(const []).winRate, 0);
@@ -1034,9 +1032,9 @@ void main() {
     final newestFirst = games.reversed.toList();
 
     final sessions = sessionize(newestFirst);
-    final headers = buildSessionItems(
-      newestFirst,
-    ).whereType<SessionHeaderItem>().toList();
+    final headers = buildSessionItems(newestFirst)
+        .whereType<SessionHeaderItem>()
+        .toList();
 
     expect(sessions.length, 2);
     expect(headers.length, sessions.length);
@@ -1068,15 +1066,18 @@ void main() {
       expect(sessionize(rankedOnly(all)).map((s) => s.games), [1, 1]);
     });
 
-    test('the Games tab cuts the same two, each with the pubs nearest to it', () {
-      final headers = rankedHeaders(all);
+    test(
+      'the Games tab cuts the same two, each with the pubs nearest to it',
+      () {
+        final headers = rankedHeaders(all);
 
-      expect(headers.length, 2);
-      // The newest session also lists the pubs game before it, the older the one
-      // after it: neither brings the two ranked games together.
-      expect(headers.map((h) => h.games), [2, 2]);
-      expect(headers.map((h) => h.netRp), [-10, 20]);
-    });
+        expect(headers.length, 2);
+        // The newest session also lists the pubs game before it, the older the one
+        // after it: neither brings the two ranked games together.
+        expect(headers.map((h) => h.games), [2, 2]);
+        expect(headers.map((h) => h.netRp), [-10, 20]);
+      },
+    );
 
     test('a break is not bridged by an excluded ranked game either', () {
       final excluded = buildMatch(
@@ -1215,6 +1216,37 @@ void main() {
       );
       final games = climb([10010, 10200]);
       expect(changes([games.first, out, games.last]), isEmpty);
+    });
+  });
+
+  group('summarize: the gain the ladder shows', () {
+    test('is the RP after the newest game less the RP before the oldest', () {
+      // Two games of +10 and +20, but the ladder moved 30 + 50 between them:
+      // a game in between moved RP without being counted.
+      final summary = summarize([
+        buildMatch(rp: 10, cumulativeRp: 1010, start: 1782090000),
+        buildMatch(rp: 20, cumulativeRp: 1080, start: 1782090000 + 5000),
+      ]);
+      expect(summary.netRp, 30);
+      expect(summary.ladderRp, 80);
+      expect(summary.gainRp, 80);
+    });
+
+    test('falls back to the games\' sum when it cannot be derived', () {
+      const summary = RankedSummary(
+        games: 1,
+        netRp: 40,
+        currentRp: 100,
+        latestRankImg: '',
+        totalKills: 0,
+        totalDamage: 0,
+        killsGames: 0,
+        damageGames: 0,
+        totalLengthSecs: 0,
+        wins: 1,
+        losses: 0,
+      );
+      expect(summary.gainRp, 40);
     });
   });
 }

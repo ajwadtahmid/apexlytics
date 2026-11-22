@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../constants/rank_constants.dart';
 import '../../../providers/predator_provider.dart';
 import '../../../providers/rank_goal_provider.dart';
@@ -44,7 +45,7 @@ class RankedSummaryHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final netPositive = summary.netRp >= 0;
+    final netPositive = summary.gainRp >= 0;
     final netColor = AppTheme.signColor(netPositive);
 
     final goalScope = (
@@ -154,7 +155,7 @@ class RankedSummaryHeader extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
                 child: Text(
-                  '${formatSignedInt(summary.netRp)} RP',
+                  '${formatSignedInt(summary.gainRp)} RP',
                   style: TextStyle(
                     color: netColor,
                     fontSize: 14,

@@ -69,6 +69,15 @@ void showRankedInfoSheet(BuildContext context) {
                 'be recorded. Matches played before tracking started can\'t be '
                 'recovered.',
           ]),
+          const SizedBox(height: AppTheme.md),
+          ..._section('Why two RP totals can differ', [
+            'The RP gain at the top of a split is how far your RP actually '
+                'moved, from where you started to where you are now. The RP '
+                'total in the stats table adds up only the games Apexlytics '
+                'recorded. If a game was missed, or its RP could not be '
+                'counted, the two differ by that game\'s RP. Averages per '
+                'game use the recorded games.',
+          ]),
           const SizedBox(height: AppTheme.lg),
           const Text(
             'Legend Trackers',

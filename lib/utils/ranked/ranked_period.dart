@@ -203,6 +203,18 @@ class RankedView {
 
   bool get isEmpty => splits.isEmpty;
 
+  /// The split and week in words, such as "S31 Split 1 · All weeks". Empty
+  /// when there is no split to name.
+  String get periodLabel {
+    String? name;
+    for (final b in splits) {
+      if (b.id == effectiveSplitId) name = b.displayName;
+    }
+    if (name == null) return '';
+    if (effectiveSplitId == kLifetimeSplitId || weeks.isEmpty) return name;
+    return '$name · ${weekIndex < 0 ? 'All weeks' : 'Week ${weekIndex + 1}'}';
+  }
+
   static const empty = RankedView(
     splits: [],
     effectiveSplitId: '',

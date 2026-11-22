@@ -20,7 +20,11 @@ class ClimbChart extends StatelessWidget {
   const ClimbChart({super.key, required this.climb});
 
   static const _height = 190.0;
-  static const _labelWidth = 62.0;
+  static const _labelWidth = 76.0;
+
+  /// The division names stop growing here, so they keep their room beside the
+  /// plot at the largest text sizes.
+  static const _labelTextScale = 1.3;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +43,10 @@ class ClimbChart extends StatelessWidget {
     double? lastLabelled;
     for (final d in kRankLadder.reversed) {
       if (d.rp <= minY || d.rp >= maxY) continue;
+      // Room above the last name, and room for this one above the bottom edge.
       final room =
-          lastLabelled == null || (lastLabelled - d.rp) * pxPerRp >= 14;
+          (lastLabelled == null || (lastLabelled - d.rp) * pxPerRp >= 17) &&
+          (d.rp - minY) * pxPerRp >= 9;
       if (room) lastLabelled = d.rp.toDouble();
       final color = rankDisplayColor(d);
       lines.add(
@@ -60,7 +66,7 @@ class ClimbChart extends StatelessWidget {
             child: Text(
               d.label,
               maxLines: 1,
-              style: TextStyle(color: color, fontSize: 10),
+              style: TextStyle(color: color, fontSize: 11),
             ),
           ),
         );
@@ -153,7 +159,12 @@ class ClimbChart extends StatelessWidget {
                   ),
                   SizedBox(
                     width: _labelWidth,
-                    child: ExcludeSemantics(child: Stack(children: labels)),
+                    child: ExcludeSemantics(
+                      child: MediaQuery.withClampedTextScaling(
+                        maxScaleFactor: _labelTextScale,
+                        child: Stack(children: labels),
+                      ),
+                    ),
                   ),
                 ],
               ),

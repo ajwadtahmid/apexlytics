@@ -215,17 +215,20 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          RankedPeriodButton(
-            label: _splitLabel,
-            semanticsLabel: 'Season, $_splitLabel',
-            onTap: () => showSplitSheet(
-              context,
-              view: _periodView,
-              // A new season starts on all its weeks, as on Stats.
-              onSelected: (id) => setState(() {
-                _splitId = id;
-                _week = -1;
-              }),
+          // Shortens its label before the week pill is pushed off the screen.
+          Flexible(
+            child: RankedPeriodButton(
+              label: _splitLabel,
+              semanticsLabel: 'Season, $_splitLabel',
+              onTap: () => showSplitSheet(
+                context,
+                view: _periodView,
+                // A new season starts on all its weeks, as on Stats.
+                onSelected: (id) => setState(() {
+                  _splitId = id;
+                  _week = -1;
+                }),
+              ),
             ),
           ),
           if (weeks.isNotEmpty)
@@ -303,7 +306,7 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
         );
       }
       if (shown.isEmpty) {
-        body.add(const _Empty());
+        body.add(_Empty(triosOnly: _triosOnly));
       } else {
         String? day;
         for (final m in shown) {
@@ -414,7 +417,7 @@ class _SlotBar extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      _Swatch(AppTheme.profileColors[i]),
+                      _Swatch(i),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -427,17 +430,13 @@ class _SlotBar extends StatelessWidget {
                           ),
                         ),
                       ),
-                      i == 0
-                          ? const Icon(
-                              Icons.lock_outline,
-                              size: 14,
-                              color: AppTheme.muted,
-                            )
-                          : const Icon(
-                              Icons.arrow_drop_down,
-                              size: 18,
-                              color: AppTheme.muted,
-                            ),
+                      // The player on screen cannot be changed, so no arrow.
+                      if (i > 0)
+                        const Icon(
+                          Icons.arrow_drop_down,
+                          size: 18,
+                          color: AppTheme.muted,
+                        ),
                     ],
                   ),
                 ),
@@ -450,20 +449,43 @@ class _SlotBar extends StatelessWidget {
   }
 }
 
+/// A profile's mark: its colour in a shape of its own (square, circle,
+/// diamond), so two profiles never differ by colour alone. [letter] sits inside
+/// when there is room for it.
 class _Swatch extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _Swatch(this.color, {this.size = 10});
+  final int index;
+  final String? letter;
+  const _Swatch(this.index, {this.letter});
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(2),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final ShapeBorder shape = switch (index) {
+      0 => RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
+      1 => const CircleBorder(),
+      _ => const StarBorder.polygon(sides: 4, pointRounding: 0.15),
+    };
+    final size = letter == null ? 11.0 : 18.0;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: AppTheme.profileColors[index],
+        shape: shape,
+      ),
+      child: letter == null
+          ? null
+          : Text(
+              letter!,
+              style: const TextStyle(
+                color: AppTheme.onAccent,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+    );
+  }
 }
 
 /// How the profiles did across the games on show.
@@ -492,6 +514,7 @@ class _Summary extends StatelessWidget {
       return present.reduce((a, b) => a + b) / present.length;
     }
 
+    final sameCount = perSlot.every((g) => g.length == perSlot.first.length);
     final trios = slots.length == 3
         ? games.where((m) => slots.every(m.includes)).length
         : null;
@@ -516,12 +539,16 @@ class _Summary extends StatelessWidget {
                 SquadColumn(names[s] ?? '', AppTheme.profileColors[i]),
             ],
             rows: [
-              SquadStatRow(
-                'Games',
-                [for (final g in perSlot) g.length],
-                (v) => '$v',
-                neutral: true,
-              ),
+              // Two profiles always share every game, so the count says nothing.
+              if (!sameCount)
+                SquadStatRow(
+                  'Games',
+                  [for (final g in perSlot) g.length],
+                  (v) => '$v',
+                  neutral: true,
+                ),
+              // A total favours whoever played more games: outlined only when
+              // the counts match, and the average is outlined instead.
               SquadStatRow(
                 'Net RP',
                 [
@@ -530,7 +557,15 @@ class _Summary extends StatelessWidget {
                 ],
                 (v) => formatSignedInt(v.toInt()),
                 signed: true,
+                neutral: !sameCount,
               ),
+              if (!sameCount)
+                SquadStatRow(
+                  'Avg RP',
+                  [for (final g in perSlot) average(g.map((m) => m.rpChange))],
+                  (v) => formatSignedInt(v.round()),
+                  signed: true,
+                ),
               SquadStatRow('Avg kills', [
                 for (final g in perSlot) average(g.map((m) => m.kills)),
               ], (v) => formatAvgKills(v.toDouble())),
@@ -570,24 +605,29 @@ class _GamesHeader extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty();
+  /// Whether the "Trios only" filter is what emptied the list.
+  final bool triosOnly;
+  const _Empty({this.triosOnly = false});
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: AppTheme.xl),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.xl),
       child: Column(
         children: [
-          Icon(Icons.groups_outlined, size: 40, color: AppTheme.muted),
-          SizedBox(height: AppTheme.md),
+          const Icon(Icons.groups_outlined, size: 40, color: AppTheme.muted),
+          const SizedBox(height: AppTheme.md),
           Text(
-            'No games together',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            triosOnly ? 'No trios in this period' : 'No games together',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: AppTheme.xs),
+          const SizedBox(height: AppTheme.xs),
           Text(
-            'None of the ranked games recorded on this device for these '
-            'profiles line up in this period.',
+            triosOnly
+                ? 'None of these games had all three profiles in it. Turn off '
+                      '"Trios only" to see the games two of them played.'
+                : 'None of the ranked games recorded on this device for these '
+                      'profiles line up in this period.',
             textAlign: TextAlign.center,
             style: AppTheme.captionLarge,
           ),
@@ -621,87 +661,106 @@ class _GameRow extends StatelessWidget {
     ];
     final asset = battleRoyaleMapAsset(match.mapKey);
     final mapName = battleRoyaleMapName(match.mapKey);
+    final spoken = [
+      mapName,
+      if (showSquadTag) match.squadSize == 3 ? 'trio' : 'duo',
+      '${formatClock(match.start)}, ${formatDuration(match.lengthSecs)}',
+      for (final uid in slots)
+        if (match.games[uid] case final game?)
+          '${names[uid] ?? ''} ${formatSignedInt(game.rpChange)} RP',
+      if (extras.isNotEmpty)
+        'also ${extras.map((u) => names[u] ?? '').join(', ')}',
+    ].join(', ');
     return SurfaceCard(
       onTap: onTap,
       padding: const EdgeInsets.all(AppTheme.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            child: SizedBox(
-              width: 56,
-              height: 56,
-              child: asset == null
-                  ? const ColoredBox(color: AppTheme.surface2)
-                  : MapAssetImage(asset: asset),
+      child: Semantics(
+        label: spoken,
+        excludeSemantics: true,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: asset == null
+                    ? const ColoredBox(color: AppTheme.surface2)
+                    : MapAssetImage(asset: asset),
+              ),
             ),
-          ),
-          const SizedBox(width: AppTheme.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 2,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      mapName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (showSquadTag)
-                      match.squadSize == 3
-                          ? const _Tag(
-                              'TRIO',
-                              AppTheme.indigo,
-                              icon: Icons.groups,
-                            )
-                          : const _Tag(
-                              'DUO',
-                              AppTheme.blue,
-                              icon: Icons.people,
-                            ),
-                    // A count, not names: names can be very long. They are in
-                    // the tooltip and on the game's own page.
-                    if (extras.isNotEmpty)
-                      Tooltip(
-                        message:
-                            'Also in this game: '
-                            '${extras.map((u) => names[u] ?? '').join(', ')}',
-                        child: _Tag('+${extras.length}', AppTheme.muted),
-                      ),
-                  ],
-                ),
-                Text(
-                  '${formatClock(match.start)} · '
-                  '${formatDuration(match.lengthSecs)}',
-                  style: AppTheme.captionSmall,
-                ),
-                const SizedBox(height: 6),
-                // Only who was in the game; a profile that was not is left out.
-                Wrap(
-                  spacing: AppTheme.md,
-                  runSpacing: 4,
-                  children: [
-                    for (final (i, uid) in slots.indexed)
-                      if (match.games[uid] case final game?)
-                        _MemberChip(
-                          color: AppTheme.profileColors[i],
-                          legend: game.legend,
-                          rp: game.rpChange,
+            const SizedBox(width: AppTheme.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        mapName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
-                  ],
-                ),
-              ],
+                      ),
+                      if (showSquadTag)
+                        match.squadSize == 3
+                            ? const _Tag(
+                                'TRIO',
+                                AppTheme.indigo,
+                                icon: Icons.groups,
+                              )
+                            : const _Tag(
+                                'DUO',
+                                AppTheme.blue,
+                                icon: Icons.people,
+                              ),
+                      // A count, not names: names can be very long. They are in
+                      // the tooltip and on the game's own page.
+                      if (extras.isNotEmpty)
+                        Tooltip(
+                          message:
+                              'Also in this game: '
+                              '${extras.map((u) => names[u] ?? '').join(', ')}',
+                          child: _Tag(
+                            '+${extras.length} more',
+                            AppTheme.muted,
+                            icon: Icons.person_add_alt_1,
+                          ),
+                        ),
+                    ],
+                  ),
+                  Text(
+                    '${formatClock(match.start)} · '
+                    '${formatDuration(match.lengthSecs)}',
+                    style: AppTheme.captionSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  // Only who was in the game; a profile that was not is left out.
+                  Wrap(
+                    spacing: AppTheme.md,
+                    runSpacing: 4,
+                    children: [
+                      for (final (i, uid) in slots.indexed)
+                        if (match.games[uid] case final game?)
+                          _MemberChip(
+                            index: i,
+                            letter: _initial(names[uid]),
+                            legend: game.legend,
+                            rp: game.rpChange,
+                          ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, size: 20, color: AppTheme.muted),
-        ],
+            const Icon(Icons.chevron_right, size: 20, color: AppTheme.muted),
+          ],
+        ),
       ),
     );
   }
@@ -732,7 +791,7 @@ class _Tag extends StatelessWidget {
           text,
           style: TextStyle(
             color: color,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -741,13 +800,20 @@ class _Tag extends StatelessWidget {
   );
 }
 
-/// One profile in a game row: its colour, legend and RP.
+String _initial(String? name) =>
+    name == null || name.isEmpty ? '' : name.characters.first.toUpperCase();
+
+/// One profile in a game row: its mark, legend and RP.
 class _MemberChip extends StatelessWidget {
-  final Color color;
+  final int index;
+
+  /// The profile's first letter, as a further hint beside colour and shape.
+  final String letter;
   final String legend;
   final int rp;
   const _MemberChip({
-    required this.color,
+    required this.index,
+    required this.letter,
     required this.legend,
     required this.rp,
   });
@@ -757,7 +823,7 @@ class _MemberChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Swatch(color, size: 8),
+        _Swatch(index, letter: letter),
         const SizedBox(width: 4),
         LegendIcon(legendName: legend, size: 14),
         const SizedBox(width: 4),
@@ -785,7 +851,7 @@ void _showInfoSheet(BuildContext context) => showInfoSheet(
     'These are the ranked games two or three of your saved profiles played '
         'together, with each profile\'s results side by side. Tap a game to '
         'see it in full.',
-    'Upstream gives no match ID, so games are matched by their start and end '
+    'The game data has no match ID, so games are matched by their start and end '
         'times. Games that start and end close together are paired. Looser '
         'ones are kept only when the games around them line up too.',
     'Only ranked games recorded on this device are used. Games played before '
@@ -794,6 +860,12 @@ void _showInfoSheet(BuildContext context) => showInfoSheet(
     'Each game\'s page says how close the match was. "Looser match" means it '
         'was counted because the games before and after also line up.',
     'The first profile is always the player on screen. Pick the others from '
-        'the boxes at the top, and the season and week from the pills.',
+        'the boxes at the top, and the season and week from the pills. In the '
+        'three-profile view, games two of the three played are listed too, '
+        'marked DUO.',
+    'A grey "+1 more" means another saved profile of yours was in that game '
+        'too. Its name is on the game\'s own page.',
+    'In the tables, the outlined figure is the best of the row. Totals are '
+        'only outlined when everyone played the same number of games.',
   ],
 );

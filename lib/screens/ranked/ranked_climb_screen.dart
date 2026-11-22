@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../constants/rank_constants.dart';
 import '../../providers/rank_climb_provider.dart';
+import '../../providers/ranked_provider.dart' show rankedSplitMatchesProvider;
 import '../../utils/error_messages.dart';
 import '../../utils/formatting/format.dart'
     show formatDuration, formatNumber, formatShortDate, formatSignedInt, plural;
@@ -86,6 +87,10 @@ class _RankedClimbScreenState extends ConsumerState<RankedClimbScreen> {
     history: const [],
   );
 
+  /// Whether the shown split is over: a newer one exists, so there is nothing
+  /// left to climb in this one. It does not depend on the phone's clock.
+  bool get _ended => _splitId != effectiveSplitId(_splits, null);
+
   String get _splitLabel {
     for (final b in _splits) {
       if (b.id == _splitId) return b.displayName;
@@ -103,17 +108,18 @@ class _RankedClimbScreenState extends ConsumerState<RankedClimbScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppTheme.md),
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: RankedPeriodButton(
-                label: _splitLabel,
-                semanticsLabel: 'Season, $_splitLabel',
-                onTap: () => showSplitSheet(
-                  context,
-                  view: _periodView,
-                  onSelected: (id) => setState(() => _splitId = id),
+            Row(
+              children: [
+                RankedPeriodButton(
+                  label: _splitLabel,
+                  semanticsLabel: 'Season, $_splitLabel',
+                  onTap: () => showSplitSheet(
+                    context,
+                    view: _periodView,
+                    onSelected: (id) => setState(() => _splitId = id),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: AppTheme.sm),
             ..._body(result, arg),
@@ -151,7 +157,7 @@ class _RankedClimbScreenState extends ConsumerState<RankedClimbScreen> {
     }
     if (climb.isEmpty) return const [_Empty()];
     return [
-      _Header(climb: climb),
+      _Header(climb: climb, ended: _ended),
       const SizedBox(height: AppTheme.md),
       if (climb.games.length > 1) ...[
         ClimbChart(climb: climb),
@@ -165,16 +171,35 @@ class _RankedClimbScreenState extends ConsumerState<RankedClimbScreen> {
         ),
       ),
       const SizedBox(height: AppTheme.md),
-      if (_tab == 0) ClimbMoves(climb: climb) else _Divisions(climb: climb),
+      if (_tab == 0)
+        ClimbMoves(
+          climb: climb,
+          onEdited: () {
+            ref.invalidate(rankedSplitMatchesProvider(arg));
+            ref.invalidate(rankClimbProvider(arg));
+          },
+        )
+      else
+        _Divisions(climb: climb, ended: _ended),
       const SizedBox(height: AppTheme.md),
-      const Text(
+      Text(
         'Built from the games recorded on this device. A split resets the '
         'ladder, so each season is its own journey. Games you excluded from the '
-        'stats still count here, as they still moved your RP.',
+        'stats still count here, as they still moved your RP.'
+        '${_gapNote(climb)}',
         style: AppTheme.captionSmall,
       ),
     ];
   }
+}
+
+/// A short extra line when the games' own RP adds up to a different figure
+/// than the ladder moved, which it can when a game moved RP without being
+/// counted as ranked.
+String _gapNote(RankClimb climb) {
+  final games = climb.games.fold(0, (a, g) => a + g.rpChange);
+  if (games == climb.net) return '';
+  return ' The games counted add up to ${formatSignedInt(games)} RP.';
 }
 
 class _Empty extends StatelessWidget {
@@ -208,7 +233,8 @@ class _Empty extends StatelessWidget {
 /// split in a few figures.
 class _Header extends StatelessWidget {
   final RankClimb climb;
-  const _Header({required this.climb});
+  final bool ended;
+  const _Header({required this.climb, required this.ended});
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +291,9 @@ class _Header extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTheme.md),
-          if (next != null) ...[
+          if (ended)
+            Text('Finished the split in ${d.label}', style: AppTheme.caption)
+          else if (next != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
@@ -305,7 +333,8 @@ class _Header extends StatelessWidget {
 /// A row for each division reached, the highest first.
 class _Divisions extends StatelessWidget {
   final RankClimb climb;
-  const _Divisions({required this.climb});
+  final bool ended;
+  const _Divisions({required this.climb, required this.ended});
 
   @override
   Widget build(BuildContext context) {
@@ -333,6 +362,7 @@ class _Divisions extends StatelessWidget {
               stay: climb.divisions[rung]!,
               share: most == 0 ? 0 : climb.divisions[rung]!.games / most,
               isNow: rung == climb.currentRung,
+              ended: ended,
               isPeak: rung == climb.peakRung,
             ),
         ],
@@ -347,12 +377,14 @@ class _DivisionRow extends StatelessWidget {
   final double share;
   final bool isNow;
   final bool isPeak;
+  final bool ended;
   const _DivisionRow({
     required this.rung,
     required this.stay,
     required this.share,
     required this.isNow,
     required this.isPeak,
+    required this.ended,
   });
 
   @override
@@ -384,7 +416,8 @@ class _DivisionRow extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (isNow) const ClimbTag('NOW', AppTheme.accent),
+                        if (isNow)
+                          ClimbTag(ended ? 'FINAL' : 'NOW', AppTheme.accent),
                         if (isPeak && !isNow)
                           const ClimbTag('PEAK', AppTheme.muted),
                       ],
@@ -407,7 +440,10 @@ class _DivisionRow extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Text(formatDuration(stay.secs), style: AppTheme.captionSmall),
+                  Text(
+                    'over ${formatDuration(stay.secs)}',
+                    style: AppTheme.captionSmall,
+                  ),
                 ],
               ),
             ],

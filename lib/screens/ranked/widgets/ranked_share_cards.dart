@@ -169,9 +169,9 @@ class RecapShareCard extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                '${formatSignedInt(r.netRp)} RP $periodPhrase',
+                '${formatSignedInt(r.gainRp)} RP $periodPhrase',
                 style: TextStyle(
-                  color: _signed(r.netRp),
+                  color: _signed(r.gainRp),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -222,9 +222,9 @@ class RecapShareCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        '${formatSignedInt(r.netRp)} RP $periodPhrase',
+                        '${formatSignedInt(r.gainRp)} RP $periodPhrase',
                         style: TextStyle(
-                          color: _signed(r.netRp),
+                          color: _signed(r.gainRp),
                           fontWeight: FontWeight.w600,
                         ),
                       ),

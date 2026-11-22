@@ -31,11 +31,15 @@ class RankedCompareEntry extends StatelessWidget {
   final String uid;
   final List<RankedSplitBucket> splits;
   final List<RankedMatch> matches;
+
+  /// The period the Legends and Maps tabs look at, named above them.
+  final String? periodLabel;
   const RankedCompareEntry({
     super.key,
     required this.uid,
     required this.splits,
     required this.matches,
+    this.periodLabel,
   });
 
   @override
@@ -45,8 +49,12 @@ class RankedCompareEntry extends StatelessWidget {
       title: 'Compare',
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              RankedCompareScreen(uid: uid, splits: splits, matches: matches),
+          builder: (_) => RankedCompareScreen(
+            uid: uid,
+            splits: splits,
+            matches: matches,
+            periodLabel: periodLabel,
+          ),
         ),
       ),
     );
@@ -58,11 +66,13 @@ class RankedCompareScreen extends StatelessWidget {
   final String uid;
   final List<RankedSplitBucket> splits;
   final List<RankedMatch> matches;
+  final String? periodLabel;
   const RankedCompareScreen({
     super.key,
     required this.uid,
     required this.splits,
     required this.matches,
+    this.periodLabel,
   });
 
   @override
@@ -73,7 +83,12 @@ class RankedCompareScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppTheme.md),
           children: [
-            RankedCompareBody(uid: uid, splits: splits, matches: matches),
+            RankedCompareBody(
+              uid: uid,
+              splits: splits,
+              matches: matches,
+              periodLabel: periodLabel,
+            ),
           ],
         ),
       ),
@@ -110,11 +125,15 @@ class RankedCompareBody extends ConsumerStatefulWidget {
   /// map comparisons.
   final List<RankedMatch> matches;
 
+  /// The period [matches] cover, named above the legend and map tabs.
+  final String? periodLabel;
+
   const RankedCompareBody({
     super.key,
     required this.uid,
     required this.splits,
     this.matches = const [],
+    this.periodLabel,
   });
 
   @override
@@ -156,15 +175,24 @@ class _RankedCompareBodyState extends ConsumerState<RankedCompareBody> {
         const SizedBox(height: AppTheme.md),
         switch (_mode) {
           _CompareMode.splits => _buildSplits(),
-          _CompareMode.legends => RankedEntityCompare(
-            kind: CompareKind.legends,
-            matches: widget.matches,
-          ),
-          _CompareMode.maps => RankedEntityCompare(
-            kind: CompareKind.maps,
-            matches: widget.matches,
-          ),
+          _CompareMode.legends => _entities(CompareKind.legends),
+          _CompareMode.maps => _entities(CompareKind.maps),
         },
+      ],
+    );
+  }
+
+  /// A legend or map comparison, under the period it covers.
+  Widget _entities(CompareKind kind) {
+    final period = widget.periodLabel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (period != null && period.isNotEmpty) ...[
+          Text(period, style: AppTheme.captionSmall),
+          const SizedBox(height: AppTheme.sm),
+        ],
+        RankedEntityCompare(kind: kind, matches: widget.matches),
       ],
     );
   }
@@ -696,8 +724,8 @@ class _SummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final daysA = _elapsedDays(bucketA.season);
     final daysB = _elapsedDays(bucketB.season);
-    final rpPerDayA = daysA == null ? null : a.summary.netRp / daysA;
-    final rpPerDayB = daysB == null ? null : b.summary.netRp / daysB;
+    final rpPerDayA = daysA == null ? null : a.summary.gainRp / daysA;
+    final rpPerDayB = daysB == null ? null : b.summary.gainRp / daysB;
     final gamesPerDayA = daysA == null ? null : a.summary.games / daysA;
     final gamesPerDayB = daysB == null ? null : b.summary.games / daysB;
 
@@ -706,7 +734,7 @@ class _SummarySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader('SUMMARY'),
+          const _SectionHeader('Summary'),
           CompareTable(
             nameA: nameA,
             nameB: nameB,
@@ -738,9 +766,9 @@ class _SummarySection extends StatelessWidget {
               ),
               CompareRow(
                 'Net RP',
-                formatSignedInt(a.summary.netRp),
-                formatSignedInt(b.summary.netRp),
-                delta: (a.summary.netRp - b.summary.netRp).toDouble(),
+                formatSignedInt(a.summary.gainRp),
+                formatSignedInt(b.summary.gainRp),
+                delta: (a.summary.gainRp - b.summary.gainRp).toDouble(),
                 integerDelta: true,
                 deltaFromFirst: true,
               ),

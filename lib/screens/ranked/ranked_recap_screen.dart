@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../constants/rank_constants.dart' show kPredatorBadgeAsset;
 import '../../models/ranked_match.dart';
 import '../../providers/best_metric_provider.dart';
@@ -224,9 +225,9 @@ class _Header extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${formatSignedInt(recap.netRp)} RP $periodPhrase',
+                  '${formatSignedInt(recap.gainRp)} RP $periodPhrase',
                   style: TextStyle(
-                    color: AppTheme.signColor(recap.netRp >= 0),
+                    color: AppTheme.signColor(recap.gainRp >= 0),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

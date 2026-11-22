@@ -592,6 +592,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
                         matchesFor: (legend) =>
                             store.matchesForLegend(widget.uid, legend),
                         onRefresh: _refresh,
+                        periodLabel: 'Lifetime',
                       ),
                     ),
                   ],
@@ -770,6 +771,7 @@ class _OverviewTab extends ConsumerWidget {
                     matchesFor: legendMatchesFor,
                     onRefresh: onRefresh,
                     sessionPool: data.view.history,
+                    periodLabel: data.view.periodLabel,
                   ),
                 ),
                 const SizedBox(width: AppTheme.sm),
@@ -797,6 +799,7 @@ class _OverviewTab extends ConsumerWidget {
                     uid: uid,
                     splits: data.view.splits,
                     matches: matches,
+                    periodLabel: data.view.periodLabel,
                   ),
                 ),
               ],

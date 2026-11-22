@@ -59,6 +59,11 @@ class SquadGameDetailScreen extends StatelessWidget {
     final killsReported = games.where((g) => g.kills != null).length;
     final damageReported = games.where((g) => g.damage != null).length;
     final mapAsset = battleRoyaleMapAsset(match.mapKey);
+    // A figure missing, or a profile not in the table, leaves the total short.
+    final partial =
+        killsReported < games.length ||
+        damageReported < games.length ||
+        others.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -180,8 +185,11 @@ class SquadGameDetailScreen extends StatelessWidget {
                   const Divider(height: AppTheme.lg, color: AppTheme.surface2),
                   Row(
                     children: [
-                      const Expanded(
-                        child: Text('Squad total', style: AppTheme.caption),
+                      Expanded(
+                        child: Text(
+                          partial ? 'Known total' : 'Squad total',
+                          style: AppTheme.caption,
+                        ),
                       ),
                       Text(
                         '${formatTotalOrNone(kills, killsReported)} kills · '

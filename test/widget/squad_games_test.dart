@@ -228,7 +228,7 @@ void main() {
           }),
         ],
       );
-      expect(find.text('+1'), findsOneWidget);
+      expect(find.text('+1 more'), findsOneWidget);
       // The name is not on the row.
       expect(find.text('Charlie'), findsNothing);
     });
@@ -264,14 +264,20 @@ void main() {
   });
 
   group('the profile slots', () {
-    testWidgets('the first is the player on screen and is locked', (
+    testWidgets('the first is the player on screen and cannot be changed', (
       tester,
     ) async {
       await pump(tester, saved: const ['1', '2'], shared: const []);
       await tester.tap(find.text('Alpha'));
       await settle(tester);
       expect(find.text('Profile 1'), findsNothing);
-      expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+      // Only the second slot has a drop-down arrow.
+      Finder arrowIn(String name) => find.descendant(
+        of: find.ancestor(of: find.text(name), matching: find.byType(InkWell)),
+        matching: find.byIcon(Icons.arrow_drop_down),
+      );
+      expect(arrowIn('Alpha'), findsNothing);
+      expect(arrowIn('Bravo'), findsOneWidget);
     });
 
     testWidgets('the second opens a list without the first', (tester) async {
@@ -348,6 +354,34 @@ void main() {
       await tester.tap(find.text('Trios only'));
       await settle(tester);
       expect(find.text('GAMES · 2'), findsOneWidget);
+    });
+
+    testWidgets(
+      '"Trios only" with no trio says so, not that nothing lined up',
+      (tester) async {
+        await pump(
+          tester,
+          saved: const ['1', '2', '3'],
+          shared: [
+            SharedMatch({'1': game('1', 0), '2': game('2', 5)}),
+          ],
+        );
+        await tester.tap(find.text('3 profiles'));
+        await settle(tester);
+        await tester.tap(find.text('Trios only'));
+        await settle(tester);
+        expect(find.text('No trios in this period'), findsOneWidget);
+        expect(find.text('No games together'), findsNothing);
+      },
+    );
+
+    testWidgets('a total is only outlined when the game counts match', (
+      tester,
+    ) async {
+      await three(tester);
+      // Alpha and Bravo played two games each, Charlie one: an average RP row
+      // stands in for the total's lead.
+      expect(find.text('Avg RP'), findsOneWidget);
     });
 
     testWidgets('picking the profile in the other slot swaps them', (

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import '../../models/ranked_match.dart';
 import 'best_metric.dart';
 import 'ranked_aggregates.dart';
@@ -11,6 +12,10 @@ class SplitRecap {
   final int wins;
   final int losses;
   final int netRp;
+
+  /// How far the ladder moved over the period (see
+  /// [RankedSummary.ladderRp]); what the recap shows as the gain.
+  final int gainRp;
 
   /// The highest running RP reached, and the running RP after the last game.
   final int peakRp;
@@ -47,6 +52,7 @@ class SplitRecap {
     required this.wins,
     required this.losses,
     required this.netRp,
+    required this.gainRp,
     required this.peakRp,
     required this.finalRp,
     required this.rankImg,
@@ -82,6 +88,7 @@ SplitRecap splitRecap(List<RankedMatch> matches, {required BestMetric metric}) {
     wins: summary.wins,
     losses: summary.losses,
     netRp: summary.netRp,
+    gainRp: summary.gainRp,
     peakRp: ranked.isEmpty
         ? 0
         : ranked.map((m) => m.cumulativeRp).reduce(math.max),

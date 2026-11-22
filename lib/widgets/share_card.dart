@@ -120,6 +120,11 @@ class ShareCardFrame extends StatelessWidget {
     );
   }
 
+  static const _titleShadow = [
+    Shadow(blurRadius: 6, color: Colors.black),
+    Shadow(blurRadius: 12, color: Colors.black),
+  ];
+
   /// The name and what the card is of, at the top.
   Widget _header() {
     final who = name;
@@ -138,7 +143,8 @@ class ShareCardFrame extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: AppTheme.caption),
+          // A soft shadow keeps it readable where the portrait runs behind it.
+          Text(label, style: AppTheme.caption.copyWith(shadows: _titleShadow)),
         ] else
           Text(
             label,
@@ -237,13 +243,13 @@ class ShareCardFrame extends StatelessWidget {
           left: 0,
           right: 0,
           top: 0,
-          height: 150,
+          height: 170,
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [AppTheme.bg.withAlpha(200), Colors.transparent],
+                colors: [AppTheme.bg.withAlpha(225), Colors.transparent],
               ),
             ),
           ),
@@ -314,8 +320,8 @@ class ShareCardFrame extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppTheme.bg.withAlpha(190), Colors.transparent],
-                    stops: const [0, 0.55],
+                    colors: [AppTheme.bg.withAlpha(220), Colors.transparent],
+                    stops: const [0, 0.62],
                   ),
                 ),
               ),
@@ -357,6 +363,7 @@ class ShareCardFrame extends StatelessWidget {
                               height: 1,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.4,
+                              shadows: _titleShadow,
                             ),
                           ),
                         ),

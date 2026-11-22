@@ -43,6 +43,9 @@ class RankedPickRateEntry extends StatelessWidget {
   final Future<List<RankedMatch>> Function(String legend)? matchesFor;
   final Future<void> Function()? onRefresh;
   final List<RankedMatch>? sessionPool;
+
+  /// The season and week the figures are for, shown under the page's title.
+  final String? periodLabel;
   const RankedPickRateEntry({
     super.key,
     required this.summary,
@@ -50,6 +53,7 @@ class RankedPickRateEntry extends StatelessWidget {
     this.matchesFor,
     this.onRefresh,
     this.sessionPool,
+    this.periodLabel,
   });
 
   @override
@@ -65,6 +69,7 @@ class RankedPickRateEntry extends StatelessWidget {
             matchesFor: matchesFor,
             onRefresh: onRefresh,
             sessionPool: sessionPool,
+            periodLabel: periodLabel,
           ),
         ),
       ),
@@ -178,6 +183,7 @@ class RankedPickRateScreen extends ConsumerStatefulWidget {
   final Future<List<RankedMatch>> Function(String legend)? matchesFor;
   final Future<void> Function()? onRefresh;
   final List<RankedMatch>? sessionPool;
+  final String? periodLabel;
   const RankedPickRateScreen({
     super.key,
     required this.summary,
@@ -185,6 +191,7 @@ class RankedPickRateScreen extends ConsumerStatefulWidget {
     this.matchesFor,
     this.onRefresh,
     this.sessionPool,
+    this.periodLabel,
   });
 
   @override
@@ -262,6 +269,12 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
                           .setTableView(i == 1),
                     ),
                   ),
+                  if (widget.periodLabel case final label?
+                      when label.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppTheme.sm),
+                      child: Text(label, style: AppTheme.captionSmall),
+                    ),
                   Expanded(
                     child: _tableView
                         ? _buildTable(pool, total)
@@ -748,6 +761,15 @@ class _LabelsPainter extends CustomPainter {
     }
     for (final (k, spot) in spots.indexed) {
       if (names[named[k]] == selected) {
+        // A ring round the dot, so the choice shows on the chart itself.
+        canvas.drawCircle(
+          centers[k],
+          _QuadrantDotPainter.radius + 4,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = AppTheme.textPrimary,
+        );
         if (spot.moved) leader(k, selectedLine);
         text(named[k], bold: true).paint(canvas, spot.rect.topLeft);
       } else {
