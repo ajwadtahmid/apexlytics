@@ -31,6 +31,8 @@ import 'ranked_personal_records_screen.dart';
 import 'ranked_pick_rate_screen.dart';
 import 'ranked_sessions_list_screen.dart';
 import 'ranked_performance_trends_screen.dart';
+import 'ranked_climb_screen.dart';
+import 'squad_games_screen.dart';
 import 'widgets/split_end_backup_nudge.dart';
 import 'widgets/unknown_season_note.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
@@ -672,6 +674,10 @@ class _OverviewTab extends ConsumerWidget {
     // screen is the one live RP belongs to (mirrors graph_card.dart's
     // isCurrentSeason check).
     final isCurrentSplit = data.view.effectiveSplitId == stats.rankedSeason?.id;
+    final showSquadGames = canShowSquadGames(
+      ref.watch(playerSettingsProvider.select((s) => s.profiles)),
+      uid,
+    );
     return RefreshIndicator(
       color: AppTheme.accent,
       onRefresh: onRefresh,
@@ -783,13 +789,24 @@ class _OverviewTab extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
+                  child: RankedClimbEntry(uid: uid, view: data.view),
+                ),
+                const SizedBox(width: AppTheme.sm),
+                Expanded(
                   child: RankedCompareEntry(
                     uid: uid,
                     splits: data.view.splits,
                     matches: matches,
                   ),
                 ),
-                const SizedBox(width: AppTheme.sm),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.md),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Expanded(
                   child: RankedSessionsEntry(
                     sessions: data.sessions,
@@ -799,6 +816,14 @@ class _OverviewTab extends ConsumerWidget {
                     selectedWeek: data.view.weekIndex,
                   ),
                 ),
+                // With fewer than two saved profiles there is no one to have
+                // played with, and Sessions takes the whole row.
+                if (showSquadGames) ...[
+                  const SizedBox(width: AppTheme.sm),
+                  Expanded(
+                    child: SquadGamesEntry(uid: uid, view: data.view),
+                  ),
+                ],
               ],
             ),
           ),

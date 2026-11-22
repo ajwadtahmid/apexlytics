@@ -115,8 +115,10 @@ Track your ranked grind and visualize your RP gains with interactive graphs. Get
   - **Legend × Map**: a matrix of legend and map results, with an All row and column and sorting.
   - **Pick Rate**: a chart and a sortable table of how often each legend is picked, linked to that legend's history.
   - **Performance Trends**: how you are trending, with session sparklines, time-of-day and day-of-week charts, and a choice of how far back to look.
+  - **The Journey**: a split's journey up and down the ladder. A chart of the RP through the split with every promotion and demotion marked, the time spent in each division, and a Timeline of each move as it happened (a change of tier is the headline, the first time into a tier is marked), with the games that caused it one tap away.
   - **Compare**: two splits, two legends or two maps side by side.
   - **Sessions**: your play sessions, with a detail page for each.
+  - **Squad Games**: with two or more saved profiles, the ranked games two or three of them played together, matched by their start and end times, with each profile's results side by side and a page for each game. Uses only the history already on the device, and is an estimate: an (i) button explains its limits.
   - **Recap**: a recap of the period with a journey chart, and a shareable image card with a tile picker and an optional footer note.
   - **Personal Records**: best RP, kills and damage games, win streaks and an all-time best; open any record to see the game.
   - Shareable cards never include your player ID.

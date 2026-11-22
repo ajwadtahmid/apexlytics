@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,7 @@ import 'package:apexlytics/services/games_service.dart'
     show GamesCapacity, GamesEligibility;
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
+import 'package:apexlytics/widgets/nav_entry_card.dart';
 
 import '../helpers.dart';
 
@@ -64,16 +67,13 @@ void main() {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         if (splitsError != null)
-          rankedSplitsProvider(
-            uid,
-          ).overrideWith((ref) async => throw splitsError)
+          rankedSplitsProvider(uid)
+              .overrideWith((ref) async => throw splitsError)
         else
           rankedSplitsProvider(uid).overrideWith((ref) async => splits ?? []),
         if (splits != null)
-          rankedSplitMatchesProvider((
-            uid: uid,
-            splitId: splitId,
-          )).overrideWith((ref) async => splitMatches ?? []),
+          rankedSplitMatchesProvider((uid: uid, splitId: splitId))
+              .overrideWith((ref) async => splitMatches ?? []),
         rankedSyncProvider(uid).overrideWith((ref) async {
           onSyncRun?.call();
           return outcome;
@@ -583,9 +583,8 @@ void main() {
 
     bool selected(WidgetTester tester, String label) {
       final index = ['Overview', 'Legends', 'Maps', 'Games'].indexOf(label);
-      return DefaultTabController.of(
-            tester.element(find.byType(TabBar)),
-          ).index ==
+      return DefaultTabController.of(tester.element(find.byType(TabBar)))
+              .index ==
           index;
     }
 
@@ -631,12 +630,18 @@ void main() {
     const uid = 'uid123';
     const splitId = 'br_ranked_s29_s1';
 
-    Future<void> showOverview(WidgetTester tester) async {
+    Future<void> showOverview(
+      WidgetTester tester, {
+      Map<String, Object> saved = const {},
+    }) async {
       // Tall enough that the whole list is built.
       tester.view.physicalSize = const Size(800, 5000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      final prefs = await prefsWith({PrefsKeys.statsRefreshMinutes: 10});
+      final prefs = await prefsWith({
+        PrefsKeys.statsRefreshMinutes: 10,
+        ...saved,
+      });
       await tester.pumpWidget(
         app(
           prefs: prefs,
@@ -684,6 +689,98 @@ void main() {
       }
       expect(top(tester, 'This split'), lessThan(top(tester, 'Highlights')));
       expect(find.text('This week'), findsNothing);
+    });
+
+    testWidgets('add Squad Games under Dig deeper with two saved profiles', (
+      tester,
+    ) async {
+      await showOverview(
+        tester,
+        saved: {
+          PrefsKeys.profiles: jsonEncode([
+            {'name': 'Tester', 'uid': 'uid123', 'platform': 'PC'},
+            {'name': 'Friend', 'uid': 'uid456', 'platform': 'PC'},
+          ]),
+        },
+      );
+
+      expect(find.text('Squad Games'), findsOneWidget);
+      expect(
+        top(tester, 'Squad Games'),
+        greaterThan(top(tester, 'Dig deeper')),
+      );
+    });
+
+    testWidgets('pair the tiles in the order All Trackers, Legend × Map; Pick '
+        'Rate, Performance Trends; The Journey, Compare; Sessions, Squad '
+        'Games; Recap, Personal Records', (tester) async {
+      await showOverview(
+        tester,
+        saved: {
+          PrefsKeys.profiles: jsonEncode([
+            {'name': 'Tester', 'uid': 'uid123', 'platform': 'PC'},
+            {'name': 'Friend', 'uid': 'uid456', 'platform': 'PC'},
+          ]),
+        },
+      );
+
+      const rows = [
+        ('All Trackers', 'Legend × Map'),
+        ('Pick Rate', 'Performance Trends'),
+        ('The Journey', 'Compare'),
+        ('Sessions', 'Squad Games'),
+        ('Recap', 'Personal Records'),
+      ];
+      double? previous;
+      for (final (left, right) in rows) {
+        final l = tester.getTopLeft(find.text(left));
+        final r = tester.getTopLeft(find.text(right));
+        expect(r.dy, closeTo(l.dy, 12), reason: '$left and $right share a row');
+        expect(r.dx, greaterThan(l.dx), reason: '$left is left of $right');
+        if (previous != null) {
+          expect(
+            l.dy,
+            greaterThan(previous),
+            reason: '$left is under the row above',
+          );
+        }
+        previous = l.dy;
+      }
+    });
+
+    testWidgets('give Sessions the whole row when Squad Games is left out', (
+      tester,
+    ) async {
+      await showOverview(tester);
+
+      expect(find.text('Squad Games'), findsNothing);
+      final sessions = tester.getSize(
+        find.ancestor(
+          of: find.text('Sessions'),
+          matching: find.byType(NavEntryCard),
+        ),
+      );
+      final compare = tester.getSize(
+        find.ancestor(
+          of: find.text('Compare'),
+          matching: find.byType(NavEntryCard),
+        ),
+      );
+      expect(sessions.width, greaterThan(compare.width * 1.8));
+    });
+
+    testWidgets('leave Squad Games out with one saved profile', (tester) async {
+      await showOverview(
+        tester,
+        saved: {
+          PrefsKeys.profiles: jsonEncode([
+            {'name': 'Tester', 'uid': 'uid123', 'platform': 'PC'},
+          ]),
+        },
+      );
+
+      expect(find.text('Compare'), findsOneWidget);
+      expect(find.text('Squad Games'), findsNothing);
     });
 
     testWidgets('are on Overview only', (tester) async {
