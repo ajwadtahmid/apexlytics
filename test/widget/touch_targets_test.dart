@@ -51,6 +51,34 @@ void main() {
       expect(taps, [1, 1]);
     });
 
+    testWidgets('stays as wide as its labels in a wide space', (t) async {
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: SegmentedCapsule(
+                        options: const ['Legends', 'Guns'],
+                        selected: 0,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Two labels and their padding, nothing like the 700 given.
+      expect(t.getSize(find.byType(SegmentedCapsule)).width, lessThan(300));
+    });
+
     testWidgets('tells a screen reader which option is on', (t) async {
       final handle = t.ensureSemantics();
       await pump(t);

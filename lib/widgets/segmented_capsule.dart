@@ -37,7 +37,9 @@ class SegmentedCapsule extends StatelessWidget {
               onTap: () => onChanged(index),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 44),
+                // Only as wide as its label, however wide the space it is given.
                 child: Center(
+                  widthFactor: 1,
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppTheme.surface2,
