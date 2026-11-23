@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,7 @@ import 'package:apexlytics/screens/ranked/widgets/match_edit_sheet.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart'
     show kUnknownSplitId;
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
+
 import '../helpers.dart';
 
 /// In-memory stand-in for [RankedHistoryStore]'s edit surface. The store's
@@ -56,6 +59,23 @@ class _FakeStore extends RankedHistoryStore {
   }
 }
 
+/// Holds the write until [release] completes, so a test can dismiss the sheet
+/// while it is pending.
+class _SlowStore extends _FakeStore {
+  final release = Completer<void>();
+  _SlowStore(super.seed);
+
+  @override
+  Future<bool> editMatch(
+    String id,
+    Map<String, Object?> values, {
+    bool? excluded,
+  }) async {
+    await release.future;
+    return super.editMatch(id, values, excluded: excluded);
+  }
+}
+
 /// Covers the only path a user directly writes to the match store (a real
 /// bug in this file a single test would have caught).
 void main() {
@@ -96,9 +116,8 @@ void main() {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         rankedHistoryStoreProvider.overrideWithValue(store),
-        rankedSyncProvider(
-          uid,
-        ).overrideWith((ref) async => RankedSyncOutcome.synced),
+        rankedSyncProvider(uid)
+            .overrideWith((ref) async => RankedSyncOutcome.synced),
       ],
       child: MaterialApp(
         theme: ThemeData.dark(),
@@ -189,6 +208,56 @@ void main() {
       expect(store.rows[m.dedupKey]!.rpChange, m.rpChange);
     },
   );
+
+  testWidgets('a save finished after the sheet was dismissed still refreshes '
+      'the stats', (tester) async {
+    final m = match();
+    final store = _SlowStore([m]);
+    var builds = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(await emptyPrefs()),
+          rankedHistoryStoreProvider.overrideWithValue(store),
+          rankedSplitsProvider.overrideWith((ref, uid) async {
+            builds++;
+            return [];
+          }),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showMatchEditSheet(context, m),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.text('Open')),
+    );
+    container.listen(rankedSplitsProvider(uid), (_, _) {});
+    await tester.pump();
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, '55');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    // Swiped away while the write is still going.
+    Navigator.of(tester.element(find.text('Correct this match'))).pop();
+    await tester.pumpAndSettle();
+    final before = builds;
+
+    store.release.complete();
+    await tester.pumpAndSettle();
+
+    expect(store.rows[m.dedupKey]!.rpChange, 55);
+    expect(builds, greaterThan(before));
+  });
 
   testWidgets('"Save anyway" on the 0-RP warning persists the correction', (
     tester,
@@ -382,9 +451,8 @@ void main() {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           rankedHistoryStoreProvider.overrideWithValue(store),
-          rankedSyncProvider(
-            uid,
-          ).overrideWith((ref) async => RankedSyncOutcome.synced),
+          rankedSyncProvider(uid)
+              .overrideWith((ref) async => RankedSyncOutcome.synced),
         ],
       );
       addTearDown(container.dispose);

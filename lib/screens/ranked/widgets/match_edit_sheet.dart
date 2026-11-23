@@ -242,6 +242,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
       _saving = true;
       _error = null;
     });
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       // One transaction: the edit and the exclusion land together.
       final saved = await ref
@@ -261,7 +262,7 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
         }
         return;
       }
-      _refreshStats();
+      _refreshStats(container);
       var updated = widget.match;
       if (changes.isNotEmpty) updated = updated.withEdits(changes);
       if (excludedChanged) updated = updated.withExcluded(_excluded);
@@ -281,8 +282,9 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
+      final container = ProviderScope.containerOf(context, listen: false);
       await ref.read(rankedHistoryStoreProvider).clearEdits(widget.match.id);
-      _refreshStats();
+      _refreshStats(container);
       if (mounted) Navigator.pop(context, widget.match.withEditsCleared());
     } catch (e, st) {
       log.w('Match edit reset failed', error: e, stackTrace: st);
@@ -297,7 +299,11 @@ class _MatchEditSheetState extends ConsumerState<MatchEditSheet> {
 
   /// Rebuilds every view fed by stored match rows. The sync provider is left
   /// alone, so saving an edit never spends a `/games` request.
-  void _refreshStats() => invalidateMatchDerivedProviders(ref);
+  ///
+  /// Through the [container], which outlives the sheet: it can be dismissed
+  /// while the write is pending, and its own `ref` is gone by then.
+  void _refreshStats(ProviderContainer container) =>
+      invalidateMatchDerivedProvidersIn(container);
 
   @override
   Widget build(BuildContext context) {
