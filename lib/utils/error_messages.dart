@@ -1,4 +1,9 @@
-import 'dart:io' show FileSystemException;
+import 'dart:io'
+    show
+        FileSystemException,
+        HandshakeException,
+        HttpException,
+        SocketException;
 
 import 'package:dio/dio.dart';
 
@@ -51,16 +56,29 @@ const _kTimedOutMessage =
 const _kNoConnectionMessage =
     'No connection. Check your internet and try again.';
 
+/// Whether [err] is a transport failure after the connection was already open:
+/// a reset while the request was sent or the answer read, or a failed TLS
+/// handshake. Dio files these as `unknown` rather than as a connection error,
+/// though to the player they are the same thing (a hand-over from Wi-Fi to
+/// mobile data, say). An `unknown` that is not an I/O error is a bug and stays
+/// one.
+bool isTransportFailure(DioException err) =>
+    err.type == DioExceptionType.unknown &&
+    (err.error is SocketException ||
+        err.error is HandshakeException ||
+        err.error is HttpException);
+
 /// Whether [error] is the device failing to reach the server (no network, or
 /// no answer in time), as opposed to the server answering with an error. Trying
 /// again is the sensible response to this one. The API service wraps a failed
 /// request in an [AppException] carrying [friendlyError]'s message, so that is
 /// recognised as well as the raw error.
 bool isConnectionError(Object? error) => switch (error) {
-  DioException(:final type) =>
-    type == DioExceptionType.connectionError ||
-        type == DioExceptionType.connectionTimeout ||
-        type == DioExceptionType.receiveTimeout,
+  DioException e =>
+    e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        isTransportFailure(e),
   AppException(:final message, :final status) =>
     status == null &&
         (message == _kNoConnectionMessage || message == _kTimedOutMessage),
@@ -71,8 +89,11 @@ String friendlyError(Object? error) {
   if (error is AppException) return error.message;
   if (error is FileSystemException) return _fileSystemMessage(error);
   if (error is DioException) {
+    if (isTransportFailure(error)) return _kNoConnectionMessage;
     return switch (error.type) {
-      DioExceptionType.connectionTimeout || DioExceptionType.receiveTimeout => 'Request timed out. The server may be waking up — try again in a moment.',
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.receiveTimeout =>
+        'Request timed out. The server may be waking up — try again in a moment.',
       DioExceptionType.connectionError =>
         'No connection. Check your internet and try again.',
       // Only ApiService's own overall-deadline timer cancels a request today
@@ -82,7 +103,7 @@ String friendlyError(Object? error) {
       DioExceptionType.cancel =>
         'Request took too long. Try again in a moment.',
       _ => switch (error.response?.statusCode) {
-        400 => 'Bad request. Try again in a few minutes.',
+        400 => "The server didn't accept that request. Check the name or UID.",
         401 => 'Unauthorized. Check your proxy configuration.',
         403 => 'Access denied.',
         404 => 'Player not found. Check the name and platform.',

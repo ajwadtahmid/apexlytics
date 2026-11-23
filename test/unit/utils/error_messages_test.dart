@@ -6,6 +6,18 @@ import 'package:apexlytics/utils/error_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('a 400 from the proxy does not tell the player to try again', () {
+    final err = DioException(
+      requestOptions: RequestOptions(path: '/player'),
+      response: Response(
+        requestOptions: RequestOptions(path: '/player'),
+        statusCode: 400,
+      ),
+      type: DioExceptionType.badResponse,
+    );
+    expect(friendlyError(err), isNot(contains('Try again')));
+  });
+
   group('friendlyError for file system failures', () {
     FileSystemException failure(int? code) => FileSystemException(
       'Cannot create file',
@@ -98,6 +110,28 @@ void main() {
         isConnectionError(const AppException('Rate limit', status: 429)),
         isFalse,
       );
+    });
+
+    test('a reset or failed handshake after the connection opened reads as '
+        'no connection', () {
+      DioException unknown(Object error) => DioException(
+        requestOptions: RequestOptions(path: '/player'),
+        type: DioExceptionType.unknown,
+        error: error,
+      );
+
+      for (final error in <Object>[
+        const SocketException('Connection reset by peer'),
+        const HandshakeException('Handshake error in client'),
+        const HttpException('Connection closed while receiving data'),
+      ]) {
+        expect(isConnectionError(unknown(error)), isTrue);
+        expect(friendlyError(unknown(error)), contains('No connection'));
+      }
+
+      // An unknown that is not an I/O error is a bug, not a lost connection.
+      expect(isConnectionError(unknown(StateError('a bug'))), isFalse);
+      expect(friendlyError(unknown(StateError('a bug'))), contains('unknown'));
     });
   });
 }

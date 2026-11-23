@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../constants/timeout_constants.dart';
 import 'app_logger.dart';
+import 'error_messages.dart' show isTransportFailure;
 
 const _kRetryKey = '_retry_count';
 const _kUsedBackupKey = '_used_backup';
@@ -107,6 +108,11 @@ class RetryInterceptor extends Interceptor {
     if (_primaryDownUntil != null && !servedByBackup) {
       _primaryDownUntil = null;
     }
+    // The window opens only once the backup has actually answered. With no
+    // connection both hosts fail, and that says nothing about the primary.
+    if (extra[_kUsedBackupKey] == true) {
+      _primaryDownUntil = DateTime.now().add(primaryDownFor);
+    }
     handler.next(response);
   }
 
@@ -120,8 +126,11 @@ class RetryInterceptor extends Interceptor {
     }
 
     final noFailover = err.requestOptions.extra[kNoFailoverKey] == true;
-    // A timeout is ambiguous (the server may have acted), so don't re-run.
-    if (noFailover && _isTimeout(err)) return handler.next(err);
+    // A timeout is ambiguous (the server may have acted), so don't re-run. A
+    // reset after the connection was open is just as ambiguous.
+    if (noFailover && (_isTimeout(err) || isTransportFailure(err))) {
+      return handler.next(err);
+    }
 
     final attempt = (err.requestOptions.extra[_kRetryKey] as int?) ?? 0;
     final usedBackup = err.requestOptions.extra[_kUsedBackupKey] == true;
@@ -196,8 +205,6 @@ class RetryInterceptor extends Interceptor {
         ..baseUrl = backup
         ..extra[_kUsedBackupKey] = true
         ..extra[_kRetryKey] = 0;
-      // Remember across requests, so the next one starts at the backup.
-      _primaryDownUntil = DateTime.now().add(primaryDownFor);
       return _refetch(err, handler);
     }
 
@@ -251,6 +258,9 @@ class RetryInterceptor extends Interceptor {
     return err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.connectionError ||
         err.type == DioExceptionType.receiveTimeout ||
-        err.type == DioExceptionType.sendTimeout;
+        err.type == DioExceptionType.sendTimeout ||
+        // A reset or a failed handshake after the connection was open (a
+        // hand-over from Wi-Fi to mobile data), which Dio files as `unknown`.
+        isTransportFailure(err);
   }
 }

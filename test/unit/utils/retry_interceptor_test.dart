@@ -1,3 +1,4 @@
+import 'dart:io' show SocketException;
 import 'dart:typed_data';
 
 import 'package:apexlytics/constants/timeout_constants.dart';
@@ -546,6 +547,36 @@ void main() {
     },
   );
 
+  test('a failure on both hosts does not send later requests to the backup',
+      () async {
+    final calledBaseUrls = <String>[];
+    var offline = true;
+    final dio = buildDio(
+      maxRetries: 0,
+      backupBaseUrl: backup,
+      onFetch: (o) async {
+        calledBaseUrls.add(o.baseUrl);
+        if (offline) {
+          throw DioException(
+            requestOptions: o,
+            type: DioExceptionType.connectionError,
+          );
+        }
+        return _status(200);
+      },
+    );
+
+    await expectLater(dio.get('/first'), throwsA(isA<DioException>()));
+    expect(calledBaseUrls, [primary, backup]);
+
+    // The connection is back: nothing was learned about the primary, so the
+    // next request starts there.
+    offline = false;
+    calledBaseUrls.clear();
+    await dio.get('/second');
+    expect(calledBaseUrls, [primary]);
+  });
+
   group('no-failover requests', () {
     test('a timeout is not retried and never reaches the backup', () async {
       final hosts = <String>[];
@@ -604,6 +635,69 @@ void main() {
 
       await dio.get('/games', options: Options(extra: {kNoFailoverKey: true}));
       expect(hosts, ['primary.test']);
+    });
+  });
+
+  group('a transport failure after the connection was open', () {
+    // What Dio reports for a reset while the answer is read, or a failed TLS
+    // handshake: type `unknown` wrapping the I/O error.
+    DioException reset(RequestOptions o) => DioException(
+      requestOptions: o,
+      type: DioExceptionType.unknown,
+      error: const SocketException('Connection reset by peer'),
+    );
+
+    test('is retried, then sent to the backup', () async {
+      final hosts = <String>[];
+      final dio = buildDio(
+        maxRetries: 1,
+        backupBaseUrl: backup,
+        onFetch: (o) async {
+          hosts.add(o.uri.host);
+          if (o.uri.host == 'primary.test') throw reset(o);
+          return _status(200);
+        },
+      );
+
+      final response = await dio.get('/player');
+
+      expect(response.statusCode, 200);
+      expect(hosts, ['primary.test', 'primary.test', 'backup.test']);
+    });
+
+    test('is not run twice for a request that must not be repeated', () async {
+      final hosts = <String>[];
+      final dio = buildDio(
+        maxRetries: 2,
+        backupBaseUrl: backup,
+        onFetch: (o) async {
+          hosts.add(o.uri.host);
+          throw reset(o);
+        },
+      );
+
+      await expectLater(
+        dio.get('/games', options: Options(extra: {kNoFailoverKey: true})),
+        throwsA(isA<DioException>()),
+      );
+      expect(hosts, ['primary.test']);
+    });
+
+    test('is not retried when the error is not an I/O error', () async {
+      var calls = 0;
+      final dio = buildDio(
+        onFetch: (o) async {
+          calls++;
+          throw DioException(
+            requestOptions: o,
+            type: DioExceptionType.unknown,
+            error: StateError('a bug'),
+          );
+        },
+      );
+
+      await expectLater(dio.get('/player'), throwsA(isA<DioException>()));
+      expect(calls, 1);
     });
   });
 }
