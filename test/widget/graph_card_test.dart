@@ -57,6 +57,38 @@ void main() {
     expect(find.textContaining('-'), findsNothing);
   });
 
+  testWidgets('a stored 0 reading is not drawn as a drop to 0', (tester) async {
+    await pump(
+      tester,
+      currentRp: 8100,
+      thisWeek: [
+        StatSnapshot(
+          timestamp: now.subtract(const Duration(hours: 5)),
+          rp: 8050,
+          seasonId: season.id,
+        ),
+        StatSnapshot(
+          timestamp: now.subtract(const Duration(hours: 3)),
+          rp: 0,
+          seasonId: season.id,
+        ),
+        StatSnapshot(
+          timestamp: now.subtract(const Duration(hours: 1)),
+          rp: 8100,
+          seasonId: season.id,
+        ),
+      ],
+    );
+
+    final spots = tester
+        .widget<LineChart>(find.byType(LineChart))
+        .data
+        .lineBarsData
+        .expand((bar) => bar.spots);
+    expect(spots, isNotEmpty);
+    expect(spots.every((s) => s.y > 0), isTrue);
+  });
+
   testWidgets('a real live reading still counts', (tester) async {
     await pump(tester, currentRp: 8100);
     expect(find.text('+100 RP this week'), findsOneWidget);

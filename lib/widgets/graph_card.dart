@@ -200,7 +200,11 @@ class _GraphCardState extends State<GraphCard> {
 
     final weekIdx = _selectedWeekIndex.clamp(0, weeks.length - 1);
     final week = weeks[weekIdx];
-    final weekSnaps = snapshotsForWeek(widget.snapshots, week);
+    // A stored 0 reading is dropped here as it is in the week's delta below.
+    final weekSnaps = snapshotsForWeek(
+      trustedSnapshots(widget.snapshots),
+      week,
+    );
 
     final now = DateTime.now();
     final isCurrentSeason = season.id == widget.currentSeason?.id;
