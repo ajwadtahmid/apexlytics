@@ -1,7 +1,9 @@
 import 'dart:async' show unawaited;
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../constants/prefs_keys.dart';
 import '../../models/player_stats.dart';
 import '../../models/season_meta.dart';
@@ -51,8 +53,8 @@ void resetSnapshotCache() {
   snapshotCacheResets._notify();
 }
 
-/// Parses a legacy prefs blob into snapshots, or an empty list when it can't
-/// be read at all.
+/// Parses a legacy prefs blob into snapshots, skipping any entry that can't be
+/// read, or an empty list when none can.
 ///
 /// Deliberately broad: `jsonDecode` succeeding on well-formed-but-wrong-shape
 /// JSON (e.g. `{"a":1}`) throws a [TypeError] on the `as List` cast, not a
@@ -65,10 +67,22 @@ List<StatSnapshot> _parseSnapshots(String? raw) {
       log.w('RP snapshot blob is not a list — treating as unparseable');
       return const [];
     }
-    return decoded
-        .whereType<Map<String, dynamic>>()
-        .map(StatSnapshot.fromJson)
-        .toList();
+    // One bad entry must not take the rest with it: the blob is kept while it
+    // parses to nothing, so a single wrong value would otherwise block the whole
+    // series for good and log again on every launch.
+    final snaps = <StatSnapshot>[];
+    var skipped = 0;
+    for (final entry in decoded) {
+      try {
+        snaps.add(StatSnapshot.fromJson(entry as Map<String, dynamic>));
+      } catch (_) {
+        skipped++;
+      }
+    }
+    if (skipped > 0) {
+      log.w('RP snapshot blob: skipped $skipped unreadable entries');
+    }
+    return snaps;
   } catch (e) {
     log.w('RP snapshot JSON parse failed — returning empty list', error: e);
     return const [];
@@ -83,11 +97,12 @@ List<StatSnapshot> _parseSnapshots(String? raw) {
 /// Each key is removed only after its rows commit, and the insert is
 /// idempotent, so an interrupted or repeated run is safe.
 ///
-/// A key whose blob fails to parse is left in place rather than removed: an
+/// A key whose blob parses to nothing is left in place rather than removed: an
 /// empty result from [_parseSnapshots] is ambiguous between "nothing to
 /// migrate" and "couldn't read this" and only the former is safe to discard
 /// - deleting an unreadable blob would destroy the only copy of that
-/// player's RP history with no recovery path.
+/// player's RP history with no recovery path. A blob with some readable
+/// entries migrates those and is removed; the unreadable ones are not kept.
 Future<void> migrateSnapshotsFromPrefs(
   SharedPreferences prefs,
   RankedHistoryStore store,

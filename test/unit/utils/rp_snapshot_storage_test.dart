@@ -423,6 +423,23 @@ void main() {
       },
     );
 
+    test('one unreadable entry does not stop the readable ones migrating', () async {
+      final prefs = await seedLegacy({
+        'stat_snapshots_u': jsonEncode([
+          {'ts': 1000, 'rp': 100},
+          {'ts': 'soon', 'rp': 150},
+          'not an entry',
+          {'ts': 3000, 'rp': 300},
+        ]),
+      });
+
+      await migrateSnapshotsFromPrefs(prefs, store);
+
+      expect((await primeSnapshots(store, 'u')).map((s) => s.rp), [100, 300]);
+      // Nothing left to retry, so it is not read (and logged) on every launch.
+      expect(prefs.getString('stat_snapshots_u'), isNull);
+    });
+
     test(
       'a well-formed but wrong-shape blob does not abort draining other keys',
       () async {
