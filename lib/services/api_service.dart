@@ -73,6 +73,11 @@ class ApiService {
   /// cached responses".
   Future<void> clearCache() => _cache.clear();
 
+  /// Counts the clears so far. A caller that keeps its own copy of a response
+  /// reads this before the request and drops the copy if it changed, so a
+  /// clear that ran meanwhile is not undone.
+  int get cacheGeneration => _cache.generation;
+
   /// How many responses are cached, and about how large they are.
   ({int entries, int bytes}) get cacheUsage => _cache.usage;
 

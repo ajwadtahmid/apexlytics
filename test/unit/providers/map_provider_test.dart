@@ -45,6 +45,7 @@ void main() {
     });
     prefs = await SharedPreferences.getInstance();
     api = MockApiService();
+    when(() => api.cacheGeneration).thenReturn(0);
     container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
@@ -116,6 +117,19 @@ void main() {
     expect(prefs.getString(PrefsKeys.seasonalMapsCache), isNotNull);
   });
 
+  test('a reply that is not a pool at all keeps the cache, unlike an empty '
+      'pool', () async {
+    await setUp_(cachedPool: populatedJson);
+    when(
+      () => api.get('/maps', noCache: true),
+    ).thenAnswer((_) async => const ApiResult({'_raw': '<html>Sign in</html>'}));
+
+    final result = await container.read(seasonalMapsProvider.future);
+
+    expect(result.rankedNames, ["World's Edge"]);
+    expect(result.pubsNames, ["World's Edge"]);
+  });
+
   test('a network failure falls back to the cache when one exists', () async {
     await setUp_(cachedPool: populatedJson);
     when(
@@ -138,4 +152,21 @@ void main() {
   // is exercised successfully for rankedSyncProvider in
   // ranked_sync_outcome_test.dart, where an intervening await before the
   // rethrow avoids whatever this race is.
+
+  test('a rotation that arrives after Clear all data is not saved', () async {
+    await setUp_();
+    var generation = 0;
+    when(() => api.cacheGeneration).thenAnswer((_) => generation);
+    when(() => api.get('/maps', noCache: true)).thenAnswer((_) async {
+      // The clear runs while the request is out.
+      generation++;
+      return const ApiResult(populatedJson);
+    });
+
+    final result = await container.read(seasonalMapsProvider.future);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(result.rankedNames, isNotEmpty);
+    expect(prefs.getString(PrefsKeys.seasonalMapsCache), isNull);
+  });
 }

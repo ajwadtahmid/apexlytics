@@ -17,6 +17,7 @@ import '../utils/api_base_options.dart';
 import '../utils/api_deadline.dart';
 import '../utils/app_logger.dart';
 import '../utils/retry_interceptor.dart';
+import 'map_service.dart' show parseMapRotation;
 import 'notification_service.dart';
 import '../constants/prefs_keys.dart';
 
@@ -194,9 +195,7 @@ Future<void> _backgroundFetchAndSchedule() async {
       ),
     );
 
-    final rotation = MapRotation.fromJson(
-      response.data as Map<String, dynamic>,
-    );
+    final rotation = parseMapRotation(response.data);
 
     final scheduled = await scheduleFetchedRotation(prefs, rotation);
     if (!scheduled) {

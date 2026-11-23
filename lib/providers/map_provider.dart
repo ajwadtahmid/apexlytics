@@ -6,6 +6,7 @@ import '../models/map_rotation.dart';
 import '../models/seasonal_maps.dart';
 import '../services/api_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/error_messages.dart' show MalformedResponseException;
 import 'api_provider.dart';
 import 'settings_provider.dart';
 import '../constants/api_constants.dart';
@@ -25,6 +26,9 @@ class SeasonalMapsNotifier extends AsyncNotifier<SeasonalMaps> {
 
     final SeasonalMaps? cached = _loadFromCache(prefs);
 
+    // Read before the request: a clear that runs while it is out must not get
+    // the answer written back.
+    final generation = apiService.cacheGeneration;
     try {
       final result = await apiService.get(ApiConstants.mapsPath, noCache: true);
       // The server intentionally returns an empty {ranked: [], pubs: []} once
@@ -36,9 +40,19 @@ class SeasonalMapsNotifier extends AsyncNotifier<SeasonalMaps> {
       // maps that may no longer exist, whereas an empty pool falls back to
       // "no favourites filter, alert on every rotation" — wrong info is worse
       // than no info here. Do not "fix" this by preserving the stale cache.
+      //
+      // That empty pool still has both lists. A body with neither (an
+      // intermediary's page, wrapped as `_raw`) is not a pool at all, so it
+      // must not wipe the cache.
+      if (result.data['ranked'] is! List && result.data['pubs'] is! List) {
+        throw const MalformedResponseException(
+          "Couldn't read the map list from the server's reply.",
+        );
+      }
       final fresh = SeasonalMaps.fromJson(result.data);
 
-      if (_hasChanged(cached, fresh)) {
+      if (_hasChanged(cached, fresh) &&
+          generation == apiService.cacheGeneration) {
         unawaited(_saveToCache(prefs, fresh));
       }
 
