@@ -71,11 +71,24 @@ void main() {
       expect(day!.day, DateTime(2026, 10, 5));
     });
 
-    test('counts a game on the day it ended', () {
+    test('counts a game on the day it started', () {
       // Starts at 23:55 and ends at 00:05 the next day.
       final day = bestDay([game(at(1, 23, 55), 50)]);
 
-      expect(day!.day, DateTime(2026, 10, 2));
+      expect(day!.day, DateTime(2026, 10, 1));
+    });
+
+    test('a game that ends on the next day, or is recorded as ending days '
+        'later, still belongs to the day it started', () {
+      final day = bestDay([
+        game(at(1, 18), 30, length: 3 * 86400), // a wrong end time
+        game(at(1, 23, 55), 20),
+        game(at(2, 12), 40),
+      ]);
+
+      expect(day!.day, DateTime(2026, 10, 1));
+      expect(day.netRp, 50);
+      expect(day.matches.map((m) => m.rpChange), [20, 30]);
     });
 
     test('a bad day is never best while a better one exists', () {

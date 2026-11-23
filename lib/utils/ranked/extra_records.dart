@@ -8,14 +8,15 @@ import 'session_overview.dart';
 /// netted.
 typedef DayRecord = ({DateTime day, int netRp, List<RankedMatch> matches});
 
-/// The local calendar day that netted the most RP, by the day each game ended.
-/// [matches] should already be the ranked games that count toward the stats.
+/// The local calendar day that netted the most RP, by the day each game
+/// started, as the play calendar, the Games tab and the hour and weekday charts
+/// do (an end time can be far off). [matches] should already be the ranked games that count toward the stats.
 /// Ties go to the day with more games, then the later one. Null with no games.
 DayRecord? bestDay(List<RankedMatch> matches) {
   final byDay = <DateTime, List<RankedMatch>>{};
   for (final m in matches) {
-    final end = m.endTime.toLocal();
-    (byDay[DateTime(end.year, end.month, end.day)] ??= []).add(m);
+    final start = m.startTime.toLocal();
+    (byDay[DateTime(start.year, start.month, start.day)] ??= []).add(m);
   }
   DayRecord? best;
   for (final e in byDay.entries) {
@@ -31,7 +32,8 @@ DayRecord? bestDay(List<RankedMatch> matches) {
       best = (
         day: e.key,
         netRp: net,
-        matches: [...e.value]..sort((a, b) => b.endTime.compareTo(a.endTime)),
+        matches: [...e.value]
+          ..sort((a, b) => b.startTime.compareTo(a.startTime)),
       );
     }
   }
