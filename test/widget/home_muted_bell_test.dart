@@ -11,6 +11,8 @@ import 'package:apexlytics/providers/alert_mute_provider.dart';
 import 'package:apexlytics/providers/map_provider.dart';
 import 'package:apexlytics/providers/news_provider.dart';
 import 'package:apexlytics/providers/predator_provider.dart';
+import 'package:apexlytics/providers/settings_provider.dart'
+    show sharedPreferencesProvider;
 import 'package:apexlytics/providers/server_provider.dart';
 import 'package:apexlytics/screens/home/home_screen.dart';
 import 'package:apexlytics/services/notification_service.dart';
@@ -112,6 +114,35 @@ void main() {
 
     expect(find.byIcon(Icons.notifications_active), findsOneWidget);
     expect(find.byIcon(Icons.notifications_paused), findsNothing);
+    await close(tester);
+  });
+
+  testWidgets('a mute written behind the app\'s back is honoured by the next '
+      'plan', (tester) async {
+    await open(tester, muted: false);
+    // The first Ranked alert (id 100) is due in about 40 minutes.
+    expect(NotificationService.pendingDesktopAlertIds, contains(100));
+
+    // The button on an alert writes the mute from another isolate, so the
+    // provider on screen has not been told.
+    await container
+        .read(sharedPreferencesProvider)
+        .setString(
+          PrefsKeys.alertMuteUntil,
+          encodeMutes({
+            'ranked': DateTime.now().add(const Duration(hours: 2)),
+          })!,
+        );
+    expect(container.read(alertMuteProvider), isEmpty);
+
+    container.invalidate(mapRotationProvider);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // A mute holds back what is due before it ends; later alerts stay armed.
+    final armed = NotificationService.pendingDesktopAlertIds;
+    expect(armed, isNot(contains(100)));
+    expect(armed, contains(101));
     await close(tester);
   });
 

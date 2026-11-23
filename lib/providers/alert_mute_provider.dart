@@ -49,11 +49,11 @@ class AlertMuteNotifier extends Notifier<Map<String, DateTime>> {
   }
 
   /// Reads the mutes again from storage, which the background isolate may have
-  /// changed since this one last looked.
-  Future<void> refresh() async {
+  /// changed since this one last looked, and returns them.
+  Future<Map<String, DateTime>> refresh() async {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.reload();
-    state = _read();
+    return state = _read();
   }
 
   /// Ends [mode]'s mute now. The caller plans the alerts again.
