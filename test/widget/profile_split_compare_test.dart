@@ -240,6 +240,59 @@ void main() {
     expect(find.text('No recorded games'), findsOneWidget);
   });
 
+  testWidgets('Retry asks for the failed history sync again', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'player_profiles': jsonEncode([
+        {'name': 'Main', 'uid': '1', 'platform': 'PC'},
+        {'name': 'Alt', 'uid': '2', 'platform': 'PC'},
+      ]),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    var syncs = 0;
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          rankedSplitsProvider.overrideWith((ref, uid) async => splits),
+          // The connection is down for the first ask only.
+          rankedSyncProvider.overrideWith((ref, uid) async {
+            if (++syncs <= 2) throw Exception('offline');
+            return RankedSyncOutcome.synced;
+          }),
+          rankedSplitDetailProvider.overrideWith((ref, arg) async {
+            await ref.watch(rankedSyncProvider(arg.uid).future);
+            return detail(20, 100);
+          }),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RankedCompareBody(uid: '1', splits: splits),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    // Both sides are on the same profile until one is switched.
+    await tester.tap(find.text('COMPARING · MAIN'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alt'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry'), findsOneWidget);
+    final before = syncs;
+
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+
+    expect(syncs, greaterThan(before));
+    expect(find.text('Retry'), findsNothing);
+  });
+
   testWidgets('the Current side is locked to your profile', (tester) async {
     await pump(tester, [('Main', '1'), ('Alt', '2')]);
 

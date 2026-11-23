@@ -597,6 +597,15 @@ class _CompareBody extends ConsumerWidget {
         child: ErrorCard(
           message: friendlyError(error),
           onRetry: () {
+            // A failed history sync stays failed until it is asked again, and
+            // the split reads below wait on it. Skipped while it would only
+            // replay its stored outcome.
+            final prefs = ref.read(sharedPreferencesProvider);
+            for (final uid in {uidA, uidB}) {
+              if (rankedSyncDue(prefs, uid)) {
+                ref.invalidate(rankedSyncProvider(uid));
+              }
+            }
             ref.invalidate(
               rankedSplitDetailProvider((uid: uidA, splitId: bucketA.id)),
             );
