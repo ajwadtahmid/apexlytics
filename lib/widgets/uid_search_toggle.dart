@@ -19,6 +19,20 @@ bool isDigitsOnly(String text) =>
 bool looksLikeUid(String text) =>
     text.length >= ApiConstants.minUidDigits && isDigitsOnly(text);
 
+/// Why [query] can't be sent as a UID or a name, or null when it can. The proxy
+/// refuses a UID over [ApiConstants.maxUidDigits] digits and a name over
+/// [ApiConstants.maxPlayerNameLength] characters, and retrying never helps.
+String? lookupLengthProblem(String query, {required bool byUid}) {
+  if (byUid && query.length > ApiConstants.maxUidDigits) {
+    return 'A UID has at most ${ApiConstants.maxUidDigits} digits.';
+  }
+  if (!byUid && query.length > ApiConstants.maxPlayerNameLength) {
+    return 'A player name has at most '
+        '${ApiConstants.maxPlayerNameLength} characters.';
+  }
+  return null;
+}
+
 /// "Looks like a UID" hint shown under the name field when [controller] holds digits only.
 /// Hidden in UID mode. Tapping the action calls [onUseUid], which should switch to UID search.
 class UidSuggestion extends StatelessWidget {

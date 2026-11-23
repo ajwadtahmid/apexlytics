@@ -2,6 +2,9 @@ class ApiConstants {
   /// Player UIDs are 10-20 digits.
   static const int minUidDigits = 10;
   static const int maxUidDigits = 20;
+
+  /// The longest player name the proxy accepts.
+  static const int maxPlayerNameLength = 64;
   static final RegExp uidPattern = RegExp('\\d{$minUidDigits,$maxUidDigits}');
 
   static const String defaultPlatform = 'PC';

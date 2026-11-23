@@ -9,7 +9,7 @@ import '../utils/lookup_form_state.dart';
 import '../utils/theme.dart';
 import '../utils/uid_warning_dialog.dart';
 import 'lookup_card.dart';
-import 'uid_search_toggle.dart' show isDigitsOnly;
+import 'uid_search_toggle.dart' show isDigitsOnly, lookupLengthProblem;
 
 /// Shared player-lookup form used in the initial setup view and profile manager.
 /// [onPlayerFound] — if supplied, called instead of the default `setPlayer` call,
@@ -80,6 +80,11 @@ class _PlayerLookupFormState extends ConsumerState<PlayerLookupForm> {
     if (byUid && !isDigitsOnly(query)) {
       // Formatters should already guarantee this — belt and suspenders.
       setState(() => _error = 'UID must contain digits only.');
+      return;
+    }
+    final tooLong = lookupLengthProblem(query, byUid: byUid);
+    if (tooLong != null) {
+      setState(() => _error = tooLong);
       return;
     }
     // The same key the favorites and result-page refreshes fire under, so all

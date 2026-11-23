@@ -35,6 +35,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _lookup.showNotice('UID must contain digits only.');
       return;
     }
+    final tooLong = lookupLengthProblem(q, byUid: _lookup.byUid);
+    if (tooLong != null) {
+      _lookup.showNotice(tooLong);
+      return;
+    }
     context.pushPage(
       PlayerResultPage(
         query: q,

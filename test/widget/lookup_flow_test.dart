@@ -182,6 +182,20 @@ void main() {
     });
   });
 
+  testWidgets('a UID over 20 digits is refused before any request', (t) async {
+    final adapter = FakeHttpAdapter({'/player/uid': player('Bob', '1')});
+    await boot(t, const StatsScreen(), adapter);
+    await toggleUidMode(t);
+    await t.pump();
+    await t.enterText(find.byType(TextField), '1' * 21);
+    await t.tap(find.text('Find My Player'));
+    await t.pump();
+    await settle(t);
+
+    expect(find.text('A UID has at most 20 digits.'), findsOneWidget);
+    expect(adapter.requests, isEmpty);
+  });
+
   group('Search at large text', () {
     for (final scale in [1.5, 2.0]) {
       testWidgets('fits a phone with text ×$scale', (t) async {
