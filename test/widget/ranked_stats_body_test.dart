@@ -665,7 +665,7 @@ void main() {
       final tops = [
         for (final h in [
           'Your account',
-          'This split',
+          'S29 Split 1', // a split that is not the player's current one
           'Highlights',
           'Dig deeper',
         ])
@@ -687,7 +687,7 @@ void main() {
           reason: tile,
         );
       }
-      expect(top(tester, 'This split'), lessThan(top(tester, 'Highlights')));
+      expect(top(tester, 'S29 Split 1'), lessThan(top(tester, 'Highlights')));
       expect(find.text('This week'), findsNothing);
     });
 

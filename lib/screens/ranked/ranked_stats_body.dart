@@ -692,7 +692,10 @@ class _OverviewTab extends ConsumerWidget {
           PlayerInfoCard(stats: stats),
           const SizedBox(height: AppTheme.lg),
           SectionLabel(
-            label: data.view.weekIndex >= 0 ? 'This week' : 'This split',
+            label: periodSectionLabel(
+              data.view,
+              currentSplit: isCurrentSplit,
+            ),
             icon: Icons.leaderboard_outlined,
           ),
           RankedSummaryHeader(
@@ -840,7 +843,10 @@ class _OverviewTab extends ConsumerWidget {
                     matches: matches,
                     // The week is said under the RP, so not here as well.
                     scope: recapScopeLabel(data.view, week: false),
-                    periodPhrase: recapPeriodPhrase(data.view),
+                    periodPhrase: recapPeriodPhrase(
+                      data.view,
+                      currentSplit: isCurrentSplit,
+                    ),
                     playerName: stats.name,
                     isPredator:
                         isCurrentSplit &&

@@ -19,9 +19,34 @@ String recapScopeLabel(RankedView view, {bool week = true}) {
 }
 
 /// Where the RP netted was made: "in Week 3" when a week is picked, otherwise
-/// "this split".
-String recapPeriodPhrase(RankedView view) =>
-    view.weekIndex >= 0 ? 'in Week ${view.weekIndex + 1}' : 'this split';
+/// "this split" for the split going on now, and the split's own name for one
+/// that is over ("in S30 Split 2"), or "over all seasons" for the lifetime view.
+String recapPeriodPhrase(RankedView view, {bool currentSplit = true}) {
+  if (view.weekIndex >= 0) return 'in Week ${view.weekIndex + 1}';
+  if (isLifetimeSplit(view.effectiveSplitId)) return 'over all seasons';
+  if (currentSplit) return 'this split';
+  final name = recapScopeLabel(view, week: false);
+  return name == 'Ranked' ? 'this split' : 'in $name';
+}
+
+/// The title over the Stats figures: "This week" or "This split" only for the
+/// period going on now. A past week reads "Week 3", and a split that is over
+/// (or all seasons) is named, the way the pickers above it name it.
+String periodSectionLabel(
+  RankedView view, {
+  required bool currentSplit,
+  DateTime? now,
+}) {
+  final named = view.periodLabel.isEmpty ? 'This split' : view.periodLabel;
+  if (isLifetimeSplit(view.effectiveSplitId) || !currentSplit) return named;
+  final i = view.weekIndex;
+  if (i < 0 || i >= view.weeks.length) return 'This split';
+  final t = now ?? DateTime.now();
+  final w = view.weeks[i];
+  return !t.isBefore(w.start) && t.isBefore(w.end)
+      ? 'This week'
+      : 'Week ${i + 1}';
+}
 
 /// What a record on the Personal Records page is the best of: "this split"
 /// with all weeks, "this week" for the week going on now, otherwise "Week 3".
