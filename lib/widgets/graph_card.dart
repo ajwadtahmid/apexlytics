@@ -312,7 +312,8 @@ class _GraphCardState extends State<GraphCard> {
               child: Text(
                 delta == null || delta == 0
                     ? 'No games recorded this week'
-                    : 'Not enough readings to draw a line yet',
+                    : 'One reading so far: ${formatNumber(displaySnaps.single.rp)} RP. '
+                          'Not enough to draw a line yet',
                 style: AppTheme.caption,
               ),
             ),

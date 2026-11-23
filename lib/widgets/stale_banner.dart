@@ -4,7 +4,14 @@ import '../utils/theme.dart';
 
 class StaleBanner extends StatelessWidget {
   final DateTime staleAt;
-  const StaleBanner({super.key, required this.staleAt});
+
+  /// What the age follows, as in "Last synced 3h ago".
+  final String label;
+  const StaleBanner({
+    super.key,
+    required this.staleAt,
+    this.label = 'Last synced',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,7 @@ class StaleBanner extends StatelessWidget {
           const Icon(Icons.history, size: 14, color: AppTheme.orange),
           const SizedBox(width: 6),
           Text(
-            'Last synced ${timeAgo(staleAt)}',
+            '$label ${timeAgo(staleAt)}',
             style: const TextStyle(color: AppTheme.orange, fontSize: 12),
           ),
         ],

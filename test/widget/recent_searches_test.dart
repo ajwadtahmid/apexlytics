@@ -93,11 +93,18 @@ void main() {
       expect(find.byTooltip('Add to favorites'), findsOneWidget);
     });
 
-    testWidgets('Clear empties the list', (t) async {
+    testWidgets('Clear empties the list once confirmed', (t) async {
       final container = await pumpPane(t);
 
       await t.tap(find.text('Clear'));
-      await t.pump();
+      await t.pumpAndSettle();
+      await t.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Clear'),
+        ),
+      );
+      await t.pumpAndSettle();
 
       expect(container.read(searchStateProvider).recents, isEmpty);
       expect(find.text('Recent'), findsNothing);

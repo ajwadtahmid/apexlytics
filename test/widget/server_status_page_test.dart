@@ -19,6 +19,7 @@ void main() {
     WidgetTester tester,
     ServerStatus status, {
     Future<ProxyHealth> Function(String)? checker,
+    DateTime? staleAt,
   }) => tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -30,7 +31,9 @@ void main() {
               ),
         ),
       ],
-      child: MaterialApp(home: ServerStatusPage(status: status)),
+      child: MaterialApp(
+        home: ServerStatusPage(status: status, staleAt: staleAt),
+      ),
     ),
   );
 
@@ -55,6 +58,60 @@ void main() {
     expect(find.text('EU-West | —'), findsOneWidget);
     expect(find.text('EU-West | 0ms'), findsNothing);
     expect(regionDots(tester), [AppTheme.red, AppTheme.green]);
+  });
+
+  group('when the readings may be old', () {
+    final fresh = statusOf({
+      'US-East': {'Status': 'UP', 'ResponseTime': 20, 'HTTPCode': 200},
+    });
+    Future<ProxyHealth> down(String _) async =>
+        (state: ProxyState.down, latency: null);
+    Future<ProxyHealth> up(String url) async => (
+      state: ProxyState.online,
+      latency: const Duration(milliseconds: 80),
+    );
+
+    testWidgets('a saved copy says when it was last checked', (tester) async {
+      await pump(
+        tester,
+        fresh,
+        staleAt: DateTime.now().subtract(const Duration(minutes: 20)),
+      );
+      await tester.pump();
+
+      expect(find.textContaining('Last checked'), findsOneWidget);
+    });
+
+    testWidgets('a fresh reading says nothing about its age', (tester) async {
+      await pump(tester, fresh);
+      await tester.pump();
+
+      expect(find.textContaining('Last checked'), findsNothing);
+      expect(find.textContaining("Can't reach"), findsNothing);
+    });
+
+    testWidgets('both of our servers down says the readings may be old', (
+      tester,
+    ) async {
+      await pump(tester, fresh, checker: down);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.textContaining("Can't reach the Apexlytics servers"),
+          findsOneWidget);
+    });
+
+    testWidgets('one of our servers still answering does not', (tester) async {
+      await pump(
+        tester,
+        fresh,
+        checker: (url) => url == Env.proxyUrl ? down(url) : up(url),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.textContaining("Can't reach"), findsNothing);
+    });
   });
 
   testWidgets('a region that is up is coloured by its latency', (tester) async {

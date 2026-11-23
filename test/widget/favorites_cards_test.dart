@@ -7,7 +7,7 @@ import 'package:apexlytics/screens/search/favorites_pane.dart';
 import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/utils/theme.dart';
-import 'package:apexlytics/widgets/status_dot.dart';
+import 'package:apexlytics/widgets/presence_dot.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,26 +101,36 @@ void main() {
     for (final f in c.read(searchStateProvider).favorites) f.query,
   ];
 
-  /// The colour of the presence dot on the card of the favorite named [name].
-  Color dotOf(WidgetTester t, String name) {
+  /// What the presence dot on the card of the favorite named [name] shows.
+  Presence dotOf(WidgetTester t, String name) {
     final card = find.ancestor(
       of: find.text(name),
       matching: find.byType(InkWell),
     );
     return t
-        .widget<StatusDot>(
-          find.descendant(of: card.first, matching: find.byType(StatusDot)),
+        .widget<PresenceDot>(
+          find.descendant(of: card.first, matching: find.byType(PresenceDot)),
         )
-        .color;
+        .presence;
+  }
+
+  /// All the text on the card of the favorite named [name], joined.
+  String textOn(WidgetTester t, String name) {
+    final card = find.ancestor(
+      of: find.text(name),
+      matching: find.byType(InkWell),
+    );
+    final texts = find.descendant(of: card.first, matching: find.byType(Text));
+    return [for (final w in t.widgetList<Text>(texts)) ?w.data].join('|');
   }
 
   testWidgets('a looked-up favorite shows its rank and RP', (t) async {
     await pumpPane(t);
 
     expect(find.text('Alpha'), findsOneWidget);
-    expect(find.text('PC · Master'), findsOneWidget);
+    expect(find.text('PC · Master · Online'), findsOneWidget);
     expect(find.text('52,671'), findsOneWidget);
-    expect(find.text('PlayStation · Platinum II'), findsOneWidget);
+    expect(find.text('PlayStation · Platinum II · Offline'), findsOneWidget);
     expect(find.text('10,330'), findsOneWidget);
     // One "RP" under each figure.
     expect(find.text('RP'), findsNWidgets(2));
@@ -157,10 +167,22 @@ void main() {
   testWidgets('the dot on each card says who is around', (t) async {
     await pumpPane(t);
 
-    expect(dotOf(t, 'Alpha'), AppTheme.orange); // online, not in a game
-    expect(dotOf(t, 'Bravo'), AppTheme.red); // offline
-    expect(dotOf(t, 'Charlie'), AppTheme.red); // failed
-    expect(dotOf(t, 'Delta'), AppTheme.muted); // not looked up
+    expect(dotOf(t, 'Alpha'), Presence.online); // online, not in a game
+    expect(dotOf(t, 'Bravo'), Presence.offline);
+    expect(dotOf(t, 'Charlie'), Presence.failed);
+    expect(dotOf(t, 'Delta'), Presence.unknown); // not looked up
+  });
+
+  testWidgets('the subtitle says the same in words', (t) async {
+    await pumpPane(t);
+
+    expect(textOn(t, 'Alpha'), contains('Online'));
+    expect(textOn(t, 'Bravo'), contains('Offline'));
+    expect(textOn(t, 'Charlie'), contains('Failed to load'));
+    // Nothing is known about one that has not been looked up.
+    final delta = textOn(t, 'Delta');
+    expect(delta, isNot(contains('Online')));
+    expect(delta, isNot(contains('Offline')));
   });
 
   testWidgets('the favorites are cards, one under another, in order', (
@@ -191,7 +213,7 @@ void main() {
           matching: find.byType(InkWell),
         );
         expect(
-          find.descendant(of: card.first, matching: find.byType(StatusDot)),
+          find.descendant(of: card.first, matching: find.byType(PresenceDot)),
           findsOneWidget,
           reason: name,
         );

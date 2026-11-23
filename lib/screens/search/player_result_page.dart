@@ -227,6 +227,7 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: AppTheme.accent,
+                      semanticsLabel: 'Refreshing',
                     ),
                   ),
                 )

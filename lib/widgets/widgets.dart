@@ -17,6 +17,7 @@ export 'lookup_card.dart';
 export 'pill_segments.dart';
 export 'platform_picker.dart';
 export 'player_info_card.dart';
+export 'presence_dot.dart';
 export 'player_lookup_form.dart';
 export 'player_stats_tabs.dart';
 export 'profile_manager_sheet.dart';

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../constants/api_constants.dart';
 import '../constants/ui_constants.dart';
 import '../models/player_stats.dart';
@@ -10,7 +11,7 @@ import '../utils/formatting/rank_utils.dart' show rankAssetPath;
 import '../utils/notifications.dart';
 import '../utils/theme.dart';
 import 'legend_icon.dart';
-import 'status_dot.dart';
+import 'presence_dot.dart';
 import 'surface_card.dart';
 import 'rank_badge.dart';
 
@@ -20,6 +21,53 @@ class PlayerInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // At a larger text size the level, rank and score line and the UID and
+    // platform line no longer fit side by side, so they wrap onto a second line.
+    final large = MediaQuery.textScalerOf(context).scale(1) > 1.2;
+    final copyUid = Semantics(
+      button: true,
+      child: Tooltip(
+        message: 'Copy UID',
+        child: GestureDetector(
+          onTap: () async {
+            await Clipboard.setData(ClipboardData(text: stats.uid));
+            if (context.mounted) {
+              context.showMessage(
+                'UID copied',
+                duration: const Duration(seconds: 2),
+              );
+            }
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(AppTheme.xs),
+            child: Icon(Icons.copy, size: 12, color: AppTheme.muted),
+          ),
+        ),
+      ),
+    );
+    final rankLine = <Widget>[
+      Text.rich(
+        TextSpan(
+          style: AppTheme.captionLarge,
+          children: [
+            TextSpan(text: 'Level ${stats.level}'),
+            separatorDot,
+          ],
+        ),
+      ),
+      RankBadge(assetPath: rankAssetPath(stats), size: 14),
+      const SizedBox(width: AppTheme.xs),
+      Text.rich(
+        TextSpan(
+          style: AppTheme.captionLarge,
+          children: [
+            TextSpan(text: stats.rank),
+            separatorDot,
+            TextSpan(text: '${formatNumber(stats.rankScore)} RP'),
+          ],
+        ),
+      ),
+    ];
     return SurfaceCard(
       padding: const EdgeInsets.all(AppTheme.md),
       radius: AppTheme.radiusLg,
@@ -29,7 +77,7 @@ class PlayerInfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              StatusDot(color: playerPresenceColor(stats)),
+              PresenceDot(presence: presenceOf(stats), decorative: true),
               const SizedBox(width: AppTheme.sm),
               Expanded(
                 child: Text(
@@ -46,77 +94,64 @@ class PlayerInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              Text.rich(
-                TextSpan(
-                  style: AppTheme.captionLarge,
-                  children: [
-                    TextSpan(text: 'Level ${stats.level}'),
-                    separatorDot,
-                  ],
+          if (large)
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                rankLine.first,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: rankLine.sublist(1),
                 ),
-              ),
-              RankBadge(assetPath: rankAssetPath(stats), size: 14),
-              const SizedBox(width: AppTheme.xs),
-              Text.rich(
-                TextSpan(
-                  style: AppTheme.captionLarge,
-                  children: [
-                    TextSpan(text: stats.rank),
-                    separatorDot,
-                    TextSpan(text: '${formatNumber(stats.rankScore)} RP'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(children: rankLine),
           const SizedBox(height: 2),
           if (stats.uid.isNotEmpty) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
+            if (large)
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppTheme.sm,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text('UID: ${stats.uid}', style: AppTheme.caption),
                       const SizedBox(width: 2),
-                      GestureDetector(
-                        onTap: () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: stats.uid),
-                          );
-                          if (context.mounted) {
-                            context.showMessage(
-                              'UID copied',
-                              duration: const Duration(seconds: 2),
-                            );
-                          }
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(AppTheme.xs),
-                          child: Icon(
-                            Icons.copy,
-                            size: 12,
-                            color: AppTheme.muted,
-                          ),
-                        ),
-                      ),
+                      copyUid,
                     ],
                   ),
-                ),
-                const SizedBox(width: AppTheme.sm),
-                _PlatformBadge(platform: stats.platform),
-              ],
-            ),
+                  _PlatformBadge(platform: stats.platform),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text('UID: ${stats.uid}', style: AppTheme.caption),
+                        const SizedBox(width: 2),
+                        copyUid,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.sm),
+                  _PlatformBadge(platform: stats.platform),
+                ],
+              ),
             const SizedBox(height: 2),
           ],
           Row(
             children: [
               LegendIcon(legendName: stats.currentLegend, size: 14),
               const SizedBox(width: AppTheme.xs),
-              Text(
-                'Currently Tracking: ${stats.currentLegend}',
-                style: const TextStyle(color: AppTheme.accent2, fontSize: 13),
+              Expanded(
+                child: Text(
+                  'Currently Tracking: ${stats.currentLegend}',
+                  style: const TextStyle(color: AppTheme.accent2, fontSize: 13),
+                ),
               ),
             ],
           ),

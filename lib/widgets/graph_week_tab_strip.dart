@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../utils/formatting/season_utils.dart';
 import '../utils/theme.dart';
 
@@ -76,36 +77,50 @@ class _WeekTabStripState extends State<WeekTabStrip> {
             final isFuture = widget.isCurrentSeason && now.isBefore(week.start);
             final isSelected = i == widget.selectedIndex;
 
-            return GestureDetector(
-              onTap: isFuture ? null : () => widget.onSelected(i),
-              child: AnimatedContainer(
-                duration: AppTheme.chipAnimation,
-                margin: const EdgeInsets.only(right: 6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: AppTheme.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.accent
-                      : isFuture
-                      ? AppTheme.surface2.withAlpha(80)
-                      : AppTheme.surface2,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                ),
-                child: Text(
-                  'W${i + 1}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color: isSelected
-                        ? AppTheme.onAccent
-                        : isFuture
-                        ? AppTheme.muted.withAlpha(80)
-                        : AppTheme.muted,
+            return Semantics(
+              button: true,
+              selected: isSelected,
+              enabled: !isFuture,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: isFuture ? null : () => widget.onSelected(i),
+                // The chip is painted small inside a 44 dp tall tap target.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: AppTheme.chipAnimation,
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: AppTheme.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.accent
+                            : isFuture
+                            ? AppTheme.surface2.withAlpha(80)
+                            : AppTheme.surface2,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusFull,
+                        ),
+                      ),
+                      child: Text(
+                        'W${i + 1}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          color: isSelected
+                              ? AppTheme.onAccent
+                              : isFuture
+                              ? AppTheme.muted.withAlpha(80)
+                              : AppTheme.muted,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

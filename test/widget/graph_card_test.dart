@@ -163,6 +163,13 @@ void main() {
       expect(find.text('No games recorded this week'), findsOneWidget);
     });
 
+    testWidgets('shows the one reading it has as text', (tester) async {
+      await pump(tester, currentRp: 8100, thisWeek: const []);
+
+      expect(find.textContaining('8,100 RP'), findsOneWidget);
+      expect(find.textContaining('Not enough to draw a line'), findsOneWidget);
+    });
+
     testWidgets('does not say it once there is a line', (tester) async {
       await pump(
         tester,

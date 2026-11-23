@@ -3,8 +3,6 @@ import 'package:flutter/foundation.dart'
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
-import '../models/player_stats.dart';
-
 class AppTheme {
   /// Transparent system bars with light icons (the app is dark end-to-end).
   /// Applied in main(), and on Android also via the AppBarTheme and around the
@@ -239,11 +237,4 @@ class AppTheme {
       dividerColor: surface2,
     ),
   );
-}
-
-/// Returns the color for a player's online presence indicator.
-Color playerPresenceColor(PlayerStats stats) {
-  if (stats.isInGame) return AppTheme.green;
-  if (stats.isOnline) return AppTheme.orange;
-  return AppTheme.red;
 }

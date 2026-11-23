@@ -127,6 +127,8 @@ class RankedSummaryHeader extends ConsumerWidget {
                         if (useLive && livePlayerRp != displayRp) ...[
                           const SizedBox(width: 6),
                           Tooltip(
+                            // A tap shows it too, not only a long press.
+                            triggerMode: TooltipTriggerMode.tap,
                             message:
                                 'Match history hasn\'t synced yet.\n'
                                 'It updates periodically and will catch up '
@@ -467,7 +469,7 @@ class _GoalButton extends StatelessWidget {
 
 Widget _estimateWidget(int rp, int? games, RankDivision target) {
   const white = TextStyle(
-    color: Colors.white,
+    color: AppTheme.textPrimary,
     fontSize: 12,
     fontWeight: FontWeight.w600,
   );

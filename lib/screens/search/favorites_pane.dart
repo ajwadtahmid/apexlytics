@@ -41,6 +41,18 @@ class FavoritesPane extends ConsumerWidget {
     }
   }
 
+  Future<void> _confirmClearRecents(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear recent searches?',
+      body: 'Your recent searches will be removed.',
+      confirmLabel: 'Clear',
+    );
+    if (confirmed) {
+      await ref.read(searchStateProvider.notifier).clearRecents();
+    }
+  }
+
   Future<void> _refreshAll(WidgetRef ref, List<PlayerRef> favorites) async {
     final service = ref.read(playerServiceProvider);
     // Process in batches to avoid saturating the API with concurrent requests.
@@ -209,8 +221,7 @@ class FavoritesPane extends ConsumerWidget {
               icon: Icons.history,
               label: 'Recent',
               clearLabel: 'Clear recent searches',
-              onClear: () =>
-                  ref.read(searchStateProvider.notifier).clearRecents(),
+              onClear: () => _confirmClearRecents(context, ref),
             ),
             ...recents.map(
               (r) => Padding(
@@ -253,9 +264,9 @@ class _ListHeader extends StatelessWidget {
       trailing: TextButton(
         onPressed: onClear,
         style: TextButton.styleFrom(
-          visualDensity: VisualDensity.compact,
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm),
-          minimumSize: Size.zero,
+          // Painted small, but 44 dp tall to touch.
+          minimumSize: const Size(0, 44),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Text(
@@ -357,11 +368,11 @@ class _PlayerCard extends ConsumerWidget {
     final age = live == null && shown != null ? _ageOf(shown) : null;
 
     // Presence is only known from a lookup made this session.
-    final dot = failed
-        ? AppTheme.red
+    final presence = failed
+        ? Presence.failed
         : live != null
-        ? playerPresenceColor(live.data)
-        : AppTheme.muted;
+        ? presenceOf(live.data)
+        : Presence.unknown;
 
     return Material(
       color: AppTheme.surface,
@@ -386,7 +397,7 @@ class _PlayerCard extends ConsumerWidget {
                 rankAsset: shown == null
                     ? null
                     : rankAssetPathFor(shown.rank, shown.rankScore),
-                presence: dot,
+                presence: presence,
               ),
               const SizedBox(width: AppTheme.md),
               Expanded(
@@ -409,6 +420,7 @@ class _PlayerCard extends ConsumerWidget {
                           ? null
                           : rankLabelFor(shown.rank, shown.rankScore),
                       age: age,
+                      presenceWord: live?.data.presence,
                       failed: failed,
                     ),
                   ],
@@ -458,7 +470,7 @@ String? _ageOf(PlayerSnapshot shown) =>
 /// rank to show (nothing looked up yet), a plain person icon holds the place.
 class _Avatar extends StatelessWidget {
   final String? rankAsset;
-  final Color presence;
+  final Presence presence;
   const _Avatar({required this.rankAsset, required this.presence});
 
   static const double _size = 40;
@@ -493,7 +505,7 @@ class _Avatar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppTheme.surface, width: 2),
               ),
-              child: StatusDot(color: presence, size: 10),
+              child: PresenceDot(presence: presence),
             ),
           ),
         ],
@@ -509,11 +521,15 @@ class _Subtitle extends StatelessWidget {
 
   /// How old the figures are, when old enough to say.
   final String? age;
+
+  /// In words, what the dot on the avatar shows. Null when nothing is known.
+  final String? presenceWord;
   final bool failed;
   const _Subtitle({
     required this.platform,
     required this.rank,
     required this.age,
+    required this.presenceWord,
     required this.failed,
   });
 
@@ -528,7 +544,12 @@ class _Subtitle extends StatelessWidget {
           child: Text(
             failed
                 ? 'Failed to load'
-                : [ApiConstants.labelFor(platform), ?rank, ?age].join(' · '),
+                : [
+                    ApiConstants.labelFor(platform),
+                    ?rank,
+                    ?presenceWord,
+                    ?age,
+                  ].join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: failed

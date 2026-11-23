@@ -147,27 +147,33 @@ class _ModePicker extends StatelessWidget {
         children: List.generate(modes.length, (i) {
           final active = i == selected;
           return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelect(i),
-              child: AnimatedContainer(
-                duration: AppTheme.shortAnimation,
-                // 12 + the label + 12 is the 44 dp a thumb needs.
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: active ? AppTheme.accent : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-                ),
-                // Four labels share one row, so the longest ("Wildcards") would
-                // break mid-word past this size.
-                child: MediaQuery.withClampedTextScaling(
-                  maxScaleFactor: 1.3,
-                  child: Text(
-                    modes[i],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: active ? AppTheme.onAccent : AppTheme.muted,
-                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 14,
+            child: Semantics(
+              button: true,
+              selected: active,
+              child: GestureDetector(
+                onTap: () => onSelect(i),
+                child: AnimatedContainer(
+                  duration: AppTheme.shortAnimation,
+                  // 12 + the label + 12 is the 44 dp a thumb needs.
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: active ? AppTheme.accent : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                  ),
+                  // Four labels share one row, so the longest ("Wildcards") would
+                  // break mid-word past this size.
+                  child: MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.3,
+                    child: Text(
+                      modes[i],
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: active ? AppTheme.onAccent : AppTheme.muted,
+                        fontWeight: active
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),

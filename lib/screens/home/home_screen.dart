@@ -47,12 +47,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mapSub = ref.listenManual(mapRotationProvider, (_, next) {
+    _mapSub = ref.listenManual(mapRotationProvider, (previous, next) {
       switch (next) {
         case AsyncData<ApiResult<MapRotation>>(:final value):
           MapNotificationService.schedule(ref, value.data);
           _scheduleRotationRefresh(value.data);
-        case AsyncError():
+        case AsyncError(:final error):
+          // The connection has just gone: the Server Status tile would
+          // otherwise keep showing its last reading as if it were current.
+          // Once, not on each retry below.
+          final alreadyFailed = previous is AsyncValue && previous.hasError;
+          if (!alreadyFailed && isConnectionError(error)) {
+            ref.invalidate(serverStatusProvider);
+          }
           // A refetch failed (map rotation uses noCache, so errors don't fall
           // back to cache). Re-arm a short retry so the rescheduling loop heals
           // itself instead of dying permanently on a transient network blip.
@@ -130,6 +137,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // The foreground refresh timer is frozen while the app is backgrounded,
       // so refetch on resume to top up the notification queue immediately.
       ref.invalidate(mapRotationProvider);
+      // So the Server Status tile says when it was last checked if the device
+      // has lost its connection while the app was away.
+      ref.invalidate(serverStatusProvider);
       // A mute pressed on an alert while the app was closed.
       unawaited(ref.read(alertMuteProvider.notifier).refresh());
     }
@@ -364,8 +374,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 data: (result) => ServerSummaryCard(
                   status: result.data,
                   staleAt: result.staleAt,
-                  onTap: () =>
-                      context.pushPage(ServerStatusPage(status: result.data)),
+                  onTap: () => context.pushPage(
+                    ServerStatusPage(
+                      status: result.data,
+                      staleAt: result.staleAt,
+                    ),
+                  ),
                 ),
                 loading: () => const SummaryTileSkeleton(),
                 error: (e, _) => ErrorCard(

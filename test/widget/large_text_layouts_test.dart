@@ -10,6 +10,7 @@ import 'package:apexlytics/screens/ranked/widgets/climb_chart.dart';
 import 'package:apexlytics/screens/ranked/widgets/climb_moves.dart';
 import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/ranked/best_metric.dart';
+import 'package:apexlytics/widgets/player_info_card.dart';
 import 'package:apexlytics/widgets/ranked_info_card.dart';
 import 'package:apexlytics/utils/ranked/rank_climb.dart';
 import 'package:apexlytics/models/ranked_match.dart';
@@ -770,6 +771,24 @@ void main() {
     );
     await tester.pump();
     expect(find.textContaining('RP to '), findsOneWidget);
+    expectNoOverflow();
+  });
+
+  testWidgets('the player card with a long UID and legend name', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      PlayerInfoCard(
+        stats: buildStats(
+          name: 'ZZephyrous',
+          uid: '1006838015507',
+          rank: 'Platinum',
+          rankScore: 10675,
+        ),
+      ),
+    );
+    expect(find.text('UID: 1006838015507'), findsOneWidget);
     expectNoOverflow();
   });
 

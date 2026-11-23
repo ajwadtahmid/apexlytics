@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../constants/api_constants.dart';
 import '../../models/server_status.dart';
 import '../../providers/proxy_health_provider.dart';
@@ -21,11 +22,22 @@ Color latencyColor(int ms) {
 
 class ServerStatusPage extends ConsumerWidget {
   final ServerStatus status;
-  const ServerStatusPage({super.key, required this.status});
+
+  /// Set when [status] is a saved copy rather than a fresh reading.
+  final DateTime? staleAt;
+  const ServerStatusPage({super.key, required this.status, this.staleAt});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final services = status.services.values.toList();
+    final proxies = ref.watch(proxyHealthProvider).asData?.value;
+    // Neither of our servers answers, so the Apex readings below may be as old
+    // as the last time this device could reach them.
+    final cannotReach =
+        proxies != null &&
+        proxies.primary.state == ProxyState.down &&
+        proxies.backup.state != ProxyState.online &&
+        proxies.backup.state != ProxyState.slow;
     return Scaffold(
       appBar: AppBar(title: const Text('Server Status')),
       body: Column(
@@ -35,7 +47,27 @@ class ServerStatusPage extends ConsumerWidget {
               padding: const EdgeInsets.all(AppTheme.md),
               itemCount: services.length + 1,
               itemBuilder: (context, i) {
-                if (i == 0) return const _ProxyStatusCard();
+                if (i == 0) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (staleAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppTheme.sm),
+                          child: StaleBanner(
+                            staleAt: staleAt!,
+                            label: 'Last checked',
+                          ),
+                        ),
+                      if (cannotReach)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: AppTheme.sm),
+                          child: _CannotReachNote(),
+                        ),
+                      const _ProxyStatusCard(),
+                    ],
+                  );
+                }
                 final svc = services[i - 1];
                 final color = AppTheme.statusColor(svc.overallStatus);
                 return SurfaceCard(
@@ -113,20 +145,26 @@ class ServerStatusPage extends ConsumerWidget {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.md),
+          Semantics(
+            link: true,
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => openExternalLink(
                 context,
                 Uri.parse(ApiConstants.apexStatusUrl),
               ),
-              child: const Text(
-                'Data from apexlegendsstatus.com',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.blue,
-                  fontSize: 12,
-                  decoration: TextDecoration.underline,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: const Center(
+                  child: Text(
+                    'Data from apexlegendsstatus.com',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppTheme.blue,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -139,6 +177,42 @@ class ServerStatusPage extends ConsumerWidget {
 
 /// Whether the app's own servers are up: the primary, and the backup it falls
 /// back to when the primary is down. Laid out like the service cards above.
+/// Says why the Apex readings below may not be current.
+class _CannotReachNote extends StatelessWidget {
+  const _CannotReachNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.md,
+        vertical: AppTheme.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.orange.withAlpha(25),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.wifi_off, size: 14, color: AppTheme.orange),
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              "Can't reach the Apexlytics servers, so the readings below are "
+              'the last ones this device received and may be out of date.',
+              style: TextStyle(color: AppTheme.orange, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProxyStatusCard extends ConsumerWidget {
   const _ProxyStatusCard();
 
