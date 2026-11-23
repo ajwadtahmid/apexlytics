@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../providers/alert_mute_provider.dart';
 import '../../../providers/api_provider.dart';
 import '../../../providers/auto_backup_provider.dart';
@@ -511,7 +512,8 @@ class CacheSettingsSection extends ConsumerWidget {
 
   /// Previews one of the app's own copies and restores it after the same
   /// confirmation as a file. A fresh copy of the current data is made first, so
-  /// the restore can itself be undone.
+  /// the restore can itself be undone; when that copy cannot be made, the player
+  /// is asked whether to restore without it.
   Future<void> _restoreAutoBackup(
     BuildContext context,
     WidgetRef ref,
@@ -536,12 +538,25 @@ class CacheSettingsSection extends ConsumerWidget {
           preview,
           rankedStore,
           beforeCommit: () async {
-            await runAutoBackup(
+            final saved = await runAutoBackup(
               ref.read(sharedPreferencesProvider),
               rankedStore,
               force: true,
             );
             ref.invalidate(autoBackupListProvider);
+            if (saved != null || !context.mounted) return saved != null;
+            // Another copy was being made, or the write failed (a full disk,
+            // usually): the restore would not be undoable, so say so first.
+            return showConfirmDialog(
+              context,
+              title: 'Could not save your current data',
+              body:
+                  'The restore replaces your profiles, favorites and settings '
+                  'with the ones in the copy, and there is no copy of what you '
+                  'have now to go back to. Restore anyway?',
+              confirmLabel: 'Restore anyway',
+              confirmColor: AppTheme.accent,
+            );
           },
         );
     }
@@ -552,7 +567,7 @@ class CacheSettingsSection extends ConsumerWidget {
     WidgetRef ref,
     BackupPreview preview,
     RankedHistoryStore rankedStore, {
-    Future<void> Function()? beforeCommit,
+    Future<bool> Function()? beforeCommit,
   }) async {
     final replaced = preview.profilesReplacedBy(
       ref.read(sharedPreferencesProvider),
@@ -566,7 +581,8 @@ class CacheSettingsSection extends ConsumerWidget {
     );
     if (!confirmed || !context.mounted) return;
 
-    await beforeCommit?.call();
+    if (beforeCommit != null && !await beforeCommit()) return;
+    if (!context.mounted) return;
     final prefs = ref.read(sharedPreferencesProvider);
     final importResult = await commitBackupImport(
       preview,

@@ -178,12 +178,17 @@ Future<AutoBackupFile?> runAutoBackup(
     await prefs.setInt(PrefsKeys.autoBackupLastAt, at.millisecondsSinceEpoch);
     _lastFailure = null;
 
-    final copies = await listAutoBackups(dir);
-    for (final old in copies.skip(kAutoBackupKeep)) {
-      try {
-        await old.file.delete();
-      } on FileSystemException {
-        // Tried again with the next copy.
+    // A copy taken just before a restore is extra: dropping the oldest to
+    // make room could delete the very copy being restored. The next scheduled
+    // copy trims back to [kAutoBackupKeep].
+    if (!force) {
+      final copies = await listAutoBackups(dir);
+      for (final old in copies.skip(kAutoBackupKeep)) {
+        try {
+          await old.file.delete();
+        } on FileSystemException {
+          // Tried again with the next copy.
+        }
       }
     }
     log.i('Automatic backup: $matchCount matches, ${data.length} bytes');

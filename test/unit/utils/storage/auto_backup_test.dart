@@ -147,6 +147,24 @@ void main() {
       expect(await listAutoBackups(dir), hasLength(2));
     });
 
+    test('a forced copy does not push out the oldest of the kept ones, the '
+        'next scheduled one trims back', () async {
+      await addGame();
+      for (var i = 0; i < kAutoBackupKeep; i++) {
+        await run(day1.add(Duration(days: i * 3)));
+      }
+      expect(await listAutoBackups(dir), hasLength(kAutoBackupKeep));
+      final oldest = (await listAutoBackups(dir)).last.file.path;
+
+      await run(day1.add(const Duration(days: 20)), force: true);
+      final kept = await listAutoBackups(dir);
+      expect(kept, hasLength(kAutoBackupKeep + 1));
+      expect(kept.map((c) => c.file.path), contains(oldest));
+
+      await run(day1.add(const Duration(days: 30)));
+      expect(await listAutoBackups(dir), hasLength(kAutoBackupKeep));
+    });
+
     test(
       'a failure is quiet, keeps the old copies and waits before retrying',
       () async {
