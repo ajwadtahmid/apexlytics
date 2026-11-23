@@ -38,6 +38,11 @@ const int kMaxPlausibleDamage = 20000;
 /// dropped, since the newest row's value is shown as current RP.
 const int kMaxPlausibleCumulativeRp = 100000;
 
+/// Upper bound for a plausible [RankedMatch.lengthSecs], a day. A restored
+/// value outside 0 to this is dropped: a huge one would overflow the SQL `SUM`
+/// that totals time played and make every aggregate of that player throw.
+const int kMaxPlausibleLengthSecs = 86400;
+
 /// Hosts a rank badge URL may use: the current API host and the legacy one in older backups.
 const Set<String> kRankImageHosts = {
   'api.apexlegendsstatus.com',

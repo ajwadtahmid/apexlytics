@@ -1275,6 +1275,29 @@ void main() {
       },
     );
 
+    test('an implausible imported game length is dropped, so the totals '
+        'still add up', () async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+      Map<String, Object?> row(int start, int length) =>
+          Map<String, Object?>.from(match('1', start).toStoredMap())
+            ..['length_secs'] = length;
+
+      final skipped = await store.importRows([
+        row(100, 9000000000000000000),
+        row(200, 9000000000000000000),
+        row(300, -5),
+        row(400, 600),
+      ]);
+
+      // Two of these made SQLite's integer SUM overflow and throw, for every
+      // total of the player.
+      expect(skipped, 0);
+      final summary = await store.summaryFor('1');
+      expect(summary.games, 4);
+      expect(summary.totalLengthSecs, 600);
+    });
+
     test('a restored row is filed under the id its own uid and start time '
         'give, whatever id the file claims', () async {
       final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);

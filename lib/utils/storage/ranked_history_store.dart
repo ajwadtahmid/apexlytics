@@ -1525,7 +1525,8 @@ class RankedHistoryStore {
   ///
   /// The file comes from the user, so a bad row is skipped and counted
   /// rather than failing the whole batch. A row with an implausible `cumulative_rp` or
-  /// untrusted `rank_img` is imported without that value (count logged). A row is skipped unless: it's
+  /// `length_secs`, or an untrusted `rank_img`, is imported without that value
+  /// (count logged). A row is skipped unless: it's
   /// filtered to [_importableColumns] (an unknown key would reach SQLite as
   /// a column name); it has a non-empty `id` and `uid`, and a `start_ms`/`end_ms`
   /// that is a readable timestamp (see [_isEpochMs]); and every value is bindable (null, number, or
@@ -1688,6 +1689,12 @@ class RankedHistoryStore {
     if (cumulativeRp != null &&
         (cumulativeRp < 0 || cumulativeRp > kMaxPlausibleCumulativeRp)) {
       row['cumulative_rp'] = null;
+      onCorrected?.call();
+    }
+    final lengthSecs = row['length_secs'] as int?;
+    if (lengthSecs != null &&
+        (lengthSecs < 0 || lengthSecs > kMaxPlausibleLengthSecs)) {
+      row['length_secs'] = null;
       onCorrected?.call();
     }
     final rankImg = row['rank_img'] as String?;
