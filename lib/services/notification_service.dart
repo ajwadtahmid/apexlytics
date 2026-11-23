@@ -358,7 +358,8 @@ class NotificationService {
 
   // Each mode owns a contiguous block of [_maxPerMode] notification IDs so a
   // batch of upcoming-rotation alerts can be scheduled — and cancelled —
-  // cleanly. IDs 1–10 stay reserved for future categories (RP milestones, etc.).
+  // cleanly. IDs 1–9 are the test alert, 10–13 the mute confirmations, and
+  // 14–99 stay free for future categories (RP milestones, etc.).
   static const _maxPerMode = 12;
   static const rankedIdBase = 100; // 100–111
   static const pubsIdBase = 120; // 120–131
