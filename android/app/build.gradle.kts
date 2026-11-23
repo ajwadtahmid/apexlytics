@@ -57,7 +57,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ajwadtahmid.apexlytics"
-        minSdk = maxOf(flutter.minSdkVersion, 26)
+        minSdk = maxOf(flutter.minSdkVersion, 30)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
