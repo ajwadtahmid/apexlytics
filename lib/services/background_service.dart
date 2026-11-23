@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -62,6 +63,11 @@ SeasonalMaps? _cachedSeasonalMaps(SharedPreferences prefs) {
   }
 }
 
+/// Bumped when this isolate stores a result, so Settings' "Last background
+/// refresh" row reads it again. A result stored by the background isolate is
+/// picked up on resume instead.
+final ValueNotifier<int> backgroundFetchResultChanges = ValueNotifier(0);
+
 /// Writes [PrefsKeys.bgFetchLastResult]. Timestamp only — a failure reason used to be
 /// appended here, which put an exception string into a pref a support
 /// screenshot could carry off the device. Never throws.
@@ -75,31 +81,48 @@ Future<void> _recordFetchResult({
       PrefsKeys.bgFetchLastResult,
       '${ok ? 'ok' : 'error'}:${DateTime.now().toIso8601String()}',
     );
+    backgroundFetchResultChanges.value++;
   } catch (e) {
     _debugLog('Failed to persist fetch result: $e');
   }
 }
 
+// The run the OS last timed out, and the one in progress. A run that was timed
+// out keeps going (nothing can stop it), so it checks this before it plans
+// alerts or records "ok" over the failure the timeout already recorded.
+int _currentRun = 0;
+int _timedOutRun = -1;
+
+// Tasks already handed back to the OS: finishing one twice is an error.
+final Set<String> _finishedTasks = {};
+
+/// Hands [taskId] back to the OS once.
+void _finishTask(String taskId) {
+  if (_finishedTasks.add(taskId)) BackgroundFetch.finish(taskId);
+}
+
 /// The OS killed the task for running too long. Recorded as a failure so
 /// Settings' "Last background refresh" doesn't keep showing an older
 /// success as if it were current.
-Future<void> _onTaskTimeout(String taskId) async {
+@visibleForTesting
+Future<void> onBackgroundTaskTimeout(String taskId) async {
   _debugLog('Task timed out: $taskId');
+  _timedOutRun = _currentRun;
   await _recordFetchResult(ok: false);
-  BackgroundFetch.finish(taskId);
+  _finishTask(taskId);
 }
 
 // Runs when the app is fully terminated (headless). Must be top-level.
 @pragma('vm:entry-point')
 void backgroundFetchHeadlessTask(HeadlessEvent event) async {
   if (event.timeout) {
-    await _onTaskTimeout(event.taskId);
+    await onBackgroundTaskTimeout(event.taskId);
     return;
   }
   try {
     await _backgroundFetchAndSchedule();
   } finally {
-    BackgroundFetch.finish(event.taskId);
+    _finishTask(event.taskId);
   }
 }
 
@@ -153,11 +176,20 @@ Future<bool> scheduleFetchedRotation(
   return true;
 }
 
-Future<void> _backgroundFetchAndSchedule() async {
+@visibleForTesting
+Future<void> runBackgroundFetch({Future<MapRotation> Function()? fetch}) =>
+    _backgroundFetchAndSchedule(fetch: fetch);
+
+Future<void> _backgroundFetchAndSchedule({
+  Future<MapRotation> Function()? fetch,
+}) async {
+  final run = ++_currentRun;
+  bool timedOut() => _timedOutRun == run;
   SharedPreferences? prefs;
   try {
     _debugLog('Fetch started');
     await NotificationService.init();
+    if (timedOut()) return;
 
     prefs = await SharedPreferences.getInstance();
     final settings = BackgroundFetchSettings.fromPrefs(prefs);
@@ -171,33 +203,42 @@ Future<void> _backgroundFetchAndSchedule() async {
       // Without this, Settings' "Last background refresh" row kept showing
       // a stale result from an earlier, mode-enabled run instead of
       // reflecting that background fetch is alive and working.
-      await _recordFetchResult(ok: true, prefs: prefs);
+      if (!timedOut()) await _recordFetchResult(ok: true, prefs: prefs);
       return;
     }
 
-    // Headless tasks run in a detached isolate — no provider tree is available,
-    // so ApiService cannot be used here. Create a minimal Dio client directly,
-    // with the same primary/backup failover ApiService gets.
-    final dio = Dio(buildApiBaseOptions());
-    dio.interceptors.add(
-      RetryInterceptor(dio: dio, backupBaseUrl: Env.proxyUrlBackup),
-    );
+    final MapRotation rotation;
+    if (fetch != null) {
+      rotation = await fetch();
+    } else {
+      // Headless tasks run in a detached isolate — no provider tree is
+      // available, so ApiService cannot be used here. Create a minimal Dio
+      // client directly, with the same primary/backup failover ApiService gets.
+      final dio = Dio(buildApiBaseOptions());
+      dio.interceptors.add(
+        RetryInterceptor(dio: dio, backupBaseUrl: Env.proxyUrlBackup),
+      );
 
-    // Bounded like the foreground ApiService: the retry/failover ladder
-    // alone can outlast the ~30 s the OS gives this task, and a killed task
-    // never gets to record its result.
-    final response = await withOverallDeadline(
-      TimeoutConstants.backgroundFetchDeadline,
-      (token) => dio.get(
-        ApiConstants.mapRotationPath,
-        queryParameters: {'version': ApiConstants.mapRotationVersion},
-        cancelToken: token,
-      ),
-    );
+      // Bounded like the foreground ApiService: the retry/failover ladder
+      // alone can outlast the ~30 s the OS gives this task, and a killed task
+      // never gets to record its result.
+      final response = await withOverallDeadline(
+        TimeoutConstants.backgroundFetchDeadline,
+        (token) => dio.get(
+          ApiConstants.mapRotationPath,
+          queryParameters: {'version': ApiConstants.mapRotationVersion},
+          cancelToken: token,
+        ),
+      );
+      rotation = parseMapRotation(response.data);
+    }
 
-    final rotation = parseMapRotation(response.data);
+    // The OS has already counted this run as timed out and been told so:
+    // planning alerts now, or recording a success, would contradict that.
+    if (timedOut()) return;
 
     final scheduled = await scheduleFetchedRotation(prefs, rotation);
+    if (timedOut()) return;
     if (!scheduled) {
       // Alerts were turned off while the request was out; the cancel is done.
       await _recordFetchResult(ok: true, prefs: prefs);
@@ -209,7 +250,7 @@ Future<void> _backgroundFetchAndSchedule() async {
     // Detail only in debug: this string can carry a host name or an upstream
     // message, and debugPrint is not stripped from release builds.
     _debugLog('Fetch failed: $e');
-    await _recordFetchResult(ok: false, prefs: prefs);
+    if (!timedOut()) await _recordFetchResult(ok: false, prefs: prefs);
   }
 }
 
@@ -242,11 +283,11 @@ class BackgroundService {
           try {
             await _backgroundFetchAndSchedule();
           } finally {
-            BackgroundFetch.finish(taskId);
+            _finishTask(taskId);
           }
         },
         // Invoked if the task doesn't finish within the deadline.
-        _onTaskTimeout,
+        onBackgroundTaskTimeout,
       );
       return true;
     } on PlatformException catch (e) {

@@ -9,6 +9,8 @@ import 'package:apexlytics/constants/prefs_keys.dart';
 import 'package:apexlytics/providers/notification_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/notification_settings_section.dart';
+import 'package:apexlytics/services/background_service.dart'
+    show backgroundFetchResultChanges;
 
 const _bannerText = 'Notification permission off';
 
@@ -117,6 +119,32 @@ void main() {
         find.textContaining('Waiting for the first background refresh'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('follows a result stored while Settings stays open', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        prefsValues: alertOn,
+        permissionEnabled: true,
+        hasBackgroundTask: true,
+      );
+      expect(
+        find.textContaining('Waiting for the first background refresh'),
+        findsOneWidget,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        PrefsKeys.bgFetchLastResult,
+        'ok:${DateTime.now().toIso8601String()}',
+      );
+      backgroundFetchResultChanges.value++;
+      await tester.pump();
+
+      expect(find.textContaining('Last background refresh'), findsOneWidget);
+      expect(find.textContaining('Waiting for the first'), findsNothing);
     });
 
     testWidgets('says alerts need the app open on a computer', (tester) async {

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/settings_provider.dart';
-import '../../../services/background_service.dart' show BackgroundService;
+import '../../../services/background_service.dart'
+    show BackgroundService, backgroundFetchResultChanges;
 import '../../../utils/formatting/format.dart' show timeAgo;
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
@@ -122,13 +125,58 @@ class NotificationSettingsSection extends ConsumerWidget {
 /// "Last background refresh: …" - background fetch is otherwise invisible,
 /// so this is the one signal distinguishing "the OS isn't running the task"
 /// from "it ran and something else is wrong".
-class _LastBackgroundRefreshRow extends ConsumerWidget {
+class _LastBackgroundRefreshRow extends ConsumerStatefulWidget {
   final bool hasBackgroundTask;
 
   const _LastBackgroundRefreshRow({required this.hasBackgroundTask});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LastBackgroundRefreshRow> createState() =>
+      _LastBackgroundRefreshRowState();
+}
+
+/// Settings stays mounted while other tabs are used, so the row follows the
+/// stored result itself: when this isolate records one, when the app comes back
+/// (the background task writes from its own isolate, so the prefs are read
+/// again first), and as the "time ago" ages.
+class _LastBackgroundRefreshRowState
+    extends ConsumerState<_LastBackgroundRefreshRow>
+    with WidgetsBindingObserver {
+  Timer? _ageTimer;
+
+  bool get hasBackgroundTask => widget.hasBackgroundTask;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    backgroundFetchResultChanges.addListener(_changed);
+    _ageTimer = Timer.periodic(const Duration(minutes: 1), (_) => _changed());
+  }
+
+  @override
+  void dispose() {
+    _ageTimer?.cancel();
+    backgroundFetchResultChanges.removeListener(_changed);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    ref
+        .read(sharedPreferencesProvider)
+        .reload()
+        .then((_) => _changed(), onError: (Object _) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final raw = ref
         .watch(sharedPreferencesProvider)
         .getString(PrefsKeys.bgFetchLastResult);
