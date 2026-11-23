@@ -26,6 +26,14 @@ final sharedMatchesProvider = FutureProvider.autoDispose
           if (p.isSet) p.uid,
       };
       final store = ref.watch(rankedHistoryStoreProvider);
+      // Follows a sync that lands while the page is open (the Stats timer's),
+      // but never starts one: only a sync that is already running or done is
+      // watched, so this still requests nothing.
+      for (final uid in uids) {
+        if (ref.read(rankedSyncProvider(uid).exists)) {
+          ref.watch(rankedSyncProvider(uid));
+        }
+      }
       final byUid = <String, List<RankedMatch>>{
         for (final uid in uids) uid: await _gamesFor(store, uid, splitId),
       };

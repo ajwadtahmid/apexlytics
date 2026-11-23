@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/api_constants.dart';
 import '../constants/prefs_keys.dart';
 import '../models/ranked_match.dart';
@@ -19,6 +20,7 @@ import 'api_provider.dart';
 import 'player_provider.dart';
 import 'rank_goal_provider.dart';
 import 'settings_provider.dart';
+import 'shared_matches_provider.dart';
 
 /// App-lifetime handle to the local ranked-history database.
 final rankedHistoryStoreProvider = Provider<RankedHistoryStore>((ref) {
@@ -96,6 +98,10 @@ const _kOfflineRetry = Duration(minutes: 5);
 /// [_kOfflineRetry], since waiting a few minutes doesn't change whether the
 /// same request gets accepted next time.
 const _kRequestErrorRetry = Duration(hours: 1);
+
+/// More than any wait the sync stores (the 3 h cooldown is the longest; the
+/// server's own Retry-After stays within its hourly window).
+const _kLongestSyncWait = Duration(hours: 6);
 
 /// Syncs ranked history for [uid]: fetches the latest 100 from `/games`, merges
 /// them into the local store, and classifies any newly/legacy-unstamped rows.
@@ -326,9 +332,15 @@ Future<RankedSyncOutcome> _syncRankedHistory({
 /// Check this before invalidating the sync on a timer: invalidating re-runs
 /// every downstream provider (the split's matches and all its aggregates),
 /// which is wasted work when the sync was only going to replay itself.
+///
+/// A stored time further ahead than any wait the sync writes is one saved
+/// while the device clock was wrong; it counts as due, so a corrected clock
+/// does not leave history unrecorded until that time comes.
 bool rankedSyncDue(SharedPreferences prefs, String uid, {DateTime? now}) {
   final nextSyncAt = prefs.getInt(PrefsKeys.gamesNextSync(uid)) ?? 0;
-  return (now ?? DateTime.now()).millisecondsSinceEpoch >= nextSyncAt;
+  final nowMs = (now ?? DateTime.now()).millisecondsSinceEpoch;
+  return nowMs >= nextSyncAt ||
+      nextSyncAt - nowMs > _kLongestSyncWait.inMilliseconds;
 }
 
 /// Whether the backend is currently seeing polls for [uid] — that is, whether
@@ -567,6 +579,7 @@ void invalidatePlayerDerivedProviders(WidgetRef ref) {
   ref.invalidate(rankedPersonalBestProvider);
   ref.invalidate(rankedAllTimeBestProvider);
   ref.invalidate(rankedSplitDetailProvider);
+  ref.invalidate(sharedMatchesProvider);
   ref.invalidate(gamesEligibilityProvider);
   ref.invalidate(rankedSeasonsProvider);
   ref.invalidate(myPlayerStatsProvider);
@@ -604,6 +617,7 @@ void _invalidateMatchDerived(void Function(ProviderOrFamily provider) ref) {
   ref(rankedSplitViewProvider);
   ref(rankedLifetimeAggregatesProvider);
   ref(rankedSplitDetailProvider);
+  ref(sharedMatchesProvider);
   ref(rankedPersonalBestProvider);
   ref(rankedAllTimeBestProvider);
 }

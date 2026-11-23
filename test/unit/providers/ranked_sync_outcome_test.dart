@@ -742,6 +742,27 @@ void main() {
       expect(rankedSyncDue(prefs, uid, now: now), isTrue);
     });
 
+    test('is due when the stored time is further off than any wait', () async {
+      // Saved while the clock was a year ahead, then the clock was corrected.
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.gamesNextSync(uid): now
+            .add(const Duration(days: 30))
+            .millisecondsSinceEpoch,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(rankedSyncDue(prefs, uid, now: now), isTrue);
+    });
+
+    test('still waits out the longest cooldown the sync writes', () async {
+      SharedPreferences.setMockInitialValues({
+        PrefsKeys.gamesNextSync(uid): now
+            .add(const Duration(hours: 3))
+            .millisecondsSinceEpoch,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(rankedSyncDue(prefs, uid, now: now), isFalse);
+    });
+
     test('is scoped to the uid', () async {
       SharedPreferences.setMockInitialValues({
         PrefsKeys.gamesNextSync('someone-else'): now

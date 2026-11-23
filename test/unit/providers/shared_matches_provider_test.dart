@@ -111,4 +111,71 @@ void main() {
     await record('a', [now]);
     expect(await read(current, saved: const ['a']), isEmpty);
   });
+
+  test('follows a sync that lands while it is being watched', () async {
+    await record('a', [now]);
+    await record('b', [now + 10]);
+    final (container, _) = await prefsContainer(
+      values: {
+        'player_profiles': jsonEncode([
+          for (final uid in ['a', 'b'])
+            {'name': uid.toUpperCase(), 'uid': uid, 'platform': 'PC'},
+        ]),
+      },
+      overrides: [
+        rankedHistoryStoreProvider.overrideWithValue(store),
+        rankedSyncProvider.overrideWith(
+          (ref, uid) async => RankedSyncOutcome.synced,
+        ),
+      ],
+    );
+    // As on the Stats tab, where the syncs are already running.
+    container.listen(rankedSyncProvider('a'), (_, _) {});
+    container.listen(rankedSyncProvider('b'), (_, _) {});
+    container.listen(sharedMatchesProvider(current), (_, _) {});
+    expect(
+      await container.read(sharedMatchesProvider(current).future),
+      hasLength(1),
+    );
+
+    // The next sync records another game for both.
+    await record('a', [now + 5000]);
+    await record('b', [now + 5010]);
+    container.invalidate(rankedSyncProvider('a'));
+    await container.read(rankedSyncProvider('a').future);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      await container.read(sharedMatchesProvider(current).future),
+      hasLength(2),
+    );
+  });
+
+  test('a clear or a restore refreshes it', () async {
+    await record('a', [now]);
+    await record('b', [now + 10]);
+    final (container, _) = await prefsContainer(
+      values: {
+        'player_profiles': jsonEncode([
+          for (final uid in ['a', 'b'])
+            {'name': uid.toUpperCase(), 'uid': uid, 'platform': 'PC'},
+        ]),
+      },
+      overrides: [rankedHistoryStoreProvider.overrideWithValue(store)],
+    );
+    container.listen(sharedMatchesProvider(current), (_, _) {});
+    expect(
+      await container.read(sharedMatchesProvider(current).future),
+      hasLength(1),
+    );
+
+    await store.deleteAll();
+    // The helper a clear or a restore runs (a container, as it outlives widgets).
+    invalidateMatchDerivedProvidersIn(container);
+
+    expect(
+      await container.read(sharedMatchesProvider(current).future),
+      isEmpty,
+    );
+  });
 }
