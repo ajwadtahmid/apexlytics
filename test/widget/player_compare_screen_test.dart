@@ -110,6 +110,13 @@ void main() {
       expect(find.text('+2,000'), findsOneWidget); // RP
     });
 
+    testWidgets('names the last column', (tester) async {
+      await pump(tester);
+
+      expect(find.text('You vs them'), findsOneWidget);
+      expect(find.text('Rank change counts divisions.'), findsOneWidget);
+    });
+
     testWidgets('says so when the other player leads', (tester) async {
       await pump(tester, mine: them, theirs: me);
 
@@ -278,6 +285,7 @@ void main() {
           uid: 'a',
           legendStats: [legend('Wraith', games: 2)],
         ),
+        size: const Size(400, 1400),
       );
       await tester.tap(find.text('Legend'));
       await tester.pump(const Duration(milliseconds: 250));
@@ -313,6 +321,7 @@ void main() {
             ),
           ],
         ),
+        size: const Size(400, 1400),
       );
       await tester.tap(find.text('Legend'));
       await tester.pump(const Duration(milliseconds: 250));

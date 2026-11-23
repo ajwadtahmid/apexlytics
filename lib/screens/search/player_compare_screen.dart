@@ -56,6 +56,7 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
         nameB: widget.them.name,
         firstIsYou: true,
         showKey: showKey,
+        deltaLabel: 'You vs them',
         rows: [for (final l in lines) _row(l)],
       );
 
@@ -98,7 +99,7 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
   List<Widget> _rankedSection() => [
     _table(rankedCompareLines(widget.me, widget.them)),
     const SizedBox(height: AppTheme.sm),
-    const Text('The Rank change counts divisions.', style: AppTheme.caption),
+    const Text('Rank change counts divisions.', style: AppTheme.caption),
   ];
 
   List<Widget> _legendSection() {

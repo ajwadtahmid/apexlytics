@@ -1,9 +1,10 @@
 import 'package:material_ui/material_ui.dart';
-import '../../../utils/formatting/format.dart' show formatNumber;
+
+import '../../../utils/formatting/format.dart' show formatNumber, formatSigned;
 import '../../../utils/theme.dart';
 
 /// RP gained/lost badge for map cards — the total (`1,234 RP`), or via
-/// [MapRpBadge.perGame] the average per game (`12.4 /game`). A dark scrim +
+/// [MapRpBadge.perGame] the average per game (`+12.4 RP/game`). A dark scrim +
 /// coloured text + a direction arrow keep it legible over any (bright or
 /// dark) part of a map photo. [MapRpBadge.custom] is the same badge for any
 /// other figure: [text] as given, with no arrow, since it is not a gain or
@@ -37,7 +38,7 @@ class MapRpBadge extends StatelessWidget {
     final shown =
         custom ??
         (avg != null
-            ? '${avg.abs().toStringAsFixed(1)} /game'
+            ? '${formatSigned(avg)} RP/game'
             : '${formatNumber(totalRp!.abs())} RP');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

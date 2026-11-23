@@ -104,8 +104,9 @@ void main() {
       ),
       findsNWidgets(3),
     );
-    // Top right: previous value, trend icon, new value.
-    expect(find.textContaining('-10.0', findRichText: true), findsOneWidget);
+    // Top right: previous value, trend icon, new value; the headline names
+    // the previous value too.
+    expect(find.textContaining('-10.0', findRichText: true), findsNWidgets(2));
     expect(find.byIcon(Icons.trending_up), findsOneWidget);
     expect(find.byIcon(Icons.trending_flat), findsNWidgets(3));
   });
@@ -255,7 +256,9 @@ void main() {
       );
 
       expect(
-        headline('Up 20.0 RP per game over your last 5 sessions'),
+        headline(
+          'Gaining 10.0 RP per game over your last 5 sessions, up from -10.0',
+        ),
         findsOneWidget,
       );
       expect(

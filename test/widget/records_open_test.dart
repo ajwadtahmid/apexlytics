@@ -303,7 +303,7 @@ void main() {
       g(at(3, 18), 5, length: 3600),
       g(at(3, 19, 15), 5, length: 3600),
     ];
-    final day = DateFormat('EEE, MMM d').format(DateTime(2026, 10, 2));
+    final day = DateFormat('MMM d').format(DateTime(2026, 10, 2));
 
     testWidgets('the best day shows its RP and games, and lists them', (
       tester,

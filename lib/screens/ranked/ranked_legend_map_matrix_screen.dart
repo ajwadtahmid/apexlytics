@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../constants/legend_constants.dart' show legendInfo;
 import '../../constants/map_constants.dart' show battleRoyaleMapInfo;
 import '../../models/ranked_match.dart';
@@ -26,11 +27,15 @@ class RankedLegendMapMatrixEntry extends StatelessWidget {
   /// its sessions are found over.
   final Future<void> Function()? onRefresh;
   final List<RankedMatch>? sessionPool;
+
+  /// The period the grid covers, named under its title.
+  final String? periodLabel;
   const RankedLegendMapMatrixEntry({
     super.key,
     required this.matches,
     this.onRefresh,
     this.sessionPool,
+    this.periodLabel,
   });
 
   @override
@@ -44,6 +49,7 @@ class RankedLegendMapMatrixEntry extends StatelessWidget {
             matches: matches,
             onRefresh: onRefresh,
             sessionPool: sessionPool,
+            periodLabel: periodLabel,
           ),
         ),
       ),
@@ -60,11 +66,15 @@ class RankedLegendMapMatrixScreen extends ConsumerWidget {
   /// See [RankedLegendMapMatrixEntry].
   final Future<void> Function()? onRefresh;
   final List<RankedMatch>? sessionPool;
+
+  /// The period the games are from, shown above the grid.
+  final String? periodLabel;
   const RankedLegendMapMatrixScreen({
     super.key,
     required this.matches,
     this.onRefresh,
     this.sessionPool,
+    this.periodLabel,
   });
 
   /// Opens the games behind one cell as a history page. A total cell
@@ -120,14 +130,33 @@ class RankedLegendMapMatrixScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: RankedLegendMapMatrixView(
-          cells: cells,
-          onCellTap: (cell) => _openCell(context, cell),
-          footer: RankedBestLegendPerMap(
-            cells: cells,
-            currentMapName: current,
-            metric: ref.watch(bestMetricProvider),
-          ),
+        child: Column(
+          children: [
+            if (periodLabel case final label? when label.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.md,
+                  AppTheme.sm,
+                  AppTheme.md,
+                  0,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(label, style: AppTheme.captionSmall),
+                ),
+              ),
+            Expanded(
+              child: RankedLegendMapMatrixView(
+                cells: cells,
+                onCellTap: (cell) => _openCell(context, cell),
+                footer: RankedBestLegendPerMap(
+                  cells: cells,
+                  currentMapName: current,
+                  metric: ref.watch(bestMetricProvider),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

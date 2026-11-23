@@ -168,7 +168,7 @@ void main() {
       // The legend's and the map's figure, as the same measure; the best
       // session says its own.
       expect(find.text('+80 RP'), findsNWidgets(3));
-      expect(find.text('+20.0 /game'), findsNothing);
+      expect(find.text('+20.0 RP/game'), findsNothing);
     });
 
     testWidgets('follows the saved choice', (tester) async {
@@ -176,7 +176,7 @@ void main() {
 
       expect(find.text('Total Kills'), findsOneWidget); // the pill
       expect(find.text('8 kills'), findsNWidgets(2));
-      expect(find.text('+20.0 /game'), findsNothing);
+      expect(find.text('+20.0 RP/game'), findsNothing);
     });
 
     testWidgets('can be changed from the recap itself', (tester) async {
@@ -192,7 +192,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('+20.0 /game'), findsNWidgets(2)); // legend, map
+      expect(find.text('+20.0 RP/game'), findsNWidgets(2)); // legend, map
       expect(find.text('+80 RP'), findsOneWidget); // the session alone
     });
 

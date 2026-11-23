@@ -576,10 +576,10 @@ class _Summary extends StatelessWidget {
                   (v) => formatSigned(v.toDouble()),
                   signed: true,
                 ),
-              SquadStatRow('Avg kills', [
+              SquadStatRow('Avg Kills', [
                 for (final g in perSlot) average(g.map((m) => m.kills)),
               ], (v) => formatAvgKills(v.toDouble())),
-              SquadStatRow('Avg damage', [
+              SquadStatRow('Avg Damage', [
                 for (final g in perSlot) average(g.map((m) => m.damage)),
               ], (v) => formatAvgDamage(v.toDouble())),
             ],

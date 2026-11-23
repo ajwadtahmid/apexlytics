@@ -66,15 +66,9 @@ void main() {
 
       expect(find.textContaining('Alter', findRichText: true), findsOneWidget);
       expect(find.textContaining('Comfort trap'), findsWidgets);
-      expect(
-        find.text('50% of your games at -5.0 RP per game'),
-        findsOneWidget,
-      );
+      expect(find.text('50% of your games at -5.0 RP/game'), findsOneWidget);
       expect(find.textContaining('Hidden gem'), findsWidgets);
-      expect(
-        find.text('25% of your games at +20.0 RP per game'),
-        findsOneWidget,
-      );
+      expect(find.text('25% of your games at +20.0 RP/game'), findsOneWidget);
     },
   );
 
@@ -82,7 +76,7 @@ void main() {
     await pump(tester, matches);
     expect(find.text('Tap a legend to see details'), findsOneWidget);
 
-    await tester.tap(find.text('50% of your games at -5.0 RP per game'));
+    await tester.tap(find.text('50% of your games at -5.0 RP/game'));
     await tester.pump();
 
     expect(find.text('Tap a legend to see details'), findsNothing);
@@ -108,7 +102,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share of your games'), findsOneWidget);
-    expect(find.text('Avg RP per game'), findsOneWidget);
+    expect(find.text('Avg RP'), findsOneWidget);
   });
 
   group('the axes', () {
@@ -174,7 +168,7 @@ void main() {
           return lookup(legend);
         },
       );
-      await tester.tap(find.text('50% of your games at -5.0 RP per game'));
+      await tester.tap(find.text('50% of your games at -5.0 RP/game'));
       await tester.pump();
 
       await tester.tap(find.text('Pick rate'));
@@ -188,7 +182,7 @@ void main() {
 
     testWidgets('has no link when there is nowhere to go', (tester) async {
       await pump(tester, matches);
-      await tester.tap(find.text('50% of your games at -5.0 RP per game'));
+      await tester.tap(find.text('50% of your games at -5.0 RP/game'));
       await tester.pump();
 
       expect(find.byIcon(Icons.chevron_right), findsNothing);
@@ -201,7 +195,7 @@ void main() {
       tester,
     ) async {
       await pump(tester, matches, matchesFor: lookup);
-      await tester.tap(find.text('50% of your games at -5.0 RP per game'));
+      await tester.tap(find.text('50% of your games at -5.0 RP/game'));
       await tester.pump();
 
       expect(find.byIcon(Icons.chevron_right), findsOneWidget);
@@ -250,8 +244,8 @@ void main() {
       expect(find.text('100.0%'), findsOneWidget);
       expect(find.text('3.0'), findsOneWidget);
       expect(find.text('600'), findsOneWidget);
-      expect(find.text('Kills'), findsOneWidget);
-      expect(find.text('Damage'), findsOneWidget);
+      expect(find.text('Avg Kills'), findsOneWidget);
+      expect(find.text('Avg Damage'), findsOneWidget);
     });
 
     testWidgets('shows the best and worst map once they load', (tester) async {
@@ -353,7 +347,7 @@ void main() {
         'LEGEND',
         'PICK',
         'WIN',
-        'RP/G',
+        'AVG RP',
         'NET',
         'KILLS',
         'DMG',
@@ -371,12 +365,12 @@ void main() {
     ) async {
       await openTable(tester);
 
-      await tester.tap(find.text('RP/G'));
+      await tester.tap(find.text('AVG RP'));
       await tester.pump();
       expect(rowOrder(tester), ['Bangalore', 'Wraith', 'Alter']);
       expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
 
-      await tester.tap(find.text('RP/G'));
+      await tester.tap(find.text('AVG RP'));
       await tester.pump();
       expect(rowOrder(tester), ['Alter', 'Wraith', 'Bangalore']);
       expect(find.byIcon(Icons.arrow_upward), findsOneWidget);
@@ -388,7 +382,15 @@ void main() {
       await openTable(tester);
       tester.view.physicalSize = const Size(360, 800);
       await tester.pump();
-      const headings = ['LEGEND', 'PICK', 'WIN', 'RP/G', 'NET', 'KILLS', 'DMG'];
+      const headings = [
+        'LEGEND',
+        'PICK',
+        'WIN',
+        'AVG RP',
+        'NET',
+        'KILLS',
+        'DMG',
+      ];
 
       for (final sorted in headings) {
         await tester.tap(find.text(sorted));

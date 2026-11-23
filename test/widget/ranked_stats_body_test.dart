@@ -551,7 +551,7 @@ void main() {
       await showOverview(tester, saved: {PrefsKeys.bestMetric: 'avgRp'});
 
       expect(find.text('Avg RP'), findsWidgets); // the pill, and the stat
-      expect(find.text('+40.0 /game'), findsWidgets);
+      expect(find.text('+40.0 RP/game'), findsWidgets);
       // Total RP is back down in the stats, no longer the card's pill.
       expect(find.text('TOTAL RP'), findsWidgets);
     });

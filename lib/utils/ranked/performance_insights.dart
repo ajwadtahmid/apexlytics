@@ -216,7 +216,8 @@ List<PlayInsight> _bestAndWorst<K>(
 /// game moved over the latest [window] sessions against the ones before, and the
 /// best day and part of the day. Either part may be missing.
 class PerformanceHeadline {
-  /// "Up 4.1 RP per game over your last 5 sessions", or null without a trend.
+  /// "Gaining 4.1 RP per game over your last 5 sessions, up from 2.0", or null
+  /// without a trend.
   final String? trend;
   final TrendVerdict? verdict;
 
@@ -262,13 +263,13 @@ PerformanceHeadline? performanceHeadline({
       : trend == null || verdict == null
       ? null
       : switch (verdict) {
-          TrendVerdict.improving =>
-            'Up ${trend.delta.abs().toStringAsFixed(1)} RP per game over your '
-                'last $window sessions',
-          TrendVerdict.declining =>
-            'Down ${trend.delta.abs().toStringAsFixed(1)} RP per game over '
-                'your last $window sessions',
           TrendVerdict.steady => 'Steady over your last $window sessions',
+          _ =>
+            '${trend.recent >= 0 ? 'Gaining' : 'Losing'} '
+                '${trend.recent.abs().toStringAsFixed(1)} RP per game over '
+                'your last $window sessions, '
+                '${verdict == TrendVerdict.improving ? 'up' : 'down'} from '
+                '${trend.previous.toStringAsFixed(1)}',
         };
 
   PlayInsight? named(String heading) =>

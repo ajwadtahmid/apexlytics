@@ -426,7 +426,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
             _Takeaways(items: takeaways, onSelect: _select),
             const SizedBox(height: AppTheme.md),
           ],
-          const Text('Avg RP per game', style: AppTheme.captionSmall),
+          const Text('Avg RP', style: AppTheme.captionSmall),
           const SizedBox(height: AppTheme.xs),
           SizedBox(
             // Tall enough that legends with different RP stand clear of each
@@ -854,7 +854,7 @@ class _Takeaways extends StatelessWidget {
                           Text(
                             '${formatPercent(t.pickRate, decimals: 0)} of your '
                             'games at ${formatSigned(t.legend.avgRpPerGame)} '
-                            'RP per game',
+                            'RP/game',
                             style: AppTheme.caption,
                           ),
                         ],
@@ -1078,7 +1078,7 @@ Future<void> _showLegendChooser(
               title: Text(l.legend),
               subtitle: Text(
                 '${formatPercent(pickRate(l), decimals: 0)} of your games at '
-                '${formatSigned(l.avgRpPerGame)} RP per game',
+                '${formatSigned(l.avgRpPerGame)} RP/game',
                 style: AppTheme.caption,
               ),
               onTap: () {
@@ -1241,8 +1241,8 @@ class _SelectedDetail extends StatelessWidget {
               for (final (i, stat) in [
                 ('Pick rate', formatPercent(rate, decimals: 1)),
                 ('Win rate', formatPercent(l.winRate)),
-                ('Kills', formatAvgKills(l.avgKills)),
-                ('Damage', formatAvgDamage(l.avgDamage)),
+                ('Avg Kills', formatAvgKills(l.avgKills)),
+                ('Avg Damage', formatAvgDamage(l.avgDamage)),
               ].indexed) ...[
                 if (i > 0) const SizedBox(width: AppTheme.xs),
                 Expanded(
@@ -1414,7 +1414,7 @@ class _LegendStatsTableState extends State<_LegendStatsTable> {
             ),
             const SizedBox(height: AppTheme.sm),
             const Text(
-              'Tap a heading to sort. RP/G is RP per game and Net is total RP; '
+              'Tap a heading to sort. AVG RP is RP per game and NET is total RP; '
               'kills and damage are per-game averages.',
               style: AppTheme.captionSmall,
             ),
@@ -1430,7 +1430,7 @@ extension on LegendSort {
     LegendSort.legend => 'LEGEND',
     LegendSort.pick => 'PICK',
     LegendSort.win => 'WIN',
-    LegendSort.rpPerGame => 'RP/G',
+    LegendSort.rpPerGame => 'AVG RP',
     LegendSort.netRp => 'NET',
     LegendSort.kills => 'KILLS',
     LegendSort.damage => 'DMG',

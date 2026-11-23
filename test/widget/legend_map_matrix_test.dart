@@ -297,6 +297,7 @@ void main() {
       WidgetTester tester, {
       String? rankedNow,
       List<RankedMatch>? games,
+      String? periodLabel,
     }) async {
       tester.view.physicalSize = const Size(800, 2000);
       tester.view.devicePixelRatio = 1;
@@ -315,13 +316,22 @@ void main() {
             ),
           ],
           child: MaterialApp(
-            home: RankedLegendMapMatrixScreen(matches: games ?? matches),
+            home: RankedLegendMapMatrixScreen(
+              matches: games ?? matches,
+              periodLabel: periodLabel,
+            ),
           ),
         ),
       );
       await tester.pump();
       await tester.pump();
     }
+
+    testWidgets('names the period its games are from', (tester) async {
+      await pump(tester, periodLabel: 'S31 Split 1 · W2');
+
+      expect(find.text('S31 Split 1 · W2'), findsOneWidget);
+    });
 
     testWidgets('says what the faded cells are', (tester) async {
       await pump(tester, rankedNow: 'Olympus');

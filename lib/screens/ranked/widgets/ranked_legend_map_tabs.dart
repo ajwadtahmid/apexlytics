@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../constants/map_constants.dart';
 import '../../../constants/stat_icons.dart';
 import '../../../models/ranked_match.dart';
@@ -213,7 +214,7 @@ class _LegendCard extends StatelessWidget {
                           formatSigned(row.avgRpPerGame),
                           valueColor: AppTheme.signColor(row.avgRpPerGame >= 0),
                         ),
-                        _chip('Avg Dmg', formatAvgDamage(row.avgDamage)),
+                        _chip('Avg Damage', formatAvgDamage(row.avgDamage)),
                         _chip(
                           'Total Dmg',
                           formatTotalOrNone(row.totalDamage, row.damageGames),
@@ -437,7 +438,7 @@ class _MapCard extends StatelessWidget {
                         ),
                         Expanded(
                           child: _MapStat(
-                            label: 'Avg Dmg',
+                            label: 'Avg Damage',
                             value: formatAvgDamage(row.avgDamage),
                           ),
                         ),

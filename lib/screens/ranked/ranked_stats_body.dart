@@ -549,7 +549,7 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
               PlayerInfoCard(stats: widget.stats),
               const SizedBox(height: AppTheme.lg),
               const SectionLabel(
-                label: 'All time',
+                label: 'Lifetime',
                 icon: Icons.leaderboard_outlined,
               ),
               RankedStatsCard(summary: agg.summary),
@@ -692,10 +692,7 @@ class _OverviewTab extends ConsumerWidget {
           PlayerInfoCard(stats: stats),
           const SizedBox(height: AppTheme.lg),
           SectionLabel(
-            label: periodSectionLabel(
-              data.view,
-              currentSplit: isCurrentSplit,
-            ),
+            label: periodSectionLabel(data.view, currentSplit: isCurrentSplit),
             icon: Icons.leaderboard_outlined,
           ),
           RankedSummaryHeader(
@@ -757,6 +754,7 @@ class _OverviewTab extends ConsumerWidget {
                     matches: matches,
                     onRefresh: onRefresh,
                     sessionPool: data.view.history,
+                    periodLabel: data.view.periodLabel,
                   ),
                 ),
               ],

@@ -175,7 +175,7 @@ void main() {
   group('how a measure is shown', () {
     test('a pill and a line of text write each figure with its unit', () {
       final shown = {
-        BestMetric.avgRp: ('+80.1 /game', '+80.1 RP/game'),
+        BestMetric.avgRp: ('+80.1 RP/game', '+80.1 RP/game'),
         BestMetric.totalRp: ('+1,084 RP', '+1,084 RP'),
         BestMetric.avgKills: ('2.8 kills/game', '2.8 kills/game'),
         BestMetric.totalKills: ('1,204 kills', '1,204 kills'),
@@ -199,7 +199,7 @@ void main() {
     });
 
     test('a loss is written with its sign', () {
-      expect(BestMetric.avgRp.formatValue(-39.6), '-39.6 /game');
+      expect(BestMetric.avgRp.formatValue(-39.6), '-39.6 RP/game');
       expect(BestMetric.totalRp.formatValue(-198), '-198 RP');
     });
 

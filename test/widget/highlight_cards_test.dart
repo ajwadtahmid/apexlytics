@@ -223,12 +223,12 @@ void main() {
     ) async {
       await pumpWith(tester, BestMetric.avgRp);
 
-      expect(find.text('+20.0 /game'), findsOneWidget); // the legend's pill
-      expect(find.text('20.0 /game'), findsOneWidget); // the map's badge
+      // The legend's pill and the map's badge say the same.
+      expect(find.text('+20.0 RP/game'), findsNWidgets(2));
       for (final label in ['TOTAL RP', 'AVG KILLS', 'AVG DMG', 'GAMES']) {
         expect(find.text(label), findsNWidgets(2), reason: label); // each card
       }
-      expect(colorOf(tester, '+20.0 /game'), AppTheme.green);
+      expect(colorOf(tester, '+20.0 RP/game'), AppTheme.green);
     });
 
     testWidgets('total RP is shown once: as the pill, not again beneath', (

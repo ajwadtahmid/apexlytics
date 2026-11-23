@@ -177,7 +177,7 @@ class SquadGameDetailScreen extends StatelessWidget {
                         (v) => formatSignedInt(v.toInt()),
                         signed: true,
                       ),
-                      SquadStatRow('Time in game', [
+                      SquadStatRow('Time played', [
                         for (final g in games) g.lengthSecs,
                       ], (v) => formatDuration(v.toInt())),
                     ],

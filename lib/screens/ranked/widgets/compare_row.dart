@@ -238,6 +238,10 @@ class CompareTable extends StatelessWidget {
   /// False for a second table under one that already shows which colour is
   /// which.
   final bool showKey;
+
+  /// What the last column is, over it: the first side's figure minus the
+  /// second's.
+  final String deltaLabel;
   const CompareTable({
     super.key,
     required this.nameA,
@@ -247,6 +251,7 @@ class CompareTable extends StatelessWidget {
     this.colorA = kCompareColorA,
     this.colorB = kCompareColorB,
     this.showKey = true,
+    this.deltaLabel = 'Difference',
   });
 
   @override
@@ -254,6 +259,7 @@ class CompareTable extends StatelessWidget {
     final a = rows.where((r) => r.winner == -1).length;
     final b = rows.where((r) => r.winner == 1).length;
     final decided = a + b;
+    final large = MediaQuery.textScalerOf(context).scale(1) > 1.2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -291,7 +297,32 @@ class CompareTable extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppTheme.xs),
+        if (rows.any((r) => r.delta != null))
+          _DeltaHeading(deltaLabel, large: large),
         ...rows,
+      ],
+    );
+  }
+}
+
+/// The title of the last column, lined up over it as [CompareRow] lays it out.
+class _DeltaHeading extends StatelessWidget {
+  final String label;
+  final bool large;
+  const _DeltaHeading(this.label, {required this.large});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(
+      label,
+      textAlign: TextAlign.end,
+      style: AppTheme.captionSmall,
+    );
+    if (large) return Align(alignment: Alignment.centerRight, child: text);
+    return Row(
+      children: [
+        const Spacer(flex: CompareRow._labelFlex + 2 * CompareRow._valueFlex),
+        Expanded(flex: CompareRow._deltaFlex, child: text),
       ],
     );
   }

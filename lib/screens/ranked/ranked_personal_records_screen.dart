@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../constants/map_constants.dart';
 import '../../constants/stat_icons.dart';
@@ -14,6 +13,7 @@ import '../../utils/formatting/format.dart'
         formatNumber,
         formatNumberOrNone,
         formatSessionSpan,
+        formatShortDate,
         formatShortDateTime,
         formatSigned,
         formatSignedInt,
@@ -408,7 +408,7 @@ List<Widget> _recordCards({
           : _vsAverage(
               bestRpGame.effectiveRpChange,
               averages.rp,
-              '${formatSigned(averages.rp)} RP per game',
+              '${formatSigned(averages.rp)} RP/game',
             ),
       value: bestRpGame == null
           ? null
@@ -915,11 +915,11 @@ class _StreakCard extends StatelessWidget {
 
 String _formatStreakDate(DateTime d) {
   final local = d.toLocal();
-  return '${DateFormat('MMMM').format(local)} ${_ordinal(local.day)}, ${local.year}';
+  return '${formatShortDate(local)}, ${local.year}';
 }
 
-/// "Fri, Oct 9": a day on a record.
-String _dayLabel(DateTime day) => DateFormat('EEE, MMM d').format(day);
+/// "Oct 9": a day on a record.
+String _dayLabel(DateTime day) => formatShortDate(day);
 
 /// Kills, damage and time played over [games]. Kills and damage are null when no
 /// game reported them.
@@ -962,7 +962,7 @@ Widget _dayCard(
       value: formatSignedInt(day.netRp),
       unit: 'RP',
       valueColor: AppTheme.signColor(day.netRp >= 0),
-      detail: DateFormat('EEEE, MMMM d').format(day.day),
+      detail: formatShortDate(day.day),
       legend: topLegendBy(day.matches, metric),
       playerName: name,
       stats: [
@@ -1203,14 +1203,4 @@ class _ShareAllButton extends StatelessWidget {
       ),
     );
   }
-}
-
-String _ordinal(int day) {
-  if (day >= 11 && day <= 13) return '${day}th';
-  return switch (day % 10) {
-    1 => '${day}st',
-    2 => '${day}nd',
-    3 => '${day}rd',
-    _ => '${day}th',
-  };
 }

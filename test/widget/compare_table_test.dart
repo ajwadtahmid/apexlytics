@@ -18,6 +18,34 @@ void main() {
   Color colorOf(WidgetTester tester, String text) =>
       tester.widget<Text>(find.text(text)).style!.color!;
 
+  testWidgets('a table with a change column names it', (tester) async {
+    await pump(
+      tester,
+      const CompareTable(
+        nameA: 'A',
+        nameB: 'B',
+        rows: [CompareRow('Win', '40%', '50%', delta: 10)],
+      ),
+    );
+
+    expect(find.text('Difference'), findsOneWidget);
+  });
+
+  testWidgets('a table with no change column has no heading for it', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const CompareTable(
+        nameA: 'A',
+        nameB: 'B',
+        rows: [CompareRow('Games', '4', '5')],
+      ),
+    );
+
+    expect(find.text('Difference'), findsNothing);
+  });
+
   group('which side is ahead', () {
     test('is the second when the change is up, the first when it is down', () {
       expect(const CompareRow('Win', '40%', '50%', delta: 10).winner, 1);

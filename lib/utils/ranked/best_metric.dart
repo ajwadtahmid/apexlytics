@@ -26,11 +26,11 @@ enum BestMetric {
   /// Kills, damage and win rate can't be, so they are not coloured as one.
   bool get isRp => this == avgRp || this == totalRp;
 
-  /// [value] (as [valueOf] gives it) written for a pill: `+80.1 /game`,
+  /// [value] (as [valueOf] gives it) written for a pill: `+80.1 RP/game`,
   /// `+561 RP`, `2.8 kills/game`, `1,204 kills`, `521 dmg/game`, `23,760 dmg`,
   /// `62.4% win rate`.
   String formatValue(double value) => switch (this) {
-    avgRp => '${formatSigned(value)} /game',
+    avgRp => '${formatSigned(value)} RP/game',
     totalRp => '${formatSignedInt(value.round())} RP',
     avgKills => '${value.toStringAsFixed(1)} kills/game',
     totalKills => '${formatNumber(value.round())} kills',
@@ -39,10 +39,8 @@ enum BestMetric {
     winRate => '${formatPercent(value)} win rate',
   };
 
-  /// [formatValue] for a line of text, where a bare "/game" would not say what
-  /// is being averaged.
-  String formatInline(double value) =>
-      this == avgRp ? '${formatSigned(value)} RP/game' : formatValue(value);
+  /// [formatValue] for a line of text.
+  String formatInline(double value) => formatValue(value);
 
   /// How many games the figure [valueOf] gives is worked out from. An average
   /// is over the games that reported the thing it averages, not all of them,

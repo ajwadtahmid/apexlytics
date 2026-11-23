@@ -176,7 +176,10 @@ void main() {
         insights: [bestDay, bestPart],
       )!;
 
-      expect(h.trend, 'Up 20.0 RP per game over your last 5 sessions');
+      expect(
+        h.trend,
+        'Gaining 10.0 RP per game over your last 5 sessions, up from -10.0',
+      );
       expect(h.verdict, TrendVerdict.improving);
       expect(h.timing, 'You do best on Fridays, in the evening');
     });
@@ -187,7 +190,10 @@ void main() {
         insights: const [],
       )!;
 
-      expect(h.trend, 'Down 20.0 RP per game over your last 5 sessions');
+      expect(
+        h.trend,
+        'Losing 10.0 RP per game over your last 5 sessions, down from 10.0',
+      );
       expect(h.verdict, TrendVerdict.declining);
       expect(h.timing, isNull);
     });
@@ -421,7 +427,10 @@ void main() {
         insights: const [],
         window: 10,
       )!;
-      expect(h.trend, 'Up 40.0 RP per game over your last 10 sessions');
+      expect(
+        h.trend,
+        'Gaining 20.0 RP per game over your last 10 sessions, up from -20.0',
+      );
     });
   });
 }

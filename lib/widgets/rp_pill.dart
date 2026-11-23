@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../utils/formatting/format.dart' show formatSigned, formatSignedInt;
 import '../utils/theme.dart';
 
@@ -43,7 +44,7 @@ class RpPill extends StatelessWidget {
     final shown =
         text ??
         (avg != null
-            ? '${formatSigned(avg)} /game'
+            ? '${formatSigned(avg)} RP/game'
             : '${formatSignedInt(totalRp!)} RP');
     final color =
         this.color ??
