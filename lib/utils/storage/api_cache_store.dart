@@ -4,6 +4,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../app_logger.dart';
+
 /// Durable backing store for [ApiCache] — the disk half of the API response
 /// cache. Its own small database, independent of `ranked_history.db`, so a
 /// bug in one can't touch the other.
@@ -109,9 +111,17 @@ class ApiCacheStore {
     await batch.commit(noResult: true);
   }
 
-  /// Drops every cached response — used by "Clear all data".
+  /// Drops every cached response — used by "Clear all data". The keys and
+  /// bodies hold looked-up names and UIDs, and a delete only moves pages to the
+  /// free list, so the file is compacted too (see
+  /// RankedHistoryStore._compact): a failure there only leaves it larger.
   Future<void> clear() async {
     final db = await _open();
     await db.delete(_table);
+    try {
+      await db.execute('VACUUM');
+    } catch (e) {
+      log.w('Compacting the API cache failed (${e.runtimeType})');
+    }
   }
 }

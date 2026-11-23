@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:apexlytics/utils/api_cache.dart';
@@ -46,6 +47,33 @@ void main() {
       expect(cache.usage, (entries: 0, bytes: 0));
     });
   });
+
+  test(
+    'a clear leaves no cached lookup readable in the database file',
+    () async {
+      final dir = Directory.systemTemp.createTempSync('apx_cache_');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final path = '${dir.path}/api_cache.db';
+      final store = ApiCacheStore(overridePath: path);
+      final cache = ApiCache(store);
+      await cache.save('/bridge?player=SomeLookedUpName', {
+        'name': 'SomeLookedUpName',
+        'uid': '1006838015507',
+      });
+      expect(
+        latin1.decode(File(path).readAsBytesSync()),
+        contains('SomeLookedUp'),
+      );
+
+      await cache.clear();
+
+      // A bare delete leaves the old pages, text and all, in the file.
+      expect(
+        latin1.decode(File(path).readAsBytesSync()),
+        isNot(contains('SomeLookedUp')),
+      );
+    },
+  );
 
   group('ApiCache.save after a clear', () {
     test('a save tied to an earlier generation is dropped', () async {
