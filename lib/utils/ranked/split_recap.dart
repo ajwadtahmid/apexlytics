@@ -89,9 +89,14 @@ SplitRecap splitRecap(List<RankedMatch> matches, {required BestMetric metric}) {
     losses: summary.losses,
     netRp: summary.netRp,
     gainRp: summary.gainRp,
+    // The RP the period started at counts too, as on the Journey chart: a
+    // period that only lost RP peaked where it began.
     peakRp: ranked.isEmpty
         ? 0
-        : ranked.map((m) => m.cumulativeRp).reduce(math.max),
+        : math.max(
+            ranked.map((m) => m.cumulativeRp).reduce(math.max),
+            ranked.last.cumulativeRp - ranked.last.rpChange,
+          ),
     finalRp: summary.currentRp,
     rankImg: summary.latestRankImg,
     bestLegend: rankByMetric(

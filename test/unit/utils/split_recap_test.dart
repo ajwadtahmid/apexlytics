@@ -160,6 +160,18 @@ void main() {
     expect(r.peakRp, 1050);
   });
 
+  test('a period that only lost RP peaked where it started', () {
+    final r = splitRecap([
+      buildMatch(start: t0, rp: -40, cumulativeRp: 4960),
+      buildMatch(start: t0 + 1500, rp: -30, cumulativeRp: 4930),
+      buildMatch(start: t0 + 3000, rp: -30, cumulativeRp: 4900),
+    ], metric: BestMetric.totalRp);
+
+    // The Journey chart starts at 5,000, so the Peak RP tile does too.
+    expect(r.peakRp, 5000);
+    expect(r.finalRp, 4900);
+  });
+
   test('no games is an empty recap with nothing best', () {
     final r = splitRecap(const [], metric: BestMetric.totalRp);
 
