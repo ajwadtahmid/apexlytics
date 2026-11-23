@@ -19,6 +19,9 @@ class FakeNotificationPlugin extends Fake
   /// How many times [cancelAll] or [cancelAllPendingNotifications] ran.
   int cancelAllCalls = 0;
 
+  /// Thrown by [cancelAll] and [cancelAllPendingNotifications] when set.
+  Object? cancelAllError;
+
   /// How many times the platform was looked up, which is what asking for
   /// permission starts with.
   int permissionLookups = 0;
@@ -44,10 +47,16 @@ class FakeNotificationPlugin extends Fake
   pendingNotificationRequests() async => List.of(pending);
 
   @override
-  Future<void> cancelAll() async => cancelAllCalls++;
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    if (cancelAllError case final error?) throw error;
+  }
 
   @override
-  Future<void> cancelAllPendingNotifications() async => cancelAllCalls++;
+  Future<void> cancelAllPendingNotifications() async {
+    cancelAllCalls++;
+    if (cancelAllError case final error?) throw error;
+  }
 
   @override
   T? resolvePlatformSpecificImplementation<

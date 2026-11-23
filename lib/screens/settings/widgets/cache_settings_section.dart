@@ -468,7 +468,7 @@ class CacheSettingsSection extends ConsumerWidget {
     // mode (some surviving a reboot) keep firing after the user erased
     // everything.
     await step('scheduled map alerts', () async {
-      await NotificationService.cancelAll();
+      await NotificationService.cancelAll(throwOnFailure: true);
       await BackgroundService.updateInterval(0);
     });
     // These read through caches that deleteAll() alone won't invalidate, so

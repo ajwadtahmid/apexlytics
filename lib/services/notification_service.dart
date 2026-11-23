@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
+
 import '../constants/map_constants.dart';
 import '../constants/prefs_keys.dart';
 import '../models/map_rotation.dart';
@@ -971,7 +973,12 @@ class NotificationService {
   ///
   /// Queued like [scheduleAll], so it can't be overtaken by the tail of a
   /// schedule that started before it.
-  static Future<void> cancelAll() => _serialized(_cancelAllInternal);
+  ///
+  /// A failure to cancel is logged and swallowed, so a caller that must not
+  /// carry on as if it worked ("Clear all data") passes [throwOnFailure] and
+  /// gets it rethrown, after the desktop timers are cleared either way.
+  static Future<void> cancelAll({bool throwOnFailure = false}) =>
+      _serialized(() => _cancelAllInternal(throwOnFailure: throwOnFailure));
 
   /// Cancels the alerts of the one mode whose ids start at [idBase], leaving the
   /// other modes' alerts armed. Needs no rotation, so it works offline.
@@ -990,7 +997,10 @@ class NotificationService {
   });
 
   /// [pendingOnly] keeps alerts already posted in the shade (Android and iOS only).
-  static Future<void> _cancelAllInternal({bool pendingOnly = false}) async {
+  static Future<void> _cancelAllInternal({
+    bool pendingOnly = false,
+    bool throwOnFailure = false,
+  }) async {
     for (final t in _desktopTimers.values) {
       t.cancel();
     }
@@ -1007,6 +1017,7 @@ class NotificationService {
       // Best-effort: no worse than the unconditional no-op this used to be,
       // and the desktop-timer cleanup above has already run either way.
       log.w('NotificationService: cancelAll failed', error: e);
+      if (throwOnFailure) rethrow;
     }
   }
 }

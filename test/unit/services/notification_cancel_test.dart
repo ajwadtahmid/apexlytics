@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../fake_notification_plugin.dart';
+
 import 'package:apexlytics/utils/alert_silence.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -126,6 +127,24 @@ void main() {
       expect(plugin.cancelAllCalls, 1);
       expect(NotificationService.pendingDesktopAlertIds, isEmpty);
     });
+
+    test(
+      'a failed cancel is swallowed, unless the caller asks to hear of it',
+      () async {
+        await armRankedAndPubs();
+        plugin.cancelAllError = StateError('plugin');
+
+        await NotificationService.cancelAll();
+        await expectLater(
+          NotificationService.cancelAll(throwOnFailure: true),
+          throwsStateError,
+        );
+        // The desktop timers are cleared whether or not the plugin cooperated.
+        expect(NotificationService.pendingDesktopAlertIds, isEmpty);
+
+        plugin.cancelAllError = null;
+      },
+    );
 
     test('an alert is dropped once it fires over a minute late', () {
       final at = DateTime.utc(2026, 11, 2, 14, 45);

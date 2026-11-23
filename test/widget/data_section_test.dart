@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:apexlytics/constants/prefs_keys.dart';
+import 'package:apexlytics/services/notification_service.dart';
 import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/best_metric_provider.dart';
 import 'package:apexlytics/providers/entity_trend_overrides_provider.dart';
@@ -22,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' show inMemoryDatabasePath;
 
+import '../fake_notification_plugin.dart';
 import '../helpers.dart';
 
 void main() {
@@ -385,6 +387,27 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Clear history of removed players?'), findsNothing);
+    });
+
+    testWidgets('Clear all data says so when the scheduled alerts could not be '
+        'cancelled', (t) async {
+      final plugin = FakeNotificationPlugin()
+        ..cancelAllError = StateError('plugin');
+      NotificationService.useFakePlugin(plugin);
+      addTearDown(() => plugin.cancelAllError = null);
+      await pump(t, games: 2);
+      await openSheet(t);
+
+      await t.tap(find.text('Clear all data'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Continue'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Erase everything'));
+      await t.pump();
+      await letStorageFinish(t);
+
+      expect(find.text('All data cleared.'), findsNothing);
+      expect(find.textContaining('scheduled map alerts'), findsOneWidget);
     });
 
     testWidgets('Clear all data asks twice before it does anything', (t) async {
