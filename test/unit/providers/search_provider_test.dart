@@ -154,12 +154,26 @@ void main() {
       await notifier.toggleFavorite(playerRef);
 
       // syncDisplayName matches by name, enriches with UID
-      await notifier.syncDisplayName('123', 'OldName');
+      await notifier.syncDisplayName('123', 'OldName', 'PC');
 
       final state = container.read(searchStateProvider);
       expect(state.favorites, hasLength(1));
       expect(state.favorites.first.uid, '123');
       expect(state.favorites.first.query, 'OldName');
+    });
+
+    test('does not give a name-only favorite the UID of a same-named player '
+        'on another platform', () async {
+      const playerRef = PlayerRef(query: 'Bob', platform: 'PS4');
+
+      final notifier = container.read(searchStateProvider.notifier);
+      await notifier.toggleFavorite(playerRef);
+
+      await notifier.syncDisplayName('999', 'Bob', 'PC');
+
+      final favorite = container.read(searchStateProvider).favorites.single;
+      expect(favorite.uid, isNull);
+      expect(favorite.platform, 'PS4');
     });
 
     test('clears all favorites', () async {
@@ -517,7 +531,7 @@ void main() {
       await notifier.toggleFavorite(alpha);
       await notifier.updateSnapshot('PC', buildStats(name: 'Alpha', uid: '1'));
 
-      await notifier.syncDisplayName('1', 'AlphaRenamed');
+      await notifier.syncDisplayName('1', 'AlphaRenamed', 'PC');
 
       final favorite = container.read(searchStateProvider).favorites.single;
       expect(favorite.query, 'AlphaRenamed');
@@ -549,7 +563,7 @@ void main() {
       );
 
       // Both fire from the same result, neither waiting for the other.
-      final named = notifier.syncDisplayName('1', 'Alpha');
+      final named = notifier.syncDisplayName('1', 'Alpha', 'PC');
       final snapshot = notifier.updateSnapshot(
         'PC',
         buildStats(name: 'Alpha', uid: '1'),

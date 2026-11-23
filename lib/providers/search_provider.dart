@@ -279,8 +279,14 @@ class SearchNotifier extends Notifier<SearchState> {
 
   /// Updates the stored display name (query) and UID for matching favorites.
   /// Matches by UID (for entries already resolved) OR by display name (for
-  /// name-based entries that don't yet have a UID, so they get enriched).
-  Future<void> syncDisplayName(String uid, String canonicalName) async {
+  /// name-based entries that don't yet have a UID, so they get enriched). A
+  /// name-based entry is enriched only on the same [platform], as a same-named
+  /// player elsewhere is someone else.
+  Future<void> syncDisplayName(
+    String uid,
+    String canonicalName,
+    String platform,
+  ) async {
     if (uid.isEmpty || canonicalName.isEmpty) return;
     final favorites = List<PlayerRef>.from(state.favorites);
     bool changed = false;
@@ -289,7 +295,9 @@ class SearchNotifier extends Notifier<SearchState> {
       final uidMatch = f.uid == uid;
       // Enrich name-based entries: match on display name so they get a UID.
       final nameEnrich =
-          f.uid == null && f.query.toLowerCase() == canonicalName.toLowerCase();
+          f.uid == null &&
+          f.platform == platform &&
+          f.query.toLowerCase() == canonicalName.toLowerCase();
       if (uidMatch || nameEnrich) {
         if (f.uid != uid || f.query != canonicalName) {
           favorites[i] = PlayerRef(

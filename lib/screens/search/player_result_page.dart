@@ -94,7 +94,11 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
             if (value.data.uid.isEmpty) return;
             ref
                 .read(searchStateProvider.notifier)
-                .syncDisplayName(value.data.uid, value.data.name);
+                .syncDisplayName(
+                  value.data.uid,
+                  value.data.name,
+                  widget.platform,
+                );
           }
         },
         fireImmediately: true,
