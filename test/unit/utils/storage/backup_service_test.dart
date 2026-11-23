@@ -279,6 +279,21 @@ void main() {
       expect(prefs.getInt(PrefsKeys.defaultTab), 2);
     });
 
+    test('restores the quiet hours with the types the app stores', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await restorePrefsData(prefs, {
+        PrefsKeys.alertQuietEnabled: true,
+        PrefsKeys.alertQuietStartMinute: 22 * 60,
+        PrefsKeys.alertQuietEndMinute: 6 * 60,
+      });
+
+      expect(prefs.getBool(PrefsKeys.alertQuietEnabled), isTrue);
+      expect(prefs.getInt(PrefsKeys.alertQuietStartMinute), 22 * 60);
+      expect(prefs.getInt(PrefsKeys.alertQuietEndMinute), 6 * 60);
+    });
+
     test('coerceRestoredPref accepts a whole-number double as an int, and '
         'nothing that merely looks similar', () {
       expect(coerceRestoredPref(PrefsKeys.defaultTab, 2.0), 2);

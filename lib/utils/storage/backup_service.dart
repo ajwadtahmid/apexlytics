@@ -153,6 +153,8 @@ const _intKeys = {
   PrefsKeys.pubsNotifyMinutes,
   PrefsKeys.mixtapeNotifyMinutes,
   PrefsKeys.wildcardNotifyMinutes,
+  PrefsKeys.alertQuietStartMinute,
+  PrefsKeys.alertQuietEndMinute,
   PrefsKeys.defaultTab,
 };
 
@@ -164,6 +166,7 @@ const _boolKeys = {
   PrefsKeys.notifyRankedMapRotation,
   PrefsKeys.notifyMixtapeMapRotation,
   PrefsKeys.notifyWildcardMapRotation,
+  PrefsKeys.alertQuietEnabled,
 };
 
 /// The type the app itself stores under [key]. Every other backed-up key —
