@@ -54,12 +54,16 @@ class SquadTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // At a larger text size a label no longer fits its narrow column without
+    // breaking mid-word, so it takes a line to itself and the columns share
+    // the whole width.
+    final large = MediaQuery.textScalerOf(context).scale(1) > 1.2;
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(flex: _labelFlex, child: SizedBox()),
+            if (!large) const Expanded(flex: _labelFlex, child: SizedBox()),
             for (final (i, c) in columns.indexed)
               Expanded(
                 flex: _valueFlex,
@@ -87,12 +91,19 @@ class SquadTable extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Flexible(
-                          child: Text(
-                            c.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.caption,
-                          ),
+                          // Shrunk to its column at a larger text size, not cut
+                          // to a few letters.
+                          child: large
+                              ? FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(c.name, style: AppTheme.caption),
+                                )
+                              : Text(
+                                  c.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.caption,
+                                ),
                         ),
                       ],
                     ),
@@ -103,43 +114,55 @@ class SquadTable extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppTheme.xs),
-        for (final r in rows) _row(r),
+        for (final r in rows) _row(r, large),
       ],
     );
   }
 
-  Widget _row(SquadStatRow r) {
+  Widget _row(SquadStatRow r, bool large) {
     final present = r.values.whereType<num>().toList();
     final best = present.isEmpty ? null : present.reduce(math.max);
     final leads = !r.neutral && present.length > 1
         ? present.where((v) => v == best).length == 1
         : false;
+    final cells = [
+      for (final (i, v) in r.values.indexed)
+        Expanded(
+          flex: _valueFlex,
+          child: Center(
+            child: v == null
+                ? const Text('–', style: AppTheme.caption)
+                : _Value(
+                    r.format(v),
+                    tint: columns[i].color,
+                    leads: leads && v == best,
+                    color: r.signed
+                        ? AppTheme.signColor(v >= 0)
+                        : AppTheme.textPrimary,
+                  ),
+          ),
+        ),
+    ];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          Expanded(
-            flex: _labelFlex,
-            child: Text(r.label, style: AppTheme.caption),
-          ),
-          for (final (i, v) in r.values.indexed)
-            Expanded(
-              flex: _valueFlex,
-              child: Center(
-                child: v == null
-                    ? const Text('–', style: AppTheme.caption)
-                    : _Value(
-                        r.format(v),
-                        tint: columns[i].color,
-                        leads: leads && v == best,
-                        color: r.signed
-                            ? AppTheme.signColor(v >= 0)
-                            : AppTheme.textPrimary,
-                      ),
-              ),
+      child: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(r.label, style: AppTheme.caption),
+                const SizedBox(height: 2),
+                Row(children: cells),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: _labelFlex,
+                  child: Text(r.label, style: AppTheme.caption),
+                ),
+                ...cells,
+              ],
             ),
-        ],
-      ),
     );
   }
 }

@@ -63,6 +63,8 @@ class _PlayerCompareScreenState extends State<PlayerCompareScreen> {
     final picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      // Full height, so it must stay below the status bar.
+      useSafeArea: true,
       builder: (_) => _LegendSheet(options: _options, selected: _legend),
     );
     if (picked != null && mounted) setState(() => _legend = picked);
@@ -403,7 +405,6 @@ class _LegendGroup extends StatelessWidget {
     required this.selected,
   });
 
-  static const _columns = 4;
   static const _gap = AppTheme.sm;
 
   @override
@@ -423,7 +424,11 @@ class _LegendGroup extends StatelessWidget {
         const SizedBox(height: AppTheme.sm),
         LayoutBuilder(
           builder: (context, box) {
-            final width = (box.maxWidth - _gap * (_columns - 1)) / _columns;
+            // Fewer, wider tiles at a larger text size, so a name is not broken
+            // mid-word.
+            final scale = MediaQuery.textScalerOf(context).scale(1);
+            final columns = scale > 1.6 ? 2 : (scale > 1.2 ? 3 : 4);
+            final width = (box.maxWidth - _gap * (columns - 1)) / columns;
             return Wrap(
               spacing: _gap,
               runSpacing: _gap,

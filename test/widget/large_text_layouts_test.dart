@@ -36,6 +36,10 @@ import 'package:apexlytics/screens/ranked/widgets/games_filter.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_entity_compare.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_best_legend_per_map.dart';
+import 'package:apexlytics/screens/ranked/squad_game_detail_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/compare_row.dart';
+import 'package:apexlytics/screens/ranked/widgets/squad_table.dart';
+import 'package:apexlytics/utils/ranked/shared_matches.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_highlight_cards.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_rp_chart.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_slot_chart.dart';
@@ -674,6 +678,78 @@ void main() {
       ),
     );
     expectNoOverflow();
+  });
+
+  testWidgets('the compare table keeps each difference figure on one line', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const CompareTable(
+        nameA: 'Season 31',
+        nameB: 'Season 30',
+        rows: [
+          CompareRow(
+            'Net RP',
+            '4,100',
+            '1,442',
+            delta: 2658,
+            integerDelta: true,
+          ),
+          CompareRow('Avg damage', '812', '567.5', delta: 244.5),
+        ],
+      ),
+    );
+    expectNoOverflow();
+    // A figure that wrapped would be as tall as two lines.
+    for (final figure in ['+2,658', '+244.5']) {
+      expect(tester.getSize(find.text(figure)).height, lessThan(40));
+    }
+    expect(tester.getSize(find.text('Avg damage')).height, lessThan(40));
+  });
+
+  testWidgets('the squad table keeps its labels whole and names readable', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      SquadTable(
+        columns: const [
+          SquadColumn('ZZephyrous', Color(0xFFFF8A3D)),
+          SquadColumn('Plato', Color(0xFF3D8AFF)),
+          SquadColumn('MR TORGUE', Color(0xFF3DFF8A)),
+        ],
+        rows: [
+          SquadStatRow('Games', const [4, 4, 3], (v) => '$v', neutral: true),
+          SquadStatRow('Avg damage', const [812, 640, 300], (v) => '$v'),
+        ],
+      ),
+    );
+    expectNoOverflow();
+    expect(tester.getSize(find.text('Avg damage')).height, lessThan(40));
+    // The whole name is kept (scaled to fit), not cut to a few letters.
+    expect(find.text('ZZephyrous'), findsOneWidget);
+    expect(find.text('MR TORGUE'), findsOneWidget);
+  });
+
+  testWidgets('the squad game page footer', (tester) async {
+    RankedMatch game(String uid, int start) =>
+        buildMatch(uid: uid, start: start, kills: 3, damage: 1200);
+    await pump(
+      tester,
+      SquadGameDetailScreen(
+        match: SharedMatch({
+          '1': game('1', 1782090000),
+          '2': game('2', 1782090010),
+        }),
+        slots: const ['1', '2'],
+        names: const {'1': 'ZZephyrous', '2': 'Plato'},
+      ),
+      page: true,
+    );
+    expectNoOverflow();
+    // The label keeps its words on one line instead of breaking inside them.
+    expect(tester.getSize(find.text('Squad total')).height, lessThan(40));
   });
 
   testWidgets('the rank progress card on a search result', (tester) async {

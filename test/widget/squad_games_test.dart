@@ -325,6 +325,16 @@ void main() {
       await settle(tester);
     }
 
+    testWidgets('a profile\'s full name is on its slot, and the diamond '
+        'carries no letter', (tester) async {
+      await three(tester);
+      expect(find.byTooltip('Charlie'), findsOneWidget);
+      // The square and the circle keep their letters; the diamond has no room.
+      expect(find.text('A'), findsWidgets);
+      expect(find.text('B'), findsWidgets);
+      expect(find.text('C'), findsNothing);
+    });
+
     testWidgets('lists trios and duos and tags each', (tester) async {
       await three(tester);
       expect(find.text('GAMES · 2'), findsOneWidget);
@@ -383,7 +393,10 @@ void main() {
         saved: const ['1', '2', '3'],
         shared: [
           SharedMatch({'1': game('1', 0, rp: 10), '2': game('2', 5, rp: 0)}),
-          SharedMatch({'1': game('1', 5000, rp: 5), '2': game('2', 5005, rp: 0)}),
+          SharedMatch({
+            '1': game('1', 5000, rp: 5),
+            '2': game('2', 5005, rp: 0),
+          }),
         ],
       );
       await tester.tap(find.text('3 profiles'));
@@ -391,8 +404,10 @@ void main() {
 
       // In the table: Net RP is +15, +0 for the one that played and a dash for
       // the third; Avg RP is 7.5, not 8.
-      Finder inTable(String text) =>
-          find.descendant(of: find.byType(SquadTable), matching: find.text(text));
+      Finder inTable(String text) => find.descendant(
+        of: find.byType(SquadTable),
+        matching: find.text(text),
+      );
       expect(inTable('+15'), findsOneWidget);
       expect(inTable('+0'), findsOneWidget);
       expect(inTable('+7.5'), findsOneWidget);

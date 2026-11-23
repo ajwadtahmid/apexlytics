@@ -183,23 +183,11 @@ class SquadGameDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const Divider(height: AppTheme.lg, color: AppTheme.surface2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          partial ? 'Known total' : 'Squad total',
-                          style: AppTheme.caption,
-                        ),
-                      ),
-                      Text(
+                  _TotalLine(
+                    label: partial ? 'Known total' : 'Squad total',
+                    figure:
                         '${formatTotalOrNone(kills, killsReported)} kills · '
                         '${formatTotalOrNone(damage, damageReported)} damage',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -209,6 +197,40 @@ class SquadGameDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The squad's total under the table. At a larger text size the label takes a
+/// line to itself, as beside a figure that wide it is left a few letters wide.
+class _TotalLine extends StatelessWidget {
+  final String label;
+  final String figure;
+  const _TotalLine({required this.label, required this.figure});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = Text(
+      figure,
+      textAlign: TextAlign.end,
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+    );
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.2) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTheme.caption),
+          const SizedBox(height: 2),
+          total,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Text(label, style: AppTheme.caption),
+        const SizedBox(width: AppTheme.sm),
+        Expanded(child: total),
+      ],
     );
   }
 }

@@ -322,6 +322,38 @@ void main() {
   });
 
   group('on a narrow screen with large text', () {
+    testWidgets('the legend picker gives names room', (tester) async {
+      tester.view.physicalSize = const Size(320, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      // The scale is applied above the app, so the picker (a route of its own)
+      // gets it too.
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, app) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2.0)),
+            child: app!,
+          ),
+          home: PlayerCompareScreen(me: me, them: them),
+        ),
+      );
+      await tester.tap(find.text('Legend'));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.ensureVisible(find.text('Change'));
+      await tester.pump();
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      final name = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Pathfinder'),
+      );
+      // Two tiles to a row, so a name has room: four would each be about 66 dp.
+      final tile = find.ancestor(of: name, matching: find.byType(SizedBox));
+      expect(tester.getSize(tile.first).width, greaterThan(120));
+    });
+
     for (final (width, scale) in [(320.0, 1.3), (320.0, 2.0), (360.0, 1.5)]) {
       testWidgets('the ranked view fits at ${width.toInt()} dp, ×$scale', (
         tester,

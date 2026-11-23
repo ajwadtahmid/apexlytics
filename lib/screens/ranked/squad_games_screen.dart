@@ -421,13 +421,18 @@ class _SlotBar extends StatelessWidget {
                       _Swatch(i),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          names[uid] ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        // Two lines, and the whole name on a long press: two
+                        // profiles with a shared start look alike when cut.
+                        child: Tooltip(
+                          message: names[uid] ?? '',
+                          child: Text(
+                            names[uid] ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -474,10 +479,13 @@ class _Swatch extends StatelessWidget {
         color: AppTheme.profileColors[index],
         shape: shape,
       ),
-      child: letter == null
+      // No letter on the diamond: its corners leave no room for one. It is
+      // never scaled with the text, which would outgrow the shape.
+      child: letter == null || index > 1
           ? null
           : Text(
               letter!,
+              textScaler: TextScaler.noScaling,
               style: const TextStyle(
                 color: AppTheme.onAccent,
                 fontSize: 11,

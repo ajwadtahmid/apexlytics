@@ -131,41 +131,57 @@ class CompareRow extends StatelessWidget {
     final d = delta;
     final isGood = d == null ? null : (invert ? d < 0 : d >= 0);
     final lead = winner;
+    final large = MediaQuery.textScalerOf(context).scale(1) > 1.2;
+    final label = Text(this.label, style: AppTheme.caption);
+    final change = d == null
+        ? const SizedBox()
+        // Kept whole: a figure never breaks across two lines.
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              _deltaText(d),
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                // A change that is nothing as shown is neither good nor bad.
+                color: lead == 0 || neutral
+                    ? AppTheme.muted
+                    : (isGood! ? AppTheme.green : AppTheme.red),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+    final values = [
+      Expanded(
+        flex: _valueFlex,
+        child: _Value(valueA, color: colorA, leads: lead == -1),
+      ),
+      Expanded(
+        flex: _valueFlex,
+        child: _Value(valueB, color: colorB, leads: lead == 1),
+      ),
+      Expanded(flex: large ? _valueFlex : _deltaFlex, child: change),
+    ];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            flex: _labelFlex,
-            child: Text(label, style: AppTheme.caption),
-          ),
-          Expanded(
-            flex: _valueFlex,
-            child: _Value(valueA, color: colorA, leads: lead == -1),
-          ),
-          Expanded(
-            flex: _valueFlex,
-            child: _Value(valueB, color: colorB, leads: lead == 1),
-          ),
-          Expanded(
-            flex: _deltaFlex,
-            child: d == null
-                ? const SizedBox()
-                : Text(
-                    _deltaText(d),
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      // A change that is nothing as shown is neither good nor bad.
-                      color: lead == 0 || neutral
-                          ? AppTheme.muted
-                          : (isGood! ? AppTheme.green : AppTheme.red),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        ],
-      ),
+      // At a larger text size the label takes a line to itself, so the three
+      // figures share the whole width.
+      child: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                label,
+                const SizedBox(height: AppTheme.xs),
+                Row(children: values),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(flex: _labelFlex, child: label),
+                ...values,
+              ],
+            ),
     );
   }
 }
