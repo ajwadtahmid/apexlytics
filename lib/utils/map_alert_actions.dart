@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../providers/map_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/background_service.dart';
@@ -83,6 +84,8 @@ Future<void> cancelMapAlertMode(MapAlertMode mode) =>
 Future<void> rescheduleMapAlerts(WidgetRef ref) async {
   try {
     final result = await ref.read(mapRotationProvider.future);
+    // The caller's widget may have gone while the rotation loaded.
+    if (!ref.context.mounted) return;
     MapNotificationService.schedule(ref, result.data);
   } catch (e) {
     log.w('Notification reschedule failed', error: e);

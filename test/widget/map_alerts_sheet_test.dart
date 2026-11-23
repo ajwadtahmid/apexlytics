@@ -25,6 +25,18 @@ class _FakeSeasonalMaps extends SeasonalMapsNotifier {
   );
 }
 
+/// A map list that never arrives.
+class _PendingSeasonalMaps extends SeasonalMapsNotifier {
+  @override
+  Future<SeasonalMaps> build() => Completer<SeasonalMaps>().future;
+}
+
+/// A map list that cannot be loaded.
+class _FailingSeasonalMaps extends SeasonalMapsNotifier {
+  @override
+  Future<SeasonalMaps> build() async => throw Exception('offline');
+}
+
 void main() {
   late ProviderContainer container;
 
@@ -32,13 +44,15 @@ void main() {
     WidgetTester tester, {
     List<String> rankedFavourites = const [],
     Future<TestAlertResult> Function()? sendTest,
+    SeasonalMapsNotifier Function() maps = _FakeSeasonalMaps.new,
+    bool settle = true,
   }) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        seasonalMapsProvider.overrideWith(_FakeSeasonalMaps.new),
+        seasonalMapsProvider.overrideWith(maps),
         if (sendTest != null)
           testAlertSenderProvider.overrideWithValue(sendTest),
         // A reschedule asks for the rotation; nothing should leave the test.
@@ -72,7 +86,14 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      // A spinner never settles.
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
   }
 
   testWidgets('unticking the last Ranked map turns Ranked alerts off, not on '
@@ -88,6 +109,23 @@ void main() {
     // Stored as "all maps", so re-enabling shows every map ticked.
     expect(settings.favoriteRankedMapNames, isEmpty);
     expect(find.textContaining('Ranked alerts are off'), findsOneWidget);
+  });
+
+  testWidgets('the switches show while the map list is still loading', (
+    tester,
+  ) async {
+    await openSheet(tester, maps: _PendingSeasonalMaps.new, settle: false);
+    expect(find.text('Map Rotation Alerts'), findsOneWidget);
+    expect(find.text('Ranked'), findsOneWidget);
+    expect(find.text('Loading maps…'), findsOneWidget);
+  });
+
+  testWidgets('a map list that cannot load says so, with a Retry, and the '
+      'switches stay', (tester) async {
+    await openSheet(tester, maps: _FailingSeasonalMaps.new);
+    expect(find.text('Ranked'), findsOneWidget);
+    expect(find.text("Couldn't load the map list."), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('each map row is at least 44 dp tall', (tester) async {

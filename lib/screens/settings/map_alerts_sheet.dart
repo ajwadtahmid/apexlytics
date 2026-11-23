@@ -3,17 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart'
     show openAppSettings;
+
 import '../../constants/map_constants.dart';
 import '../../models/seasonal_maps.dart';
 import '../../providers/map_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/notification_service.dart';
-import '../../utils/error_messages.dart';
 import '../../utils/map_alert_actions.dart';
 import '../../utils/notifications.dart';
 import '../../utils/theme.dart';
-import '../../widgets/error_card.dart';
 import '../../widgets/setting_row.dart';
 import 'widgets/map_mode_list.dart';
 import 'widgets/notification_health_banners.dart';
@@ -165,11 +164,13 @@ class _MapAlertsSheetContentState
           final selected = i == effectiveIndex;
           return SimpleDialogOption(
             onPressed: () async {
+              // Taken before the permission prompt: the sheet can be closed
+              // while it is up, and the choice is still saved.
+              final notifier = ref.read(playerSettingsProvider.notifier);
               Navigator.pop(ctx);
               if (minutes > 0 && current == 0) {
                 await NotificationService.requestPermissions();
               }
-              final notifier = ref.read(playerSettingsProvider.notifier);
               switch (mode) {
                 case MapAlertMode.ranked:
                   await notifier.setRankedNotifyMinutesBefore(minutes);
@@ -327,7 +328,12 @@ class _MapAlertsSheetContentState
     );
   }
 
-  Future<void> _reschedule() => rescheduleMapAlerts(ref);
+  Future<void> _reschedule() async {
+    // Closed meanwhile: its `ref` is gone. The next rotation refresh plans the
+    // alerts from the saved settings.
+    if (!mounted) return;
+    await rescheduleMapAlerts(ref);
+  }
 
   Future<void> _sendTestAlert() async {
     setState(() {
@@ -369,111 +375,110 @@ class _MapAlertsSheetContentState
       playerSettingsProvider.select((s) => s.mixtapeNotifyMinutesBefore),
     );
     final seasonalMapsAsync = ref.watch(seasonalMapsProvider);
+    // Null while the list loads or if it can't be loaded: only the favourite-map
+    // rows need it, so the switches and lead times show regardless.
+    final seasonalMaps = seasonalMapsAsync.asData?.value;
+    final mapListRow = _MapListStatus(
+      failed: seasonalMapsAsync.hasError,
+      onRetry: () => ref.invalidate(seasonalMapsProvider),
+    );
 
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.85,
       minChildSize: 0.5,
       maxChildSize: 0.95,
-      builder: (context, scrollController) => seasonalMapsAsync.when(
-        data: (seasonalMaps) => ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.md,
-            AppTheme.md,
-            AppTheme.md,
-            AppTheme.lg,
+      builder: (context, scrollController) => ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.md,
+          AppTheme.md,
+          AppTheme.md,
+          AppTheme.lg,
+        ),
+        children: [
+          const SheetHandle(),
+          const SizedBox(height: AppTheme.md),
+          const Text(
+            'Map Rotation Alerts',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          children: [
-            const SheetHandle(),
-            const SizedBox(height: AppTheme.md),
-            const Text(
-              'Map Rotation Alerts',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          const SizedBox(height: AppTheme.xs),
+          const Text(
+            'Tap a mode to enable or disable it. '
+            'Bell on = alert, bell off = skipped.',
+            style: TextStyle(color: AppTheme.muted, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: AppTheme.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _sendingTest ? null : _sendTestAlert,
+              icon: const Icon(Icons.notifications_active_outlined, size: 18),
+              label: const Text('Send a test alert'),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.accent),
             ),
-            const SizedBox(height: AppTheme.xs),
-            const Text(
-              'Tap a mode to enable or disable it. '
-              'Bell on = alert, bell off = skipped.',
-              style: TextStyle(
-                color: AppTheme.muted,
-                fontSize: 13,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: AppTheme.sm),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _sendingTest ? null : _sendTestAlert,
-                icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                label: const Text('Send a test alert'),
-                style: TextButton.styleFrom(foregroundColor: AppTheme.accent),
-              ),
-            ),
-            if (_testNote case final note?)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppTheme.sm),
-                child: InkWell(
-                  onTap: note.opensSettings ? openAppSettings : null,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(note.icon, size: 18, color: note.color),
-                      const SizedBox(width: AppTheme.sm),
-                      Expanded(
-                        child: Text(
-                          note.text,
-                          style: const TextStyle(fontSize: 13, height: 1.4),
-                        ),
+          ),
+          if (_testNote case final note?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.sm),
+              child: InkWell(
+                onTap: note.opensSettings ? openAppSettings : null,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(note.icon, size: 18, color: note.color),
+                    const SizedBox(width: AppTheme.sm),
+                    Expanded(
+                      child: Text(
+                        note.text,
+                        style: const TextStyle(fontSize: 13, height: 1.4),
                       ),
-                      if (note.opensSettings)
-                        const Text(
-                          'Fix',
-                          style: TextStyle(
-                            color: AppTheme.accent,
-                            fontSize: 13,
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                    if (note.opensSettings)
+                      const Text(
+                        'Fix',
+                        style: TextStyle(color: AppTheme.accent, fontSize: 13),
+                      ),
+                  ],
                 ),
               ),
-            const SizedBox(height: AppTheme.sm),
+            ),
+          const SizedBox(height: AppTheme.sm),
 
-            SettingsCard(
-              child: Column(
-                children: [
-                  // Here too, not just the Settings card: this is where
-                  // alerts get switched on.
-                  NotificationHealthBanners(
-                    alertsActive:
-                        (notifyRanked && rankedMinutesBefore > 0) ||
-                        (notifyPubs && pubsMinutesBefore > 0) ||
-                        (notifyWildcard && wildcardMinutesBefore > 0) ||
-                        (notifyMixtape && mixtapeMinutesBefore > 0),
-                    separator: const Divider(
-                      color: AppTheme.surface2,
-                      height: 24,
-                    ),
+          SettingsCard(
+            child: Column(
+              children: [
+                // Here too, not just the Settings card: this is where
+                // alerts get switched on.
+                NotificationHealthBanners(
+                  alertsActive:
+                      (notifyRanked && rankedMinutesBefore > 0) ||
+                      (notifyPubs && pubsMinutesBefore > 0) ||
+                      (notifyWildcard && wildcardMinutesBefore > 0) ||
+                      (notifyMixtape && mixtapeMinutesBefore > 0),
+                  separator: const Divider(
+                    color: AppTheme.surface2,
+                    height: 24,
                   ),
-                  // ── Ranked ─────────────────────────────────────────
-                  MapModeTile(
-                    icon: Icons.leaderboard_outlined,
-                    label: 'Ranked',
-                    enabled: notifyRanked,
-                    onTap: () => _toggleMode(
-                      context,
-                      MapAlertMode.ranked,
-                      !notifyRanked,
-                    ),
+                ),
+                // ── Ranked ─────────────────────────────────────────
+                MapModeTile(
+                  icon: Icons.leaderboard_outlined,
+                  label: 'Ranked',
+                  enabled: notifyRanked,
+                  onTap: () =>
+                      _toggleMode(context, MapAlertMode.ranked, !notifyRanked),
+                ),
+                if (notifyRanked) ...[
+                  MapTimingTile(
+                    label: _timingLabel(rankedMinutesBefore),
+                    onTap: () => _pickTiming(context, MapAlertMode.ranked),
                   ),
-                  if (notifyRanked) ...[
-                    MapTimingTile(
-                      label: _timingLabel(rankedMinutesBefore),
-                      onTap: () => _pickTiming(context, MapAlertMode.ranked),
-                    ),
+                  if (seasonalMaps == null)
+                    mapListRow
+                  else ...[
                     ..._visibleNames(
                       seasonalMaps.ranked,
                       _rankedNotify,
@@ -500,22 +505,26 @@ class _MapAlertsSheetContentState
                         onTap: () => setState(() => _showAllRanked = true),
                       ),
                   ],
+                ],
 
-                  const Divider(color: AppTheme.surface2, height: 24),
+                const Divider(color: AppTheme.surface2, height: 24),
 
-                  // ── Pubs ───────────────────────────────────────────
-                  MapModeTile(
-                    icon: Icons.public,
-                    label: 'Pubs',
-                    enabled: notifyPubs,
-                    onTap: () =>
-                        _toggleMode(context, MapAlertMode.pubs, !notifyPubs),
+                // ── Pubs ───────────────────────────────────────────
+                MapModeTile(
+                  icon: Icons.public,
+                  label: 'Pubs',
+                  enabled: notifyPubs,
+                  onTap: () =>
+                      _toggleMode(context, MapAlertMode.pubs, !notifyPubs),
+                ),
+                if (notifyPubs) ...[
+                  MapTimingTile(
+                    label: _timingLabel(pubsMinutesBefore),
+                    onTap: () => _pickTiming(context, MapAlertMode.pubs),
                   ),
-                  if (notifyPubs) ...[
-                    MapTimingTile(
-                      label: _timingLabel(pubsMinutesBefore),
-                      onTap: () => _pickTiming(context, MapAlertMode.pubs),
-                    ),
+                  if (seasonalMaps == null)
+                    mapListRow
+                  else ...[
                     ..._visibleNames(
                       seasonalMaps.pubs,
                       _pubsNotify,
@@ -542,62 +551,92 @@ class _MapAlertsSheetContentState
                         onTap: () => setState(() => _showAllPubs = true),
                       ),
                   ],
-
-                  const Divider(color: AppTheme.surface2, height: 24),
-
-                  // ── Wildcards ───────────────────────────────────────
-                  MapModeTile(
-                    icon: Icons.casino,
-                    label: 'Wildcards',
-                    enabled: notifyWildcard,
-                    onTap: () => _toggleMode(
-                      context,
-                      MapAlertMode.wildcard,
-                      !notifyWildcard,
-                    ),
-                  ),
-                  if (notifyWildcard) ...[
-                    MapTimingTile(
-                      label: _timingLabel(wildcardMinutesBefore),
-                      onTap: () => _pickTiming(context, MapAlertMode.wildcard),
-                    ),
-                  ],
-
-                  const Divider(color: AppTheme.surface2, height: 24),
-
-                  // ── Mixtape ─────────────────────────────────────────
-                  MapModeTile(
-                    icon: Icons.music_note_outlined,
-                    label: 'Mixtape',
-                    enabled: notifyMixtape,
-                    onTap: () => _toggleMode(
-                      context,
-                      MapAlertMode.mixtape,
-                      !notifyMixtape,
-                    ),
-                  ),
-                  if (notifyMixtape) ...[
-                    MapTimingTile(
-                      label: _timingLabel(mixtapeMinutesBefore),
-                      onTap: () => _pickTiming(context, MapAlertMode.mixtape),
-                    ),
-                  ],
-                  const Divider(color: AppTheme.surface2, height: 24),
-                  const QuietHoursTile(),
                 ],
-              ),
+
+                const Divider(color: AppTheme.surface2, height: 24),
+
+                // ── Wildcards ───────────────────────────────────────
+                MapModeTile(
+                  icon: Icons.casino,
+                  label: 'Wildcards',
+                  enabled: notifyWildcard,
+                  onTap: () => _toggleMode(
+                    context,
+                    MapAlertMode.wildcard,
+                    !notifyWildcard,
+                  ),
+                ),
+                if (notifyWildcard) ...[
+                  MapTimingTile(
+                    label: _timingLabel(wildcardMinutesBefore),
+                    onTap: () => _pickTiming(context, MapAlertMode.wildcard),
+                  ),
+                ],
+
+                const Divider(color: AppTheme.surface2, height: 24),
+
+                // ── Mixtape ─────────────────────────────────────────
+                MapModeTile(
+                  icon: Icons.music_note_outlined,
+                  label: 'Mixtape',
+                  enabled: notifyMixtape,
+                  onTap: () => _toggleMode(
+                    context,
+                    MapAlertMode.mixtape,
+                    !notifyMixtape,
+                  ),
+                ),
+                if (notifyMixtape) ...[
+                  MapTimingTile(
+                    label: _timingLabel(mixtapeMinutesBefore),
+                    onTap: () => _pickTiming(context, MapAlertMode.mixtape),
+                  ),
+                ],
+                const Divider(color: AppTheme.surface2, height: 24),
+                const QuietHoursTile(),
+              ],
             ),
-          ],
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => ErrorCard(
-          fullScreen: true,
-          message: friendlyError(err),
-          onRetry: () => ref.invalidate(seasonalMapsProvider),
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+/// Stands in for a mode's favourite-map rows while the map list loads, or says
+/// it could not be loaded.
+class _MapListStatus extends StatelessWidget {
+  final bool failed;
+  final VoidCallback onRetry;
+  const _MapListStatus({required this.failed, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppTheme.sm),
+    child: failed
+        ? Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  "Couldn't load the map list.",
+                  style: AppTheme.captionLarge,
+                ),
+              ),
+              TextButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
+          )
+        : const Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: AppTheme.sm),
+              Text('Loading maps…', style: AppTheme.captionLarge),
+            ],
+          ),
+  );
 }
 
 /// What the sheet says under "Send a test alert" once one has been tried.
