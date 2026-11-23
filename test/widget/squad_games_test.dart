@@ -11,6 +11,7 @@ import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/providers/shared_matches_provider.dart';
 import 'package:apexlytics/screens/ranked/squad_game_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/squad_games_screen.dart';
+import 'package:apexlytics/screens/ranked/widgets/squad_table.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
 import 'package:apexlytics/utils/ranked/shared_matches.dart';
 
@@ -374,6 +375,29 @@ void main() {
         expect(find.text('No games together'), findsNothing);
       },
     );
+
+    testWidgets('a profile with no games shows no reading, not a zero gain, and '
+        'the average keeps its decimal', (tester) async {
+      await pump(
+        tester,
+        saved: const ['1', '2', '3'],
+        shared: [
+          SharedMatch({'1': game('1', 0, rp: 10), '2': game('2', 5, rp: 0)}),
+          SharedMatch({'1': game('1', 5000, rp: 5), '2': game('2', 5005, rp: 0)}),
+        ],
+      );
+      await tester.tap(find.text('3 profiles'));
+      await settle(tester);
+
+      // In the table: Net RP is +15, +0 for the one that played and a dash for
+      // the third; Avg RP is 7.5, not 8.
+      Finder inTable(String text) =>
+          find.descendant(of: find.byType(SquadTable), matching: find.text(text));
+      expect(inTable('+15'), findsOneWidget);
+      expect(inTable('+0'), findsOneWidget);
+      expect(inTable('+7.5'), findsOneWidget);
+      expect(inTable('+8'), findsNothing);
+    });
 
     testWidgets('a total is only outlined when the game counts match', (
       tester,

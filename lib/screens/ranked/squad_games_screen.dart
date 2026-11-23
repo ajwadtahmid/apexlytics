@@ -12,6 +12,7 @@ import '../../utils/formatting/format.dart'
         formatClock,
         formatDuration,
         formatShortDate,
+        formatSigned,
         formatSignedInt,
         plural;
 import '../../utils/ranked/ranked_period.dart';
@@ -552,8 +553,9 @@ class _Summary extends StatelessWidget {
               SquadStatRow(
                 'Net RP',
                 [
+                  // No reading, not a zero gain, for a profile with no games.
                   for (final g in perSlot)
-                    g.fold<int>(0, (a, m) => a + m.rpChange),
+                    g.isEmpty ? null : g.fold<int>(0, (a, m) => a + m.rpChange),
                 ],
                 (v) => formatSignedInt(v.toInt()),
                 signed: true,
@@ -563,7 +565,7 @@ class _Summary extends StatelessWidget {
                 SquadStatRow(
                   'Avg RP',
                   [for (final g in perSlot) average(g.map((m) => m.rpChange))],
-                  (v) => formatSignedInt(v.round()),
+                  (v) => formatSigned(v.toDouble()),
                   signed: true,
                 ),
               SquadStatRow('Avg kills', [
