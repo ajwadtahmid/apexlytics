@@ -85,7 +85,7 @@ class PlayerStats {
       }
       trackers.add(
         EquippedTracker(
-          name: stat['name'] as String? ?? '',
+          name: asString(stat['name']) ?? '',
           value: _parseInt(stat['value']),
         ),
       );
@@ -212,9 +212,9 @@ class LegendTracker {
   };
 
   factory LegendTracker.fromJson(Map<String, dynamic> json) => LegendTracker(
-    key: json['key'] as String? ?? '',
-    displayName: json['name'] as String? ?? json['key'] as String? ?? '',
-    value: (json['value'] as num?)?.toInt() ?? 0,
+    key: asString(json['key']) ?? '',
+    displayName: asString(json['name']) ?? asString(json['key']) ?? '',
+    value: asInt(json['value']) ?? 0,
   );
 }
 
@@ -282,13 +282,14 @@ class LegendStat {
   };
 
   factory LegendStat.fromJson(Map<String, dynamic> json) => LegendStat(
-    name: json['name'] as String? ?? '',
-    trackers: (json['trackers'] as List? ?? [])
+    name: asString(json['name']) ?? '',
+    trackers: (asList(json['trackers']) ?? [])
         .whereType<Map<String, dynamic>>()
         .map(LegendTracker.fromJson)
         .toList(),
-    lastUpdated: json['lu'] != null
-        ? DateTime.fromMillisecondsSinceEpoch(json['lu'] as int)
-        : null,
+    lastUpdated: switch (asEpochMs(asInt(json['lu']))) {
+      final ms? => DateTime.fromMillisecondsSinceEpoch(ms),
+      null => null,
+    },
   );
 }

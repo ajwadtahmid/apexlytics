@@ -1,3 +1,5 @@
+import '../utils/formatting/json_utils.dart';
+
 class MapRotation {
   final MapMode battleRoyaleCurrent;
   final MapMode battleRoyaleNext;
@@ -87,18 +89,18 @@ class MapMode {
   });
 
   factory MapMode.fromJson(Map<String, dynamic> json) {
-    final mins = (json['remainingMins'] as num?)?.toInt() ?? 0;
+    final mins = asInt(json['remainingMins']) ?? 0;
     // The API sometimes returns minutes only — derive seconds from minutes
     // when remainingSecs is absent.
-    final secs = (json['remainingSecs'] as num?)?.toInt() ?? mins * 60;
+    final secs = asInt(json['remainingSecs']) ?? mins * 60;
     return MapMode(
-      map: json['map'] as String? ?? 'Unknown',
+      map: asString(json['map']) ?? 'Unknown',
       // A glitch can send a negative countdown; it means "already over".
       remainingSecs: secs < 0 ? 0 : secs,
       // JSON key uses PascalCase — API inconsistency, not a typo.
-      durationMins: (json['DurationInMinutes'] as num?)?.toInt() ?? 0,
-      asset: json['asset'] as String? ?? '',
-      eventName: json['eventName'] as String?,
+      durationMins: asInt(json['DurationInMinutes']) ?? 0,
+      asset: asString(json['asset']) ?? '',
+      eventName: asString(json['eventName']),
     );
   }
 

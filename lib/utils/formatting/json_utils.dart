@@ -19,6 +19,19 @@ List<dynamic>? asList(Object? v) => v is List ? v : null;
 /// [v] as a string, or null for anything else.
 String? asString(Object? v) => v is String ? v : null;
 
+/// [v] as an int when it is a finite number or a numeric string, or null for
+/// anything else. A number sent as text ("1200") reads as the number, where a
+/// hard cast would throw and blank the whole response.
+int? asInt(Object? v) {
+  if (v is num) return v.isFinite ? v.toInt() : null;
+  if (v is String) {
+    final t = v.trim();
+    final d = int.tryParse(t) ?? double.tryParse(t);
+    return d is num && d.isFinite ? d.toInt() : null;
+  }
+  return null;
+}
+
 /// Decodes a JSON-encoded string array from SharedPreferences.
 /// Returns an empty list on null input, malformed JSON, or JSON whose shape
 /// isn't a list — the last of those throws TypeError on the `as List?` cast

@@ -1,3 +1,5 @@
+import '../utils/formatting/json_utils.dart';
+
 class ServerStatus {
   final Map<String, ServiceStatus> services;
 
@@ -70,8 +72,8 @@ class RegionStatus {
 
   factory RegionStatus.fromJson(Map<String, dynamic> json) {
     return RegionStatus(
-      status: json['Status'] as String? ?? 'UNKNOWN',
-      responseTime: (json['ResponseTime'] as num?)?.toInt() ?? 0,
+      status: asString(json['Status']) ?? 'UNKNOWN',
+      responseTime: asInt(json['ResponseTime']) ?? 0,
     );
   }
 }

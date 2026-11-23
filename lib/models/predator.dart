@@ -31,11 +31,10 @@ class PlatformPredator {
   });
 
   factory PlatformPredator.fromJson(Map<String, dynamic> json) {
-    final ts = (json['updateTimestamp'] as num?)?.toInt() ?? 0;
+    final ts = asInt(json['updateTimestamp']) ?? 0;
     return PlatformPredator(
-      minRp: (json['val'] as num?)?.toInt() ?? 0,
-      totalMastersAndPreds:
-          (json['totalMastersAndPreds'] as num?)?.toInt() ?? 0,
+      minRp: asInt(json['val']) ?? 0,
+      totalMastersAndPreds: asInt(json['totalMastersAndPreds']) ?? 0,
       updatedAt: ts > 0 ? DateTime.fromMillisecondsSinceEpoch(ts * 1000) : null,
     );
   }

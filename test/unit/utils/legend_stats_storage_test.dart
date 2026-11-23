@@ -23,7 +23,7 @@ void main() {
       expect(loadLegendStats(prefs), isEmpty);
     });
 
-    test('skips one unreadable entry and keeps the others', () async {
+    test('keeps a legend whose timestamp is unreadable, and the others', () async {
       SharedPreferences.setMockInitialValues({
         PrefsKeys.legendStatsKeyFor(null): jsonEncode([
           {
@@ -33,14 +33,16 @@ void main() {
             ],
           },
           // A wrong type in one field, as a foreign or hand-edited backup
-          // could carry.
+          // could carry: the legend's trackers are kept, without a timestamp.
           {'name': 'Lifeline', 'trackers': <Object?>[], 'lu': 'x'},
           {'name': 'Axle', 'trackers': <Object?>[]},
         ]),
       });
       final prefs = await SharedPreferences.getInstance();
 
-      expect(loadLegendStats(prefs).map((l) => l.name), ['Wraith', 'Axle']);
+      final legends = loadLegendStats(prefs);
+      expect(legends.map((l) => l.name), ['Wraith', 'Lifeline', 'Axle']);
+      expect(legends[1].lastUpdated, isNull);
     });
   });
 

@@ -1,3 +1,5 @@
+import '../utils/formatting/json_utils.dart';
+
 class NewsArticle {
   final String title;
   final String description;
@@ -13,10 +15,10 @@ class NewsArticle {
 
   factory NewsArticle.fromJson(Map<String, dynamic> json) {
     return NewsArticle(
-      title: json['title'] as String? ?? 'No Title',
-      description: json['description'] as String? ?? '',
-      link: json['link'] as String? ?? '',
-      imageUrl: json['img'] as String? ?? '',
+      title: asString(json['title']) ?? 'No Title',
+      description: asString(json['description']) ?? '',
+      link: asString(json['link']) ?? '',
+      imageUrl: asString(json['img']) ?? '',
     );
   }
 }
