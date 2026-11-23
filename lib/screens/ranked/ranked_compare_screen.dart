@@ -615,7 +615,7 @@ class _CompareBody extends ConsumerWidget {
       children: [
         _Disclaimer(note),
         const SizedBox(height: AppTheme.md),
-        _SummarySection(
+        SplitCompareSummary(
           bucketA: bucketA,
           bucketB: bucketB,
           nameA: nameA,
@@ -703,7 +703,9 @@ int? _elapsedDays(SeasonMeta? season) {
   return days < 1 ? 1 : days;
 }
 
-class _SummarySection extends StatelessWidget {
+/// The Summary table of the Splits comparison, for two splits' details.
+@visibleForTesting
+class SplitCompareSummary extends StatelessWidget {
   final RankedSplitBucket bucketA;
   final RankedSplitBucket bucketB;
   final String nameA;
@@ -711,7 +713,7 @@ class _SummarySection extends StatelessWidget {
   final RankedSplitDetail a;
   final RankedSplitDetail b;
 
-  const _SummarySection({
+  const SplitCompareSummary({
     required this.bucketA,
     required this.bucketB,
     required this.nameA,
@@ -728,6 +730,9 @@ class _SummarySection extends StatelessWidget {
     final rpPerDayB = daysB == null ? null : b.summary.gainRp / daysB;
     final gamesPerDayA = daysA == null ? null : a.summary.games / daysA;
     final gamesPerDayB = daysB == null ? null : b.summary.games / daysB;
+    final gamesDiffer =
+        a.summary.gainRp != a.summary.netRp ||
+        b.summary.gainRp != b.summary.netRp;
 
     return SurfaceCard(
       padding: const EdgeInsets.all(AppTheme.md),
@@ -772,6 +777,18 @@ class _SummarySection extends StatelessWidget {
                 integerDelta: true,
                 deltaFromFirst: true,
               ),
+              // What the counted games add up to, shown when it is not what the
+              // ladder moved, so Avg RP can be followed from it.
+              if (gamesDiffer)
+                CompareRow(
+                  'Games RP',
+                  formatSignedInt(a.summary.netRp),
+                  formatSignedInt(b.summary.netRp),
+                  delta: (a.summary.netRp - b.summary.netRp).toDouble(),
+                  integerDelta: true,
+                  deltaFromFirst: true,
+                  neutral: true,
+                ),
               CompareRow(
                 'RP/day',
                 rpPerDayA == null ? kNoReading : formatSigned(rpPerDayA),
@@ -811,6 +828,15 @@ class _SummarySection extends StatelessWidget {
               ),
             ],
           ),
+          if (gamesDiffer) ...[
+            const SizedBox(height: AppTheme.sm),
+            const Text(
+              'Net RP is how far the ladder moved. Games RP adds up the counted '
+              'games, which is what Avg RP averages, so the two differ when a '
+              'game was left out of the count.',
+              style: AppTheme.captionSmall,
+            ),
+          ],
         ],
       ),
     );

@@ -1997,7 +1997,14 @@ void main() {
       expect(isImplausibleRpChange(1000), isTrue);
     });
 
-    void expectSummaryEq(RankedSummary a, RankedSummary b) {
+    // [ladder] also compares how far the ladder moved. Lifetime has no such
+    // figure from SQL (the ladder resets between splits), so it is left out there.
+    void expectSummaryEq(
+      RankedSummary a,
+      RankedSummary b, {
+      bool ladder = false,
+    }) {
+      if (ladder) expect(a.ladderRp, b.ladderRp);
       expect(a.games, b.games);
       expect(a.netRp, b.netRp);
       expect(a.currentRp, b.currentRp);
@@ -2133,7 +2140,38 @@ void main() {
       expectSummaryEq(
         await store.summaryFor('1', seasonId: 'br_ranked_s1_s2'),
         summarize(s2),
+        ladder: true,
       );
+    });
+
+    test('a split\'s ladder gain counts a hand-excluded game, as the Dart path '
+        'does', () async {
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+      RankedMatch game(int start, int rp, int total) =>
+          buildMatch(start: start, rp: rp, cumulativeRp: total);
+      final seasons = {'s1': season('br_ranked_s1_s1', 0, 1000)};
+      await store.upsertAll('1', [
+        game(100, 10, 110),
+        game(200, 30, 140), // left out of the count below
+        game(300, 20, 160),
+      ], seasons: seasons);
+      await store.setExcludedFor(['1_200'], true);
+
+      final all = await store.getBySeason('1', 'br_ranked_s1_s1');
+      final summary = await store.summaryFor('1', seasonId: 'br_ranked_s1_s1');
+
+      // The games add up to +30, but the ladder moved from 100 to 160.
+      expect(summary.netRp, 30);
+      expect(summary.ladderRp, 60);
+      expect(summary.gainRp, 60);
+      expectSummaryEq(
+        summary,
+        summarize(rankedOnly(all), currentRpFrom: all),
+        ladder: true,
+      );
+      // Lifetime has no ladder figure and shows the games' sum.
+      expect((await store.summaryFor('1')).gainRp, 30);
     });
 
     test('legendMapBreakdownsFor counts a padded legend name', () async {

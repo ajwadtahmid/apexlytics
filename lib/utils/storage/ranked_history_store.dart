@@ -951,9 +951,27 @@ class RankedHistoryStore {
       latestArgs,
     );
     final newest = latest.isEmpty ? null : latest.first;
+    final currentRp = (newest?['cumulative_rp'] as num?)?.toInt() ?? 0;
+    // The ladder gain of one split: where it ended less where its first counted
+    // game started, as [summarize] reads it. A game left out of the count still
+    // moved the ladder, so this is not always the games' own sum. Not defined
+    // across splits (the ladder resets), so Lifetime has none.
+    int? ladderRp;
+    if (seasonId != null) {
+      final first = (await db.rawQuery(
+        'SELECT cumulative_rp, rp_change FROM $table WHERE $where '
+        'ORDER BY end_ms ASC LIMIT 1',
+        args,
+      )).first;
+      final before =
+          ((first['cumulative_rp'] as num?)?.toInt() ?? 0) -
+          ((first['rp_change'] as num?)?.toInt() ?? 0);
+      ladderRp = currentRp - before;
+    }
     return total.toSummary(
-      currentRp: (newest?['cumulative_rp'] as num?)?.toInt() ?? 0,
+      currentRp: currentRp,
       latestRankImg: newest?['rank_img'] as String? ?? '',
+      ladderRp: ladderRp,
     );
   }
 
