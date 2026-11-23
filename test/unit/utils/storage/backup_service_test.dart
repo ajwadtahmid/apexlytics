@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 import '../../../helpers.dart';
 
 void main() {
@@ -967,6 +968,47 @@ void main() {
         isEmpty,
       );
     });
+  });
+
+  group('the restore preview count of new matches', () {
+    Future<int> newCount(List<Object?> rows, RankedHistoryStore store) async {
+      final tmp = Directory.systemTemp.createTempSync('apx_preview_');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final file = File('${tmp.path}/backup.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'version': 3,
+            'prefs': <String, Object?>{},
+            'ranked_history': rows,
+          }),
+        );
+      final result = await previewBackupFile(file, rankedStore: store);
+      return (result as PreviewReady).preview.newMatchCount;
+    }
+
+    test(
+      'leaves out rows the restore would skip, and counts an id once',
+      () async {
+        final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+        addTearDown(store.close);
+        await store.deleteAll();
+        await store.upsertAll('1', [buildMatch(uid: '1', start: 100)]);
+        Map<String, Object?> row(String uid, int start) =>
+            buildMatch(uid: uid, start: start).toStoredMap();
+
+        final count = await newCount([
+          row('1', 100), // already stored
+          row('1', 200),
+          row('1', 200), // the same match again
+          row('2', 300),
+          {...row('1', 400)..remove('uid')}, // no player
+          {...row('1', 500), 'start_ms': 'soon'}, // no usable start time
+          'not a row',
+        ], store);
+
+        expect(count, 2);
+      },
+    );
   });
 }
 

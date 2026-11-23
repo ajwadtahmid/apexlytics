@@ -934,9 +934,10 @@ List<Map<String, dynamic>> _profileEntries(Object? raw) {
 
 int _rowCount(Object? rows) => rows is List ? rows.length : 0;
 
-/// How many of [rows] (raw `ranked_history` entries) aren't already in
-/// [rankedStore] by id. Matches [rankedStore]'s own dedup key, so this is
-/// exact, not an estimate. 0 when there's no store to compare against.
+/// How many of [rows] (raw `ranked_history` entries) a restore would add to
+/// [rankedStore]: rows it can use and that aren't already stored by id, each id
+/// counted once. Matches the store's own dedup key and per-row rules, so this
+/// is exact, not an estimate. 0 when there's no store to compare against.
 Future<int> _countNewMatches(
   Object? rows,
   RankedHistoryStore? rankedStore,
@@ -945,15 +946,12 @@ Future<int> _countNewMatches(
   // Only the ids the file carries are looked up (in chunks), so this stays
   // bounded by the file rather than by however much history is stored.
   // By the id a restore would file each row under, not the one the file claims.
-  final existing = await rankedStore.existingIds([
+  final ids = <String>{
     for (final r in rows)
-      if (r is Map) ?RankedHistoryStore.canonicalIdOf(r),
-  ]);
-  return rows.where((r) {
-    if (r is! Map) return false;
-    final id = RankedHistoryStore.canonicalIdOf(r);
-    return id == null || !existing.contains(id);
-  }).length;
+      if (r is Map) ?RankedHistoryStore.importableIdOf(r),
+  };
+  final existing = await rankedStore.existingIds(ids.toList());
+  return ids.where((id) => !existing.contains(id)).length;
 }
 
 /// Restores a previously-[previewBackup]'d file. [rankedStore], when

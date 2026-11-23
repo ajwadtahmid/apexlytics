@@ -1614,6 +1614,11 @@ class RankedHistoryStore {
     return '${uid}_${(start as num).toInt() ~/ 1000}';
   }
 
+  /// The id a restore would file backup row [r] under, or null when the restore
+  /// would skip the row as unusable (see [importRows] for the rules).
+  static String? importableIdOf(Map<dynamic, dynamic> r) =>
+      _importableRow(r)?['id'] as String?;
+
   /// Latest millisecond timestamp a [DateTime] can hold; one past it makes
   /// `DateTime.fromMillisecondsSinceEpoch` throw.
   static const _maxEpochMs = 8640000000000000;
