@@ -6,8 +6,11 @@ class NewsService {
   final ApiService _api;
   NewsService(this._api);
 
-  Future<ApiResult<List<NewsArticle>>> getNews({String lang = 'en-US'}) async {
-    final result = await _api.getList(ApiConstants.newsPath, params: {'lang': lang});
+  Future<ApiResult<List<NewsArticle>>> getNews() async {
+    final result = await _api.getList(
+      ApiConstants.newsPath,
+      params: {'lang': 'en-US'},
+    );
     final articles = result.data
         .whereType<Map<String, dynamic>>()
         .map(NewsArticle.fromJson)

@@ -5,7 +5,7 @@ import 'package:apexlytics/providers/navigation_provider.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/storage_usage_provider.dart';
 import 'package:apexlytics/screens/settings/widgets/backup_reminder_banner.dart';
-import 'package:apexlytics/screens/settings/widgets/cache_settings_section.dart';
+import 'package:apexlytics/screens/settings/widgets/data_settings_section.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,7 +77,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: Column(
-                children: [BackupReminderBanner(), CacheSettingsSection()],
+                children: [BackupReminderBanner(), DataSettingsSection()],
               ),
             ),
           ),

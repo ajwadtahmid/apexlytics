@@ -20,7 +20,7 @@ import 'api_provider.dart';
 import 'player_provider.dart';
 import 'rank_goal_provider.dart';
 import 'settings_provider.dart';
-import 'shared_matches_provider.dart';
+import 'squad_games_provider.dart';
 
 /// App-lifetime handle to the local ranked-history database.
 final rankedHistoryStoreProvider = Provider<RankedHistoryStore>((ref) {
@@ -579,7 +579,7 @@ void invalidatePlayerDerivedProviders(WidgetRef ref) {
   ref.invalidate(rankedPersonalBestProvider);
   ref.invalidate(rankedAllTimeBestProvider);
   ref.invalidate(rankedSplitDetailProvider);
-  ref.invalidate(sharedMatchesProvider);
+  ref.invalidate(squadGamesProvider);
   ref.invalidate(gamesEligibilityProvider);
   ref.invalidate(rankedSeasonsProvider);
   ref.invalidate(myPlayerStatsProvider);
@@ -617,7 +617,7 @@ void _invalidateMatchDerived(void Function(ProviderOrFamily provider) ref) {
   ref(rankedSplitViewProvider);
   ref(rankedLifetimeAggregatesProvider);
   ref(rankedSplitDetailProvider);
-  ref(sharedMatchesProvider);
+  ref(squadGamesProvider);
   ref(rankedPersonalBestProvider);
   ref(rankedAllTimeBestProvider);
 }

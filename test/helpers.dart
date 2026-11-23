@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:apexlytics/models/map_rotation.dart' show MapMode;
 import 'package:apexlytics/models/player_stats.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/season_meta.dart';
@@ -148,6 +149,37 @@ RankedMatch buildMatch({
   });
   return excluded ? match.withExcluded(true) : match;
 }
+
+/// [n] ranked games on [legend], each worth [rp], five thousand seconds apart
+/// from a start that depends on the legend, so two legends' games never share
+/// a start time.
+List<RankedMatch> buildMatches(
+  String legend,
+  int n,
+  int rp, {
+  String map = 'olympus_rotation',
+}) => [
+  for (var i = 0; i < n; i++)
+    buildMatch(
+      legend: legend,
+      map: map,
+      rp: rp,
+      start: 1782090000 + legend.hashCode % 1000 + i * 5000,
+    ),
+];
+
+/// A [MapMode] for [map], with a countdown and a length for the tests that
+/// only need it to have one.
+MapMode buildMapMode(
+  String map, {
+  int remainingSecs = 1800,
+  int durationMins = 60,
+}) => MapMode(
+  map: map,
+  remainingSecs: remainingSecs,
+  durationMins: durationMins,
+  asset: '',
+);
 
 /// Builds a minimal [PlayerStats] for use in tests. Override only the fields
 /// you care about; everything else gets a sensible default.

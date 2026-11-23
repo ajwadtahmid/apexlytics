@@ -9,8 +9,8 @@ import '../../../utils/notifications.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
 
-class GeneralSettingsSection extends ConsumerWidget {
-  const GeneralSettingsSection({super.key});
+class PlayerSettingsSection extends ConsumerWidget {
+  const PlayerSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -95,10 +95,7 @@ class _PlayerInfoContent extends ConsumerWidget {
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
           onTap: () {
             Clipboard.setData(ClipboardData(text: uid));
-            context.showMessage(
-              'UID copied',
-              duration: const Duration(seconds: 2),
-            );
+            context.showMessage('UID copied', duration: AppTheme.toastShort);
           },
           child: Row(
             children: [

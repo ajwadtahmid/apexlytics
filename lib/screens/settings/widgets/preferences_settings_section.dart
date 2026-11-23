@@ -7,8 +7,8 @@ import '../../../providers/settings_provider.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
 
-class StatsRefreshSection extends ConsumerWidget {
-  const StatsRefreshSection({super.key});
+class PreferencesSettingsSection extends ConsumerWidget {
+  const PreferencesSettingsSection({super.key});
 
   static String _tabLabel(int storedTab) => appTabForDefault(storedTab).label;
 

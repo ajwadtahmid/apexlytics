@@ -14,6 +14,7 @@ import '../../../utils/formatting/format.dart'
         formatShortDate,
         formatSigned,
         formatTotalOrNone,
+        isSameLocalDay,
         kNoReading,
         plural,
         timeAgo;
@@ -484,11 +485,6 @@ String _stamp(DateTime t) {
   return '$day ${_timeFmt.format(l)}';
 }
 
-bool _sameDay(DateTime a, DateTime b) {
-  final x = a.toLocal(), y = b.toLocal();
-  return x.year == y.year && x.month == y.month && x.day == y.day;
-}
-
 /// A small divider where a session runs past midnight, naming the day on
 /// each side: the rows above it are the later day.
 class _DayChange extends StatelessWidget {
@@ -591,7 +587,7 @@ class _SessionTitle extends StatelessWidget {
     final played = item.playSecs > 0
         ? ' · ${formatDuration(item.playSecs)}'
         : '';
-    final sameDay = _sameDay(item.start, item.end);
+    final sameDay = isSameLocalDay(item.start, item.end);
     // The end repeats the date only when the session crossed midnight.
     final span =
         '${_stamp(item.start)} – '
@@ -876,7 +872,7 @@ class _MatchRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       child: Ink(
         decoration: BoxDecoration(
-          color: selected ? AppTheme.accent.withAlpha(30) : null,
+          color: selected ? AppTheme.tint(AppTheme.accent) : null,
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         ),
         child: Opacity(

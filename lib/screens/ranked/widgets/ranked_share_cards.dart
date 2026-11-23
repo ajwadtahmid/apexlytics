@@ -400,7 +400,7 @@ class RecordShareCard extends StatelessWidget {
               vertical: AppTheme.xs,
             ),
             decoration: BoxDecoration(
-              color: color.withAlpha(30),
+              color: AppTheme.tint(color),
               borderRadius: BorderRadius.circular(AppTheme.radiusFull),
             ),
             child: Text(

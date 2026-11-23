@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+
+import '../constants/api_constants.dart';
 import '../constants/timeout_constants.dart';
 import '../env/env.dart';
 import '../utils/api_base_options.dart';
@@ -62,7 +64,7 @@ class ApiService {
     try {
       await withOverallDeadline(
         TimeoutConstants.overallRequestDeadline,
-        (token) => _dio.get('/healthz', cancelToken: token),
+        (token) => _dio.get(ApiConstants.healthPath, cancelToken: token),
       );
     } catch (e) {
       log.d('Warmup failed (best-effort)', error: e);

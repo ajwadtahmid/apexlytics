@@ -13,6 +13,19 @@ void main() {
     endSeconds: 1_790_000_000,
   );
 
+  group('SeasonMeta.parseSplitId', () {
+    test('reads the season and the split from a split id', () {
+      expect(
+        SeasonMeta.parseSplitId('br_ranked_s29_s2'),
+        (season: 29, split: 2),
+      );
+    });
+
+    test('is null for a placeholder', () {
+      expect(SeasonMeta.parseSplitId('__other__'), isNull);
+    });
+  });
+
   group('SeasonMeta.isSplitId', () {
     test('accepts real split ids', () {
       expect(SeasonMeta.isSplitId('br_ranked_s29_s1'), isTrue);

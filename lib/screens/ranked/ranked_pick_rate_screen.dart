@@ -1540,7 +1540,7 @@ class _LegendStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppTheme.accent.withAlpha(25) : Colors.transparent,
+      color: selected ? AppTheme.tintSoft(AppTheme.accent) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(

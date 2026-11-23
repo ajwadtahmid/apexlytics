@@ -2,8 +2,6 @@ import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/search_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/favorites_pane.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +11,6 @@ import '../helpers.dart';
 
 void main() {
   setUpAll(useFfiDatabase);
-
-  var dbCounter = 0;
 
   // Three favorites, the last without a UID.
   const favorites =
@@ -33,13 +29,7 @@ void main() {
           await SharedPreferences.getInstance(),
         ),
         apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:favorites_removal_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: FakeHttpAdapter(),
-          ),
+          isolatedApiService(FakeHttpAdapter()),
         ),
       ],
     );

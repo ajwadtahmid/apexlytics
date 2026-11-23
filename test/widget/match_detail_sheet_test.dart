@@ -60,8 +60,8 @@ void main() {
     await open(tester, [game()]);
 
     expect(
-      find.byWidgetPredicate((w) => w.runtimeType.toString() == '_DragHandle'),
-      findsOneWidget,
+      tester.widget<BottomSheet>(find.byType(BottomSheet)).showDragHandle,
+      isTrue,
     );
   });
 

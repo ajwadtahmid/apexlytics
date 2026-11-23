@@ -7,7 +7,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../utils/backup_reminder.dart';
 import '../../../utils/ranked/ranked_period.dart';
 import '../../../utils/theme.dart';
-import '../../settings/widgets/cache_settings_section.dart' show exportData;
+import '../../settings/widgets/data_settings_section.dart' show exportData;
 
 /// Once a split ends, a card at the top of Overview asking for an export, for
 /// as long as none was made since and until it is dismissed. A split's games
@@ -56,7 +56,7 @@ class _SplitEndBackupNudgeState extends ConsumerState<SplitEndBackupNudge> {
       margin: const EdgeInsets.only(bottom: AppTheme.md),
       padding: const EdgeInsets.only(left: AppTheme.sm),
       decoration: BoxDecoration(
-        color: AppTheme.accent.withAlpha(30),
+        color: AppTheme.tint(AppTheme.accent),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         border: Border.all(color: AppTheme.accent.withAlpha(90)),
       ),

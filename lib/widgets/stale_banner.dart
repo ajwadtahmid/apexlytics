@@ -21,7 +21,7 @@ class StaleBanner extends StatelessWidget {
         vertical: AppTheme.sm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.orange.withAlpha(25),
+        color: AppTheme.tintSoft(AppTheme.orange),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Row(

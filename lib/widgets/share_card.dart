@@ -381,7 +381,7 @@ class ShareCardFrame extends StatelessWidget {
               gradient: RadialGradient(
                 center: const Alignment(0, -1),
                 radius: 0.95,
-                colors: [AppTheme.accent.withAlpha(30), AppTheme.bg],
+                colors: [AppTheme.tint(AppTheme.accent), AppTheme.bg],
               ),
             ),
             child: Padding(

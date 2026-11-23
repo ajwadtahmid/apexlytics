@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../constants/map_constants.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/shared_matches_provider.dart';
+import '../../providers/squad_games_provider.dart';
 import '../../utils/error_messages.dart';
 import '../../utils/formatting/format.dart'
     show
@@ -16,7 +16,7 @@ import '../../utils/formatting/format.dart'
         formatSignedInt,
         plural;
 import '../../utils/ranked/ranked_period.dart';
-import '../../utils/ranked/shared_matches.dart';
+import '../../utils/ranked/squad_games.dart';
 import '../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../utils/theme.dart';
 import '../../widgets/choice_sheet.dart';
@@ -140,14 +140,14 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
     return 'Season';
   }
 
-  bool _inPeriod(SharedMatch m) {
+  bool _inPeriod(SquadGame m) {
     final weeks = _weeks;
     if (_week < 0 || _week >= weeks.length) return true;
     final w = weeks[_week];
     return !m.end.isBefore(w.start) && m.end.isBefore(w.end);
   }
 
-  bool _isShown(SharedMatch m) {
+  bool _isShown(SquadGame m) {
     if (!_inPeriod(m)) return false;
     if (!_three) return _slots.every(m.includes);
     final n = _slots.where(m.includes).length;
@@ -189,9 +189,9 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
     );
     final names = {for (final p in saved) p.uid: p.name};
     _sanitize([for (final p in saved) p.uid]);
-    final result = ref.watch(sharedMatchesProvider(_splitId));
+    final result = ref.watch(squadGamesProvider(_splitId));
     final shown = [
-      for (final m in result.value ?? const <SharedMatch>[])
+      for (final m in result.value ?? const <SquadGame>[])
         if (_isShown(m)) m,
     ];
     final weeks = _weeks;
@@ -256,7 +256,7 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
           padding: const EdgeInsets.symmetric(vertical: AppTheme.lg),
           child: ErrorCard(
             message: friendlyError(result.error!),
-            onRetry: () => ref.invalidate(sharedMatchesProvider(_splitId)),
+            onRetry: () => ref.invalidate(squadGamesProvider(_splitId)),
           ),
         ),
       );
@@ -501,7 +501,7 @@ class _Swatch extends StatelessWidget {
 class _Summary extends StatelessWidget {
   final List<String> slots;
   final Map<String, String> names;
-  final List<SharedMatch> games;
+  final List<SquadGame> games;
   const _Summary({
     required this.slots,
     required this.names,
@@ -648,7 +648,7 @@ class _Empty extends StatelessWidget {
 }
 
 class _GameRow extends StatelessWidget {
-  final SharedMatch match;
+  final SquadGame match;
   final List<String> slots;
   final Map<String, String> names;
 

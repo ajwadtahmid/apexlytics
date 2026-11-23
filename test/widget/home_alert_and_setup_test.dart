@@ -21,9 +21,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers.dart';
 
-MapMode _mode(String map) =>
-    MapMode(map: map, remainingSecs: 1800, durationMins: 60, asset: '');
-
 /// The season's map pool, without asking the server for it.
 class _Seasonal extends SeasonalMapsNotifier {
   @override
@@ -53,10 +50,10 @@ void main() {
         mapRotationProvider.overrideWith(
           (ref) async => ApiResult(
             MapRotation(
-              battleRoyaleCurrent: _mode('Olympus'),
-              battleRoyaleNext: _mode("World's Edge"),
-              rankedCurrent: _mode('Kings Canyon'),
-              rankedNext: _mode('Olympus'),
+              battleRoyaleCurrent: buildMapMode('Olympus'),
+              battleRoyaleNext: buildMapMode("World's Edge"),
+              rankedCurrent: buildMapMode('Kings Canyon'),
+              rankedNext: buildMapMode('Olympus'),
             ),
           ),
         ),

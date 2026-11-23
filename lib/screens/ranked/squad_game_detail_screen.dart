@@ -5,11 +5,12 @@ import '../../utils/formatting/format.dart'
     show
         formatClock,
         formatDuration,
+        formatMinSec,
         formatNumber,
         formatShortDate,
         formatSignedInt,
         formatTotalOrNone;
-import '../../utils/ranked/shared_matches.dart';
+import '../../utils/ranked/squad_games.dart';
 import '../../utils/theme.dart';
 import '../../widgets/legend_icon.dart';
 import '../../widgets/map_asset_image.dart';
@@ -19,7 +20,7 @@ import 'widgets/squad_table.dart';
 /// One game the saved profiles played together: the map, and each profile's
 /// legend, kills, damage, RP and time in the game side by side.
 class SquadGameDetailScreen extends StatelessWidget {
-  final SharedMatch match;
+  final SquadGame match;
 
   /// The profiles the list was showing, in its order: the first is the player
   /// on screen. A column is drawn for each one that was in this game.
@@ -238,12 +239,9 @@ class _TotalLine extends StatelessWidget {
 /// How sure the match is: how far apart the profiles' times were, and whether
 /// that was close enough on its own.
 class _HowMatched extends StatelessWidget {
-  final SharedMatch match;
+  final SquadGame match;
   final List<String> others;
   const _HowMatched({required this.match, required this.others});
-
-  static String _gap(int secs) =>
-      secs < 60 ? '${secs}s' : '${secs ~/ 60}m ${secs % 60}s';
 
   @override
   Widget build(BuildContext context) {
@@ -271,8 +269,8 @@ class _HowMatched extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.xs),
           Text(
-            'Starts ${_gap(match.startSpreadSecs)} apart, ends '
-            '${_gap(match.endSpreadSecs)} apart. '
+            'Starts ${formatMinSec(match.startSpreadSecs)} apart, ends '
+            '${formatMinSec(match.endSpreadSecs)} apart. '
             '${close ? 'Close enough to count on its own.' : 'Counted because the games before and after also line up.'}',
             style: AppTheme.captionLarge,
           ),

@@ -271,4 +271,40 @@ void main() {
       expect(formatTimeLeft(86400), '1d 0h');
     });
   });
+  group('formatMinSec', () {
+    test('writes minutes and seconds with their units, unpadded', () {
+      expect(formatMinSec(845), '14m 5s');
+      expect(formatMinSec(60), '1m 0s');
+      expect(formatMinSec(3725), '62m 5s');
+    });
+
+    test('is just seconds under a minute', () {
+      expect(formatMinSec(45), '45s');
+      expect(formatMinSec(0), '0s');
+    });
+  });
+
+  group('calendarDay and isSameLocalDay', () {
+    test('reduce a time to its local date', () {
+      final t = DateTime(2026, 10, 9, 23, 59, 30);
+      expect(calendarDay(t), DateTime(2026, 10, 9));
+    });
+
+    test('read a UTC instant on the device\'s own calendar', () {
+      final utc = DateTime.utc(2026, 10, 9, 12);
+      final local = utc.toLocal();
+      expect(calendarDay(utc), DateTime(local.year, local.month, local.day));
+    });
+
+    test('say whether two times are on the same local date', () {
+      expect(
+        isSameLocalDay(DateTime(2026, 10, 9, 0, 1), DateTime(2026, 10, 9, 23)),
+        isTrue,
+      );
+      expect(
+        isSameLocalDay(DateTime(2026, 10, 9, 23, 59), DateTime(2026, 10, 10)),
+        isFalse,
+      );
+    });
+  });
 }

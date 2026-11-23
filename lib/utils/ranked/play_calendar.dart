@@ -1,12 +1,7 @@
 import '../../models/ranked_match.dart';
+import '../formatting/format.dart' show calendarDay;
 import '../formatting/season_utils.dart' show WeekRange;
 import 'ranked_aggregates.dart';
-
-/// The local calendar date of [t], with no time.
-DateTime calendarDay(DateTime t) {
-  final local = t.toLocal();
-  return DateTime(local.year, local.month, local.day);
-}
 
 /// The games of one session that started on one day. A session that runs past
 /// midnight has a part on each day; [part] is only that day's games, and

@@ -19,7 +19,7 @@ import '../../../widgets/surface_card.dart';
 import '../../../widgets/trend_window_picker.dart';
 import '../../../widgets/win_loss_stat.dart';
 import 'map_rp_badge.dart';
-import 'rank_badge.dart';
+import 'leaderboard_rank_chip.dart';
 import 'ranked_legend_detail_sheet.dart';
 import 'ranked_map_detail_sheet.dart';
 
@@ -181,7 +181,7 @@ class _LegendCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        RankBadge(rank: rank),
+                        LeaderboardRankChip(rank: rank),
                         const SizedBox(width: AppTheme.sm),
                         // Scales down a touch on a narrow card rather than
                         // truncating the legend name.
@@ -403,7 +403,7 @@ class _MapCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  RankBadge(rank: rank, onImage: true),
+                  LeaderboardRankChip(rank: rank, onImage: true),
                   const SizedBox(width: AppTheme.sm),
                   Expanded(
                     child: Text(

@@ -186,7 +186,7 @@ class _BadgeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
+        color: AppTheme.tint(color),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

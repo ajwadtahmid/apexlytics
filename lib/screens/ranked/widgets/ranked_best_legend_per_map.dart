@@ -99,7 +99,7 @@ class _MapRow extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.accent.withAlpha(30),
+                    color: AppTheme.tint(AppTheme.accent),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(

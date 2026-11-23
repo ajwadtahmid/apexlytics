@@ -10,7 +10,7 @@ import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/search_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/providers/storage_usage_provider.dart';
-import 'package:apexlytics/screens/settings/widgets/cache_settings_section.dart';
+import 'package:apexlytics/screens/settings/widgets/data_settings_section.dart';
 import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/formatting/format.dart';
 import 'package:apexlytics/utils/formatting/snapshot_types.dart';
@@ -94,7 +94,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: SingleChildScrollView(child: CacheSettingsSection()),
+            body: SingleChildScrollView(child: DataSettingsSection()),
           ),
         ),
       ),

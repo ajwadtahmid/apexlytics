@@ -13,15 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers.dart';
 
-List<RankedMatch> _games(String legend, int n, int rp) => [
-  for (var i = 0; i < n; i++)
-    buildMatch(
-      legend: legend,
-      rp: rp,
-      start: 1782090000 + legend.hashCode % 1000 + i * 5000,
-    ),
-];
-
 void main() {
   Future<void> pump(
     WidgetTester tester,
@@ -54,9 +45,9 @@ void main() {
 
   // Alter is half the games and loses RP; Bangalore is played less and wins.
   final matches = [
-    ..._games('Alter', 8, -5),
-    ..._games('Bangalore', 4, 20),
-    ..._games('Wraith', 4, -3),
+    ...buildMatches('Alter', 8, -5),
+    ...buildMatches('Bangalore', 4, 20),
+    ...buildMatches('Wraith', 4, -3),
   ];
 
   testWidgets(
@@ -85,7 +76,7 @@ void main() {
   });
 
   testWidgets('says nothing when no legend is a trap or a gem', (tester) async {
-    await pump(tester, _games('Alter', 8, 5));
+    await pump(tester, buildMatches('Alter', 8, 5));
 
     expect(find.textContaining('Comfort trap  '), findsNothing);
     expect(find.textContaining('of your games at'), findsNothing);
@@ -117,9 +108,9 @@ void main() {
       tester,
     ) async {
       await pump(tester, [
-        ..._games('Alter', 30, 4),
-        ..._games('Bangalore', 3, 307),
-        ..._games('Wraith', 3, -150),
+        ...buildMatches('Alter', 30, 4),
+        ...buildMatches('Bangalore', 3, 307),
+        ...buildMatches('Wraith', 3, -150),
       ]);
 
       final data = chart(tester);
@@ -138,9 +129,9 @@ void main() {
     testWidgets('do not leave the lower half empty when every legend gains '
         'RP', (tester) async {
       await pump(tester, [
-        ..._games('Alter', 30, 12),
-        ..._games('Bangalore', 10, 30),
-        ..._games('Wraith', 10, 20),
+        ...buildMatches('Alter', 30, 12),
+        ...buildMatches('Bangalore', 10, 30),
+        ...buildMatches('Wraith', 10, 20),
       ]);
 
       final data = chart(tester);
@@ -464,10 +455,10 @@ void main() {
     // Alter sits just above 0 RP, so it is a core legend against 0 but below
     // the player's average of +4.8. Zed has too few games to show.
     final custom = [
-      ..._games('Alter', 8, 1),
-      ..._games('Bangalore', 4, 20),
-      ..._games('Wraith', 4, -3),
-      ..._games('Zed', 2, 5),
+      ...buildMatches('Alter', 8, 1),
+      ...buildMatches('Bangalore', 4, 20),
+      ...buildMatches('Wraith', 4, -3),
+      ...buildMatches('Zed', 2, 5),
     ];
 
     Future<void> openSheet(WidgetTester tester) async {
@@ -759,9 +750,9 @@ void main() {
       // Two legends with the same share of games and the same RP sit on top
       // of each other; a third is elsewhere.
       await pump(tester, [
-        ..._games('Alter', 10, 20),
-        ..._games('Bangalore', 10, 20),
-        ..._games('Wraith', 30, -5),
+        ...buildMatches('Alter', 10, 20),
+        ...buildMatches('Bangalore', 10, 20),
+        ...buildMatches('Wraith', 30, -5),
       ]);
 
       final data = chart(tester);

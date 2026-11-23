@@ -208,7 +208,7 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
                   if (context.mounted) {
                     context.showMessage(
                       isFav ? 'Removed from favorites' : 'Added to favorites',
-                      duration: const Duration(seconds: 2),
+                      duration: AppTheme.toastShort,
                     );
                   }
                 } on AppException catch (e) {

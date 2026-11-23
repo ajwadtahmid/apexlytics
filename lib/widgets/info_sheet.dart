@@ -35,7 +35,7 @@ Future<void> showInfoSheet(
               Container(
                 padding: const EdgeInsets.all(AppTheme.md),
                 decoration: BoxDecoration(
-                  color: AppTheme.orange.withAlpha(25),
+                  color: AppTheme.tintSoft(AppTheme.orange),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                   border: Border.all(color: AppTheme.orange.withAlpha(120)),
                 ),

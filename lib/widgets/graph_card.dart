@@ -409,7 +409,7 @@ class _DeltaBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
+        color: AppTheme.tint(color),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Text(

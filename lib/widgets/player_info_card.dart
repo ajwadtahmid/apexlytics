@@ -32,10 +32,7 @@ class PlayerInfoCard extends StatelessWidget {
           onTap: () async {
             await Clipboard.setData(ClipboardData(text: stats.uid));
             if (context.mounted) {
-              context.showMessage(
-                'UID copied',
-                duration: const Duration(seconds: 2),
-              );
+              context.showMessage('UID copied', duration: AppTheme.toastShort);
             }
           },
           child: const Padding(
@@ -203,7 +200,7 @@ class _PlatformBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: p.color.withAlpha(30),
+        color: AppTheme.tint(p.color),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Row(

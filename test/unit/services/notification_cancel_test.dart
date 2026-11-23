@@ -6,12 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../fake_notification_plugin.dart';
+import '../../helpers.dart';
 
 import 'package:apexlytics/utils/alert_silence.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 MapMode _mode(String map, {int secs = 3600}) =>
-    MapMode(map: map, remainingSecs: secs, durationMins: 60, asset: '');
+    buildMapMode(map, remainingSecs: secs);
 
 MapRotation _rotation() => MapRotation(
   battleRoyaleCurrent: _mode('Olympus'),

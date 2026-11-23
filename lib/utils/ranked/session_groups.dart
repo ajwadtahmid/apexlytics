@@ -1,4 +1,6 @@
 import 'package:intl/intl.dart';
+
+import '../formatting/format.dart' show calendarDay;
 import 'ranked_aggregates.dart';
 
 /// Sessions that fall in the same stretch of time, under one heading.
@@ -22,7 +24,7 @@ List<SessionGroup> groupSessions(
   List<RankedSession> sessions, {
   DateTime? now,
 }) {
-  final today = _dayOf(now ?? DateTime.now());
+  final today = calendarDay(now ?? DateTime.now());
   // Calendar days, not 24-hour steps: across a clock change a day is 23 or 25
   // hours long, and a step of 24 hours would miss midnight.
   final yesterday = DateTime(today.year, today.month, today.day - 1);
@@ -35,7 +37,7 @@ List<SessionGroup> groupSessions(
   final month = DateFormat('MMMM yyyy');
 
   String labelOf(DateTime start) {
-    final day = _dayOf(start);
+    final day = calendarDay(start);
     if (day == today) return 'Today';
     if (day == yesterday) return 'Yesterday';
     if (!day.isBefore(thisWeek)) return 'This week';
@@ -55,6 +57,3 @@ List<SessionGroup> groupSessions(
   }
   return groups;
 }
-
-/// The calendar day of [t], without the time.
-DateTime _dayOf(DateTime t) => DateTime(t.year, t.month, t.day);

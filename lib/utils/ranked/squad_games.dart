@@ -33,10 +33,10 @@ const kSharedWideEndSecs = 300;
 const kMaxSquadSize = 3;
 
 /// One game the saved profiles played together: each member's own record of it.
-class SharedMatch {
+class SquadGame {
   /// Each member's game, by uid.
   final Map<String, RankedMatch> games;
-  const SharedMatch(this.games);
+  const SquadGame(this.games);
 
   Iterable<String> get uids => games.keys;
   int get squadSize => games.length;
@@ -101,7 +101,7 @@ class _Edge {
 /// first. Only ranked games that count toward the stats are looked at. A result
 /// holds two or three profiles; solo games are left out. Deterministic: the
 /// same input always gives the same pairs.
-List<SharedMatch> findSharedMatches(Map<String, List<RankedMatch>> byUid) {
+List<SquadGame> findSquadGames(Map<String, List<RankedMatch>> byUid) {
   final uids = byUid.keys.toList()..sort();
   final games = [
     for (final uid in uids)
@@ -146,7 +146,7 @@ List<SharedMatch> findSharedMatches(Map<String, List<RankedMatch>> byUid) {
 
   final result = [
     for (final group in groupOf.values.toSet())
-      SharedMatch({
+      SquadGame({
         for (final n in (group.toList()..sort((x, y) => x.uid - y.uid)))
           uids[n.uid]: games[n.uid][n.game],
       }),
@@ -210,7 +210,7 @@ int _compareNodes(_Node a, _Node b) {
   return u != 0 ? u : a.game.compareTo(b.game);
 }
 
-int _newestFirst(SharedMatch a, SharedMatch b) {
+int _newestFirst(SquadGame a, SquadGame b) {
   final d = b.start.compareTo(a.start);
   if (d != 0) return d;
   // The same start: the same members in a fixed order.

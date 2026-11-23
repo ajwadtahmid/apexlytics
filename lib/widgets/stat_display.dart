@@ -47,7 +47,9 @@ class StatDisplay extends StatelessWidget {
     return Container(
       padding: pad,
       decoration: BoxDecoration(
-        color: highlight ? AppTheme.accent.withAlpha(25) : AppTheme.surface2,
+        color: highlight
+            ? AppTheme.tintSoft(AppTheme.accent)
+            : AppTheme.surface2,
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Column(

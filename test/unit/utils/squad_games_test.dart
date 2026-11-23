@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:apexlytics/models/ranked_match.dart';
-import 'package:apexlytics/utils/ranked/shared_matches.dart';
+import 'package:apexlytics/utils/ranked/squad_games.dart';
 
 import '../../helpers.dart';
 
@@ -26,8 +26,8 @@ void main() {
     excluded: excluded,
   );
 
-  List<SharedMatch> find(Map<String, List<RankedMatch>> byUid) =>
-      findSharedMatches(byUid);
+  List<SquadGame> find(Map<String, List<RankedMatch>> byUid) =>
+      findSquadGames(byUid);
 
   group('a tight pair', () {
     test('is accepted on its own', () {
@@ -276,7 +276,7 @@ void main() {
     });
   });
 
-  group('SharedMatch', () {
+  group('SquadGame', () {
     test('reports when and how far apart the members were', () {
       final found = find({
         'a': [game('a', 0)],

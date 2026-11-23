@@ -45,8 +45,8 @@ import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart';
 import 'auto_backup_tile.dart';
 
-class CacheSettingsSection extends ConsumerWidget {
-  const CacheSettingsSection({super.key});
+class DataSettingsSection extends ConsumerWidget {
+  const DataSettingsSection({super.key});
 
   /// Under Export data: what there is to back up, and when it last was.
   static String _exportLine(StorageUsage? u, DateTime? lastBackup) {

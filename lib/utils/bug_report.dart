@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:intl/intl.dart';
 
+import '../constants/api_constants.dart';
 import 'backup_reminder.dart' show backupAgeLabel;
 import 'formatting/format.dart' show formatBytes, formatNumber, timeAgo;
 import 'log_buffer.dart';
@@ -27,8 +28,7 @@ const kGithubUrlBudget = 7000;
 const kEmailUrlBudget = 12000;
 const kWindowsEmailUrlBudget = 1900;
 
-const _githubBase =
-    'https://github.com/ajwadtahmid/apexlytics/issues/new?body=';
+const _githubBase = '${ApiConstants.issuesNewUrl}?body=';
 const _emailBase =
     'mailto:support@ajwadtahmid.com?subject=Apexlytics+Bug+Report&body=';
 

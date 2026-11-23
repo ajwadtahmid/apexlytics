@@ -1,9 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+
 import '../../../providers/auto_backup_provider.dart';
 import '../../../utils/formatting/format.dart'
-    show formatBytes, formatClock, plural;
+    show formatBytes, formatClock, formatShortDate, plural;
 import '../../../utils/storage/auto_backup.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/widgets.dart' show SheetHandle;
@@ -25,7 +25,7 @@ class AutoBackupTile extends ConsumerWidget {
   });
 
   static String _when(DateTime at) =>
-      '${DateFormat('MMM d').format(at)}, ${formatClock(at)}';
+      '${formatShortDate(at)}, ${formatClock(at)}';
 
   void _open(BuildContext context) {
     showModalBottomSheet<void>(

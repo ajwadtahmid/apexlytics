@@ -6,15 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers.dart';
 
-List<RankedMatch> _games(String legend, int n, int rp) => [
-  for (var i = 0; i < n; i++)
-    buildMatch(
-      legend: legend,
-      rp: rp,
-      start: 1782090000 + legend.hashCode % 1000 + i * 5000,
-    ),
-];
-
 void main() {
   group('quadrantOf', () {
     test('crosses pick rate with RP against the two lines', () {
@@ -50,9 +41,9 @@ void main() {
 
     test('names the comfort trap and the hidden gem', () {
       final found = takeaways([
-        ..._games('Alter', 8, -5), // half the games, losing RP
-        ..._games('Bangalore', 4, 20), // played less, winning
-        ..._games('Wraith', 4, -3),
+        ...buildMatches('Alter', 8, -5), // half the games, losing RP
+        ...buildMatches('Bangalore', 4, 20), // played less, winning
+        ...buildMatches('Wraith', 4, -3),
       ]);
 
       expect(found.map((t) => t.quadrant), [
@@ -66,10 +57,14 @@ void main() {
 
     test('picks the most played trap and the best gem', () {
       final found = takeaways([
-        ..._games('Alter', 10, -2),
-        ..._games('Loba', 7, -9), // also losing, but played less than Alter
-        ..._games('Wraith', 3, 10),
-        ..._games('Seer', 3, 25), // the better gem
+        ...buildMatches('Alter', 10, -2),
+        ...buildMatches(
+          'Loba',
+          7,
+          -9,
+        ), // also losing, but played less than Alter
+        ...buildMatches('Wraith', 3, 10),
+        ...buildMatches('Seer', 3, 25), // the better gem
       ]);
 
       expect(found.map((t) => t.legend.legend), ['Alter', 'Seer']);
@@ -77,23 +72,29 @@ void main() {
 
     test('never names a legend with too few games', () {
       final found = takeaways([
-        ..._games('Alter', 10, 5),
-        ..._games('Wraith', 2, 40), // a great run over two games
+        ...buildMatches('Alter', 10, 5),
+        ...buildMatches('Wraith', 2, 40), // a great run over two games
       ]);
 
       expect(found, isEmpty);
     });
 
     test('has nothing to say when no legend is a trap or a gem', () {
-      expect(takeaways([..._games('Alter', 8, 5)]), isEmpty);
+      expect(takeaways([...buildMatches('Alter', 8, 5)]), isEmpty);
       expect(
-        takeaways([..._games('Alter', 6, 5), ..._games('Wraith', 6, 5)]),
+        takeaways([
+          ...buildMatches('Alter', 6, 5),
+          ...buildMatches('Wraith', 6, 5),
+        ]),
         isEmpty,
       );
     });
 
     test('follows the baseline it is given', () {
-      final matches = [..._games('Alter', 8, 4), ..._games('Wraith', 4, 9)];
+      final matches = [
+        ...buildMatches('Alter', 8, 4),
+        ...buildMatches('Wraith', 4, 9),
+      ];
       // Against 0 RP, Alter is a main and only Wraith stands out.
       expect(takeaways(matches).map((t) => t.quadrant), [
         PickRateQuadrant.hiddenGem,
@@ -213,9 +214,9 @@ void main() {
 
   group('pickRatePool', () {
     final legends = legendBreakdowns([
-      ..._games('Alter', 5, 10),
-      ..._games('Bangalore', 2, 10),
-      ..._games('Wraith', 3, 10),
+      ...buildMatches('Alter', 5, 10),
+      ...buildMatches('Bangalore', 2, 10),
+      ...buildMatches('Wraith', 3, 10),
     ]);
 
     test('keeps only legends with enough games by default', () {
@@ -232,9 +233,9 @@ void main() {
   group('legendsMovedByBaseline', () {
     // Alter: 8 games at +10. Bangalore: 4 at +2. Wraith: 4 at -6.
     final pool = legendBreakdowns([
-      ..._games('Alter', 8, 10),
-      ..._games('Bangalore', 4, 2),
-      ..._games('Wraith', 4, -6),
+      ...buildMatches('Alter', 8, 10),
+      ...buildMatches('Bangalore', 4, 2),
+      ...buildMatches('Wraith', 4, -6),
     ]);
 
     int moved(double average) => legendsMovedByBaseline(

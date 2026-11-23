@@ -2,10 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'theme.dart';
 
 extension ScaffoldMessengerX on ScaffoldMessengerState {
-  void showMessage(
-    String text, {
-    Duration duration = const Duration(seconds: 4),
-  }) {
+  void showMessage(String text, {Duration duration = AppTheme.toastDefault}) {
     showSnackBar(SnackBar(content: Text(text), duration: duration));
   }
 
@@ -15,10 +12,7 @@ extension ScaffoldMessengerX on ScaffoldMessengerState {
 }
 
 extension BuildContextMessengerX on BuildContext {
-  void showMessage(
-    String text, {
-    Duration duration = const Duration(seconds: 4),
-  }) {
+  void showMessage(String text, {Duration duration = AppTheme.toastDefault}) {
     ScaffoldMessenger.of(this).showMessage(text, duration: duration);
   }
 

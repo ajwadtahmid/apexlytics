@@ -17,8 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers.dart';
 
-MapMode _mode(String map) =>
-    MapMode(map: map, remainingSecs: 600, durationMins: 60, asset: '');
+MapMode _mode(String map) => buildMapMode(map, remainingSecs: 600);
 
 MapRotation _rotation(String rankedNow) => MapRotation(
   battleRoyaleCurrent: _mode('Olympus'),

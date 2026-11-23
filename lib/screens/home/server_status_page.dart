@@ -96,7 +96,7 @@ class ServerStatusPage extends ConsumerWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: color.withAlpha(30),
+                              color: AppTheme.tint(color),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -189,7 +189,7 @@ class _CannotReachNote extends StatelessWidget {
         vertical: AppTheme.sm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.orange.withAlpha(25),
+        color: AppTheme.tintSoft(AppTheme.orange),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: const Row(
@@ -243,7 +243,7 @@ class _ProxyStatusCard extends ConsumerWidget {
                   vertical: 3,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withAlpha(30),
+                  color: AppTheme.tint(color),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

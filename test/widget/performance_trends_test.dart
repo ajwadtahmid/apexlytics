@@ -746,11 +746,11 @@ void main() {
       );
 
       expect(
-        rich('Up: +5m 00s game length vs your 5 sessions before'),
+        rich('Up: +5m 0s game length vs your 5 sessions before'),
         findsOneWidget,
       );
-      expect(rich('10m 00s'), findsWidgets);
-      expect(rich('15m 00s'), findsWidgets);
+      expect(rich('10m 0s'), findsWidgets);
+      expect(rich('15m 0s'), findsWidgets);
       // It isn't improving, which would call a longer game good.
       expect(rich('Improving: +5m'), findsNothing);
     });
@@ -821,7 +821,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        rich('Average over all 10 sessions: 10m 00s game length'),
+        rich('Average over all 10 sessions: 10m 0s game length'),
         findsOneWidget,
       );
       expect(

@@ -40,7 +40,7 @@ import 'package:apexlytics/screens/ranked/widgets/ranked_best_legend_per_map.dar
 import 'package:apexlytics/screens/ranked/squad_game_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/compare_row.dart';
 import 'package:apexlytics/screens/ranked/widgets/squad_table.dart';
-import 'package:apexlytics/utils/ranked/shared_matches.dart';
+import 'package:apexlytics/utils/ranked/squad_games.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_highlight_cards.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_rp_chart.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_slot_chart.dart';
@@ -739,7 +739,7 @@ void main() {
     await pump(
       tester,
       SquadGameDetailScreen(
-        match: SharedMatch({
+        match: SquadGame({
           '1': game('1', 1782090000),
           '2': game('2', 1782090010),
         }),

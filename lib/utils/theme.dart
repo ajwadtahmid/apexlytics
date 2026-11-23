@@ -102,6 +102,18 @@ class AppTheme {
   static const double summaryTileVerticalPadding = 14;
 
   /// Duration for short UI transitions (pill/tab animations, etc).
+  /// How strong the soft tint of a colour is as a chip or banner fill:
+  /// [tintAlpha] for a chip, [tintSoftAlpha] for a banner.
+  static const int tintAlpha = 30;
+  static const int tintSoftAlpha = 25;
+  static Color tint(Color c) => c.withAlpha(tintAlpha);
+  static Color tintSoft(Color c) => c.withAlpha(tintSoftAlpha);
+
+  /// How long a snackbar stays: [toastShort] for a quick confirmation,
+  /// [toastDefault] for a message.
+  static const Duration toastShort = Duration(seconds: 2);
+  static const Duration toastDefault = Duration(seconds: 4);
+
   static const Duration shortAnimation = Duration(milliseconds: 200);
 
   /// Duration for a selection pill / chip changing state.

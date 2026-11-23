@@ -6,16 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers.dart';
 
-List<RankedMatch> _games(String legend, String map, int n, int rp) => [
-  for (var i = 0; i < n; i++)
-    buildMatch(
-      legend: legend,
-      map: map,
-      rp: rp,
-      start: 1782090000 + legend.hashCode % 1000 + i * 5000,
-    ),
-];
-
 void main() {
   Future<void> pump(
     WidgetTester tester,
@@ -42,12 +32,12 @@ void main() {
     await pump(
       tester,
       [
-        ..._games('Axle', 'olympus_rotation', 6, 10),
-        ..._games('Bangalore', 'olympus_rotation', 4, 10),
+        ...buildMatches('Axle', 6, 10, map: 'olympus_rotation'),
+        ...buildMatches('Bangalore', 4, 10, map: 'olympus_rotation'),
       ],
       [
-        ..._games('Axle', 'olympus_rotation', 2, -5),
-        ..._games('Wraith', 'olympus_rotation', 8, -5),
+        ...buildMatches('Axle', 2, -5, map: 'olympus_rotation'),
+        ...buildMatches('Wraith', 8, -5, map: 'olympus_rotation'),
       ],
     );
 
@@ -67,8 +57,8 @@ void main() {
   ) async {
     await pump(
       tester,
-      [..._games('Axle', 'olympus_rotation', 2, 10)],
-      [..._games('Wraith', 'storm_point_rotation', 2, 10)],
+      [...buildMatches('Axle', 2, 10, map: 'olympus_rotation')],
+      [...buildMatches('Wraith', 2, 10, map: 'storm_point_rotation')],
     );
 
     expect(find.text('Legends picked differently'), findsOneWidget);
@@ -76,7 +66,7 @@ void main() {
   });
 
   testWidgets('is not there at all when nothing moved', (tester) async {
-    final same = [..._games('Axle', 'olympus_rotation', 4, 10)];
+    final same = [...buildMatches('Axle', 4, 10, map: 'olympus_rotation')];
     await pump(tester, same, same);
 
     expect(find.text('What changed'), findsNothing);

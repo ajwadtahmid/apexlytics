@@ -6,7 +6,7 @@ import '../../../providers/navigation_provider.dart';
 import '../../../utils/backup_reminder.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
-import 'cache_settings_section.dart' show exportData;
+import 'data_settings_section.dart' show exportData;
 
 /// The backup card at the top of Settings, about one thing: whether the match
 /// history is safe from losing the phone. Match history lives only on the

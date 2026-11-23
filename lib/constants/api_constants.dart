@@ -22,8 +22,11 @@ class ApiConstants {
 
   static const String privacyPolicyUrl =
       'https://ajwadtahmid.github.io/privacy-policies/Apexlytics.html';
-  static const String releaseNotesUrl =
-      'https://github.com/ajwadtahmid/apexlytics/releases';
+  static const String githubRepoUrl =
+      'https://github.com/ajwadtahmid/apexlytics';
+  static const String releaseNotesUrl = '$githubRepoUrl/releases';
+  static const String issuesNewUrl = '$githubRepoUrl/issues/new';
+  static const String rankedGuideUrl = '$githubRepoUrl#ranked-tracking-guide';
   static const String playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.ajwadtahmid.apexlytics';
   static const String appStoreUrl = 'https://apps.apple.com/app/id6778521764';
@@ -39,8 +42,8 @@ class ApiConstants {
 
   static bool isUidOnly(String platform) => uidOnlyPlatforms.contains(platform);
 
-  // Proxy routes. The response-cache TTL table matches request paths by prefix,
-  // so a path is spelled once, here, and the table keys off the same constant.
+  // Proxy routes: a path is spelled once, here.
+  static const String healthPath = '/healthz';
   static const String playerPath = '/player';
   static const String playerUidPath = '/player/uid';
   static const String predatorPath = '/predator';

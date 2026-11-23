@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../models/map_rotation.dart';
-import '../../../utils/formatting/format.dart' show formatClock, formatTimeLeft;
+import '../../../utils/formatting/format.dart'
+    show formatClock, formatTimeLeft, isSameLocalDay;
 import '../../../utils/alert_silence.dart' show formatMuteEnd;
 import '../../../utils/theme.dart';
 import '../../../widgets/surface_card.dart';
@@ -26,8 +27,7 @@ String? formatNextMapEnd({
   final from = now ?? DateTime.now();
   final end = from.add(Duration(seconds: remainingSecs + durationMins * 60));
   final time = formatClock(end);
-  final sameDay =
-      end.year == from.year && end.month == from.month && end.day == from.day;
+  final sameDay = isSameLocalDay(end, from);
   return sameDay ? time : '$time tomorrow';
 }
 

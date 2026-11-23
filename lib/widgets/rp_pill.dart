@@ -54,7 +54,7 @@ class RpPill extends StatelessWidget {
           ? const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 2)
           : const EdgeInsets.symmetric(horizontal: 9, vertical: AppTheme.xs),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
+        color: AppTheme.tint(color),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Text(

@@ -68,7 +68,7 @@ class UidSuggestion extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(AppTheme.sm),
               decoration: BoxDecoration(
-                color: AppTheme.accent.withAlpha(30),
+                color: AppTheme.tint(AppTheme.accent),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSm),
               ),
               child: const Row(

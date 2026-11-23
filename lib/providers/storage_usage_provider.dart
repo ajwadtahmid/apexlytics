@@ -21,7 +21,7 @@ class StorageUsage {
   });
 }
 
-/// Counted afresh whenever the Data section asks (see `CacheSettingsSection`),
+/// Counted afresh whenever the Data section asks (see `DataSettingsSection`),
 /// and after the cache is cleared.
 final storageUsageProvider = FutureProvider.autoDispose<StorageUsage>((
   ref,

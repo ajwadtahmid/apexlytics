@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../constants/api_constants.dart';
+
 /// How one proxy answered a health check.
 enum ProxyState { online, slow, down, notConfigured }
 
@@ -27,7 +29,7 @@ Future<ProxyHealth> checkProxy(String baseUrl, {Dio? dio}) async {
   final clock = Stopwatch()..start();
   try {
     final res = await client.get<Object?>(
-      '${baseUrl.replaceAll(RegExp(r'/+$'), '')}/healthz',
+      '${baseUrl.replaceAll(RegExp(r'/+$'), '')}${ApiConstants.healthPath}',
       options: Options(validateStatus: (_) => true),
     );
     clock.stop();

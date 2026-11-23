@@ -153,7 +153,7 @@ class RankedSummaryHeader extends ConsumerWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: netColor.withAlpha(30),
+                  color: AppTheme.tint(netColor),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
                 child: Text(

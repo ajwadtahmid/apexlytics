@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart'
     show openAppSettings;
 
@@ -18,6 +17,7 @@ import 'widgets/map_mode_list.dart';
 import 'widgets/notification_health_banners.dart';
 import 'widgets/quiet_hours_tile.dart';
 import '../../widgets/sheet_handle.dart';
+import '../../utils/formatting/format.dart' show formatClock;
 
 void showMapAlertsSheet(BuildContext context) {
   showModalBottomSheet(
@@ -663,7 +663,7 @@ class _TestAlertNote {
     TestAlertResult.sent => _TestAlertNote(
       Icons.check_circle_outline,
       AppTheme.green,
-      'Sent at ${DateFormat('h:mm a').format(at)}. If it did not show, check '
+      'Sent at ${formatClock(at)}. If it did not show, check '
       'your notification settings or battery limits for Apexlytics.',
     ),
     TestAlertResult.permissionOff => const _TestAlertNote(

@@ -5,9 +5,7 @@ import 'package:apexlytics/providers/api_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/search_screen.dart';
 import 'package:apexlytics/screens/stats/stats_screen.dart';
-import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/formatting/search_utils.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/widgets/lookup_card.dart' show LookupModePicker;
 import 'package:apexlytics/widgets/player_lookup_form.dart';
 import 'package:apexlytics/widgets/profile_manager_sheet.dart';
@@ -60,8 +58,6 @@ class _GatedAdapter extends FakeHttpAdapter {
 void main() {
   setUpAll(useFfiDatabase);
 
-  var dbCounter = 0;
-
   /// Sqflite runs on a real isolate, which fake-async pumping can't wait for; give it real time.
   Future<void> settle(WidgetTester t) async {
     for (var i = 0; i < 6; i++) {
@@ -90,15 +86,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sp),
-        apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:lookup_flow_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: adapter,
-          ),
-        ),
+        apiServiceProvider.overrideWithValue(isolatedApiService(adapter)),
       ],
     );
     addTearDown(container.dispose);

@@ -5,16 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers.dart';
 
-List<RankedMatch> _games(String legend, String map, int n, int rp) => [
-  for (var i = 0; i < n; i++)
-    buildMatch(
-      legend: legend,
-      map: map,
-      rp: rp,
-      start: 1782090000 + legend.hashCode % 1000 + i * 5000,
-    ),
-];
-
 List<LegendBreakdown> _legends(List<RankedMatch> m) => legendBreakdowns(m);
 List<MapBreakdown> _maps(List<RankedMatch> m) => mapBreakdowns(m);
 
@@ -22,12 +12,12 @@ void main() {
   group('pickRateShifts', () {
     // Axle 60% and Bangalore 40%, then Axle 20% and Wraith 80%.
     final before = _legends([
-      ..._games('Axle', 'olympus_rotation', 6, 10),
-      ..._games('Bangalore', 'olympus_rotation', 4, 10),
+      ...buildMatches('Axle', 6, 10, map: 'olympus_rotation'),
+      ...buildMatches('Bangalore', 4, 10, map: 'olympus_rotation'),
     ]);
     final after = _legends([
-      ..._games('Axle', 'olympus_rotation', 2, 10),
-      ..._games('Wraith', 'olympus_rotation', 8, 10),
+      ...buildMatches('Axle', 2, 10, map: 'olympus_rotation'),
+      ...buildMatches('Wraith', 8, 10, map: 'olympus_rotation'),
     ]);
 
     test('orders the legends by how far their share moved', () {
@@ -48,7 +38,9 @@ void main() {
     });
 
     test('leaves out a share that moved by less than a point', () {
-      final same = _legends([..._games('Axle', 'olympus_rotation', 4, 10)]);
+      final same = _legends([
+        ...buildMatches('Axle', 4, 10, map: 'olympus_rotation'),
+      ]);
       expect(pickRateShifts(same, same), isEmpty);
     });
 
@@ -60,16 +52,16 @@ void main() {
 
   group('mapRpShifts', () {
     final before = _maps([
-      ..._games('Axle', 'olympus_rotation', 4, 10),
-      ..._games('Axle', 'storm_point_rotation', 4, 5),
-      ..._games('Axle', 'kings_canyon_rotation', 4, 5),
+      ...buildMatches('Axle', 4, 10, map: 'olympus_rotation'),
+      ...buildMatches('Axle', 4, 5, map: 'storm_point_rotation'),
+      ...buildMatches('Axle', 4, 5, map: 'kings_canyon_rotation'),
     ]);
     final after = _maps([
-      ..._games('Axle', 'olympus_rotation', 4, -5),
+      ...buildMatches('Axle', 4, -5, map: 'olympus_rotation'),
       // Too few games here to read anything into.
-      ..._games('Axle', 'storm_point_rotation', 2, -20),
+      ...buildMatches('Axle', 2, -20, map: 'storm_point_rotation'),
       // Not played before.
-      ..._games('Axle', 'worlds_edge_rotation', 5, 20),
+      ...buildMatches('Axle', 5, 20, map: 'worlds_edge_rotation'),
     ]);
 
     test('compares the maps played enough in both, and only those', () {
@@ -82,8 +74,10 @@ void main() {
     });
 
     test('pairs a map across periods that spell its key differently', () {
-      final earlier = _maps(_games('Axle', 'edistrict', 4, 10));
-      final later = _maps(_games('Axle', 'edistrict_rotation', 4, -10));
+      final earlier = _maps(buildMatches('Axle', 4, 10, map: 'edistrict'));
+      final later = _maps(
+        buildMatches('Axle', 4, -10, map: 'edistrict_rotation'),
+      );
 
       final shifts = mapRpShifts(earlier, later);
 
@@ -93,20 +87,22 @@ void main() {
     });
 
     test('pairs a map across a difference in case', () {
-      final earlier = _maps(_games('Axle', 'OLYMPUS_ROTATION', 4, 10));
-      final later = _maps(_games('Axle', 'olympus_rotation', 4, -5));
+      final earlier = _maps(
+        buildMatches('Axle', 4, 10, map: 'OLYMPUS_ROTATION'),
+      );
+      final later = _maps(buildMatches('Axle', 4, -5, map: 'olympus_rotation'));
 
       expect(mapRpShifts(earlier, later), hasLength(1));
     });
 
     test('puts the biggest swing first, up or down', () {
       final flat = _maps([
-        ..._games('Axle', 'olympus_rotation', 3, 0),
-        ..._games('Axle', 'storm_point_rotation', 3, 0),
+        ...buildMatches('Axle', 3, 0, map: 'olympus_rotation'),
+        ...buildMatches('Axle', 3, 0, map: 'storm_point_rotation'),
       ]);
       final moved = _maps([
-        ..._games('Axle', 'olympus_rotation', 3, 4),
-        ..._games('Axle', 'storm_point_rotation', 3, -12),
+        ...buildMatches('Axle', 3, 4, map: 'olympus_rotation'),
+        ...buildMatches('Axle', 3, -12, map: 'storm_point_rotation'),
       ]);
 
       expect(mapRpShifts(flat, moved).map((s) => s.map), [

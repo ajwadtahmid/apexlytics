@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'app_logger.dart';
 import 'storage/api_cache_store.dart';
-import '../constants/api_constants.dart';
 
 class ApiResult<T> {
   final T data;
@@ -16,17 +15,6 @@ class CachedEntry {
   final DateTime savedAt;
   const CachedEntry({required this.data, required this.savedAt});
 }
-
-/// Per-endpoint TTL overrides (in minutes). Endpoints not listed fall back to
-/// [ApiCache.defaultMaxAgeMinutes].
-///
-/// `/maprotation` deliberately has no entry: [MapService.getMapRotation]
-/// always fetches with `noCache: true`, and the background-fetch path
-/// bypasses this cache entirely — no caller could ever hit its TTL.
-const Map<String, int> kEndpointCacheTtlMinutes = {
-  ApiConstants.predatorPath: 60,
-  ApiConstants.serversPath: 5,
-};
 
 /// One persisted response as held in memory: the JSON text exactly as stored,
 /// not the decoded tree. A decoded copy of a player payload is several times
@@ -137,18 +125,20 @@ class ApiCache {
     }
   }
 
-  /// Loads cached data by [key]. Returns null if not found or expired past
-  /// the endpoint's TTL.
+  /// Loads cached data by [key]. Returns null if not found or older than
+  /// [defaultMaxAgeMinutes].
   ///
   /// An expired entry is kept: [loadStale] is the offline fallback and needs
   /// it. The entry cap bounds growth.
   CachedEntry? load(String key) {
     final entry = _read(key);
     if (entry == null) return null;
-    final ttl = _ttlForKey(key);
     // Millisecond epoch comparison: timezone-safe because both sides use the same
     // internal clock reference regardless of local time zone.
-    if (DateTime.now().difference(entry.savedAt).inMinutes > ttl) return null;
+    if (DateTime.now().difference(entry.savedAt).inMinutes >
+        defaultMaxAgeMinutes) {
+      return null;
+    }
     return entry;
   }
 
@@ -234,14 +224,5 @@ class ApiCache {
     _entries.clear();
     _decoded.clear();
     await _store.clear();
-  }
-
-  /// Resolves TTL by matching the key against [kEndpointCacheTtlMinutes].
-  /// Keys are cache keys (endpoint + params), so we match on prefix.
-  static int _ttlForKey(String key) {
-    for (final entry in kEndpointCacheTtlMinutes.entries) {
-      if (key.startsWith(entry.key)) return entry.value;
-    }
-    return defaultMaxAgeMinutes;
   }
 }

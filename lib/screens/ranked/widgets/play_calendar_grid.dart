@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
-import '../../../utils/formatting/format.dart' show formatSignedInt, plural;
+
+import '../../../utils/formatting/format.dart'
+    show calendarDay, formatShortDate, formatSignedInt, plural;
 import '../../../utils/formatting/season_utils.dart' show WeekRange;
 import '../../../utils/ranked/play_calendar.dart';
 import '../../../utils/ranked/ranked_aggregates.dart';
@@ -87,7 +89,7 @@ class _PlayCalendarState extends State<PlayCalendar> {
         ),
       );
     }
-    final label = DateFormat('MMM d').format(c.day);
+    final label = formatShortDate(c.day);
     return Semantics(
       button: play != null,
       label: play == null

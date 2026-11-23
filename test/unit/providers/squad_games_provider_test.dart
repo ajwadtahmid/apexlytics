@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:apexlytics/models/season_meta.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
-import 'package:apexlytics/providers/shared_matches_provider.dart';
+import 'package:apexlytics/providers/squad_games_provider.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
-import 'package:apexlytics/utils/ranked/shared_matches.dart';
+import 'package:apexlytics/utils/ranked/squad_games.dart';
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
 
 import '../../helpers.dart';
@@ -53,7 +53,7 @@ void main() {
     for (final s in starts) buildMatch(uid: uid, start: s),
   ], seasons: seasons);
 
-  Future<List<SharedMatch>> read(
+  Future<List<SquadGame>> read(
     String splitId, {
     List<String> saved = const ['a', 'b'],
   }) async {
@@ -66,7 +66,7 @@ void main() {
       },
       overrides: [rankedHistoryStoreProvider.overrideWithValue(store)],
     );
-    return container.read(sharedMatchesProvider(splitId).future);
+    return container.read(squadGamesProvider(splitId).future);
   }
 
   test('pairs the games the saved profiles recorded in a split', () async {
@@ -132,9 +132,9 @@ void main() {
     // As on the Stats tab, where the syncs are already running.
     container.listen(rankedSyncProvider('a'), (_, _) {});
     container.listen(rankedSyncProvider('b'), (_, _) {});
-    container.listen(sharedMatchesProvider(current), (_, _) {});
+    container.listen(squadGamesProvider(current), (_, _) {});
     expect(
-      await container.read(sharedMatchesProvider(current).future),
+      await container.read(squadGamesProvider(current).future),
       hasLength(1),
     );
 
@@ -146,7 +146,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(
-      await container.read(sharedMatchesProvider(current).future),
+      await container.read(squadGamesProvider(current).future),
       hasLength(2),
     );
   });
@@ -163,9 +163,9 @@ void main() {
       },
       overrides: [rankedHistoryStoreProvider.overrideWithValue(store)],
     );
-    container.listen(sharedMatchesProvider(current), (_, _) {});
+    container.listen(squadGamesProvider(current), (_, _) {});
     expect(
-      await container.read(sharedMatchesProvider(current).future),
+      await container.read(squadGamesProvider(current).future),
       hasLength(1),
     );
 
@@ -173,9 +173,6 @@ void main() {
     // The helper a clear or a restore runs (a container, as it outlives widgets).
     invalidateMatchDerivedProvidersIn(container);
 
-    expect(
-      await container.read(sharedMatchesProvider(current).future),
-      isEmpty,
-    );
+    expect(await container.read(squadGamesProvider(current).future), isEmpty);
   });
 }

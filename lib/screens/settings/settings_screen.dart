@@ -10,10 +10,10 @@ import '../../utils/theme.dart';
 import '../../widgets/widgets.dart';
 import 'about_screen.dart';
 import 'widgets/backup_reminder_banner.dart';
-import 'widgets/cache_settings_section.dart';
-import 'widgets/general_settings_section.dart';
+import 'widgets/data_settings_section.dart';
+import 'widgets/player_settings_section.dart';
 import 'widgets/notification_settings_section.dart';
-import 'widgets/stats_refresh_section.dart';
+import 'widgets/preferences_settings_section.dart';
 import '../../utils/navigation_utils.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -27,13 +27,13 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(AppTheme.md),
         children: [
           const BackupReminderBanner(),
-          const GeneralSettingsSection(),
+          const PlayerSettingsSection(),
           const SizedBox(height: AppTheme.md),
-          const StatsRefreshSection(),
+          const PreferencesSettingsSection(),
           const SizedBox(height: AppTheme.md),
           const NotificationSettingsSection(),
           const SizedBox(height: AppTheme.md),
-          const CacheSettingsSection(),
+          const DataSettingsSection(),
           const SizedBox(height: AppTheme.md),
 
           // ── Support ─────────────────────────────────────

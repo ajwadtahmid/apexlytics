@@ -7,10 +7,8 @@ import '../../../widgets/sheet_handle.dart';
 Future<void> _openProfileSearch(BuildContext context) =>
     openExternalLink(context, Uri.parse(ApiConstants.alsProfileSearchUrl));
 
-Future<void> _openFullGuide(BuildContext context) => openExternalLink(
-  context,
-  Uri.parse('https://github.com/ajwadtahmid/apexlytics#ranked-tracking-guide'),
-);
+Future<void> _openFullGuide(BuildContext context) =>
+    openExternalLink(context, Uri.parse(ApiConstants.rankedGuideUrl));
 
 /// "How ranked tracking works" — explains the mechanics behind the empty
 /// states in RankedStatsBody so a confused user has somewhere to look

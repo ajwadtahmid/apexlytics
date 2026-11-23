@@ -2,6 +2,7 @@
 /// season with its splits as chips, newest first.
 library;
 
+import '../../models/season_meta.dart';
 import 'ranked_period.dart';
 
 /// One season and the splits of it that are in the picker, in play order.
@@ -28,16 +29,9 @@ class SplitGroups {
   });
 }
 
-final _splitId = RegExp(r's(\d+)_s(\d+)$');
-
-/// The split number in an id (`br_ranked_s29_s2` is 2), or 0.
-int _splitNumber(String id) {
-  final m = _splitId.firstMatch(id);
-  return m == null ? 0 : int.parse(m.group(2)!);
-}
-
 /// The split number of [split] (`br_ranked_s29_s2` is 2), or 0.
-int splitNumberOf(RankedSplitBucket split) => _splitNumber(split.id);
+int splitNumberOf(RankedSplitBucket split) =>
+    SeasonMeta.parseSplitId(split.id)?.split ?? 0;
 
 SplitGroups groupSplits(List<RankedSplitBucket> splits) {
   RankedSplitBucket? lifetime;
@@ -48,11 +42,11 @@ SplitGroups groupSplits(List<RankedSplitBucket> splits) {
       lifetime = s;
       continue;
     }
-    final m = _splitId.firstMatch(s.id);
-    if (m == null) {
+    final parsed = SeasonMeta.parseSplitId(s.id);
+    if (parsed == null) {
       others.add(s);
     } else {
-      bySeason.putIfAbsent(int.parse(m.group(1)!), () => []).add(s);
+      bySeason.putIfAbsent(parsed.season, () => []).add(s);
     }
   }
   final numbers = bySeason.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -63,7 +57,11 @@ SplitGroups groupSplits(List<RankedSplitBucket> splits) {
         SeasonGroup(
           number: n,
           splits: bySeason[n]!
-            ..sort((a, b) => _splitNumber(a.id).compareTo(_splitNumber(b.id))),
+            ..sort(
+              (a, b) => (SeasonMeta.parseSplitId(a.id)?.split ?? 0).compareTo(
+                SeasonMeta.parseSplitId(b.id)?.split ?? 0,
+              ),
+            ),
         ),
     ],
     others: others,

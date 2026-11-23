@@ -21,11 +21,18 @@ class SeasonMeta {
   /// window can overlap the real one's, permanently misfiling a match.
   static bool isSplitId(String id) => _splitIdPattern.hasMatch(id);
 
+  /// The season and split numbers in a split id ("br_ranked_s29_s1" is season
+  /// 29, split 1), or null when [id] isn't a split.
+  static ({int season, int split})? parseSplitId(String id) {
+    final m = _splitIdPattern.firstMatch(id);
+    if (m == null) return null;
+    return (season: int.parse(m.group(1)!), split: int.parse(m.group(2)!));
+  }
+
   /// The season number in a split id ("br_ranked_s29_s1" → 29), or null when
   /// [id] isn't a split.
   static int? seasonNumberOf(String id) {
-    final m = _splitIdPattern.firstMatch(id);
-    return m == null ? null : int.parse(m.group(1)!);
+    return parseSplitId(id)?.season;
   }
 
   // "br_ranked_s29_s1" → "Season 29 (Split 1)"
@@ -42,9 +49,9 @@ class SeasonMeta {
   // would otherwise show that raw id too, via a completely different
   // fallback path this class doesn't control.
   static String parseDisplayName(String id) {
-    final match = _splitIdPattern.firstMatch(id);
-    if (match != null) {
-      return 'Season ${match.group(1)} (Split ${match.group(2)})';
+    final parsed = parseSplitId(id);
+    if (parsed != null) {
+      return 'Season ${parsed.season} (Split ${parsed.split})';
     }
     return 'Other';
   }

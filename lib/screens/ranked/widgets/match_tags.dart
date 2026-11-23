@@ -70,7 +70,7 @@ class EditedChip extends StatelessWidget {
   Widget build(BuildContext context) => _TagPill(
     text: 'Edited',
     color: AppTheme.accent,
-    background: AppTheme.accent.withAlpha(30),
+    background: AppTheme.tint(AppTheme.accent),
     fontSize: 11,
     weight: FontWeight.w600,
     padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 3),
@@ -101,7 +101,7 @@ class MatchModeChip extends StatelessWidget {
     return _TagPill(
       text: ranked ? 'Ranked' : 'Casual',
       color: color,
-      background: color.withAlpha(30),
+      background: AppTheme.tint(color),
       fontSize: 11,
       weight: FontWeight.w600,
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.sm, vertical: 3),

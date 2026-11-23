@@ -38,7 +38,7 @@ class LowPowerWarning extends ConsumerWidget {
           vertical: AppTheme.sm,
         ),
         decoration: BoxDecoration(
-          color: AppTheme.accent2.withAlpha(25),
+          color: AppTheme.tintSoft(AppTheme.accent2),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         ),
         child: Row(

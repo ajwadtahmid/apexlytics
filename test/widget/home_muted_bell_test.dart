@@ -40,7 +40,7 @@ class _NoNews extends NewsNotifier {
 }
 
 MapMode _mode(String map) =>
-    MapMode(map: map, remainingSecs: 3000, durationMins: 90, asset: '');
+    buildMapMode(map, remainingSecs: 3000, durationMins: 90);
 
 /// Home with a rotation, Ranked alerts on, and a mute pressed on one.
 void main() {

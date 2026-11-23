@@ -18,6 +18,7 @@ import '../../utils/error_messages.dart';
 import '../../utils/formatting/format.dart' show kNoReading;
 import '../../utils/formatting/snapshot_types.dart';
 import '../../utils/ranked/ranked_period.dart';
+import '../../utils/notifications.dart';
 import '../../utils/theme.dart';
 import '../../widgets/best_metric_picker.dart';
 import '../../widgets/error_card.dart';
@@ -410,12 +411,8 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
     await settings.setStatsRefreshMinutes(kRecordingRefreshMinutes);
     await settings.setKeepScreenOn(true);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Recording started — keep Apexlytics open while you play.',
-        ),
-      ),
+    context.showMessage(
+      'Recording started — keep Apexlytics open while you play.',
     );
     await _refresh();
   }
@@ -981,7 +978,7 @@ class _SyncIssueBanner extends StatelessWidget {
         vertical: AppTheme.sm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.orange.withAlpha(25),
+        color: AppTheme.tintSoft(AppTheme.orange),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Row(
@@ -1022,7 +1019,7 @@ class _InfoCoachMark extends StatelessWidget {
         vertical: AppTheme.sm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.accent.withAlpha(30),
+        color: AppTheme.tint(AppTheme.accent),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         border: Border.all(color: AppTheme.accent.withAlpha(90)),
       ),

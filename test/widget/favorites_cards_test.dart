@@ -4,8 +4,6 @@ import 'package:apexlytics/providers/player_provider.dart';
 import 'package:apexlytics/providers/search_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/search/favorites_pane.dart';
-import 'package:apexlytics/services/api_service.dart';
-import 'package:apexlytics/utils/storage/api_cache_store.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/presence_dot.dart';
 import 'package:material_ui/material_ui.dart';
@@ -35,8 +33,6 @@ Map<String, Object?> _player(
 void main() {
   setUpAll(useFfiDatabase);
 
-  var dbCounter = 0;
-
   // "1" and "2" are looked up this session (2 is offline); "3" fails; "4" is
   // never looked up and has nothing cached.
   const saved =
@@ -59,12 +55,8 @@ void main() {
           await SharedPreferences.getInstance(),
         ),
         apiServiceProvider.overrideWithValue(
-          ApiService(
-            ApiCacheStore(
-              overridePath:
-                  'file:favorites_cards_${dbCounter++}?mode=memory&cache=shared',
-            ),
-            httpClientAdapter: FakeHttpAdapter({
+          isolatedApiService(
+            FakeHttpAdapter({
               '/player/uid': (RequestOptions o) =>
                   switch (o.queryParameters['uid']) {
                     '1' => _player('Alpha', '1', 'Master', 52671, online: true),

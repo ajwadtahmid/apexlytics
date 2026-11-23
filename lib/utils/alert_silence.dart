@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'formatting/format.dart' show formatClock;
+
+import 'formatting/format.dart' show formatClock, isSameLocalDay;
 
 /// The two reasons a map alert that is otherwise due is not sent: the player's
 /// quiet hours, and a mute pressed on an earlier alert.
@@ -119,7 +120,7 @@ DateTime muteEnd(MuteChoice choice, DateTime now) {
 String formatMuteEnd(DateTime end, DateTime now) {
   final e = end.toLocal();
   final n = now.toLocal();
-  final sameDay = e.year == n.year && e.month == n.month && e.day == n.day;
+  final sameDay = isSameLocalDay(e, n);
   return sameDay ? formatClock(e) : '${formatClock(e)} tomorrow';
 }
 

@@ -3,10 +3,14 @@ import '../../../utils/theme.dart';
 
 /// Leaderboard rank chip shown beside a legend/map name. [onImage] uses a dark
 /// scrim + white text so it stays legible over map artwork.
-class RankBadge extends StatelessWidget {
+class LeaderboardRankChip extends StatelessWidget {
   final int rank;
   final bool onImage;
-  const RankBadge({super.key, required this.rank, this.onImage = false});
+  const LeaderboardRankChip({
+    super.key,
+    required this.rank,
+    this.onImage = false,
+  });
 
   @override
   Widget build(BuildContext context) {

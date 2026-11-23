@@ -262,7 +262,7 @@ class _Banner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppTheme.sm),
         decoration: BoxDecoration(
-          color: color.withAlpha(30),
+          color: AppTheme.tint(color),
           borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         ),
         child: Row(

@@ -83,7 +83,7 @@ class FavoritesPane extends ConsumerWidget {
       if (context.mounted) {
         context.showMessage(
           'Added to favorites',
-          duration: const Duration(seconds: 2),
+          duration: AppTheme.toastShort,
         );
       }
     } on AppException catch (e) {
@@ -289,7 +289,7 @@ class _RemoveBackground extends StatelessWidget {
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: AppTheme.md),
       decoration: BoxDecoration(
-        color: AppTheme.red.withAlpha(25),
+        color: AppTheme.tintSoft(AppTheme.red),
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: const Icon(Icons.delete_outline, color: AppTheme.red),

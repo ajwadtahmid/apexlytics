@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/ranked_match.dart';
 import '../utils/ranked/ranked_period.dart';
-import '../utils/ranked/shared_matches.dart';
+import '../utils/ranked/squad_games.dart';
 import '../utils/storage/ranked_history_store.dart';
 import 'ranked_provider.dart';
 import 'settings_provider.dart';
@@ -16,8 +16,8 @@ import 'settings_provider.dart';
 /// page then narrows the result to the profiles it shows. The week is applied
 /// by the page, after matching, so the games around a week's edge still count
 /// as neighbours.
-final sharedMatchesProvider = FutureProvider.autoDispose
-    .family<List<SharedMatch>, String>((ref, splitId) async {
+final squadGamesProvider = FutureProvider.autoDispose
+    .family<List<SquadGame>, String>((ref, splitId) async {
       final profiles = ref.watch(
         playerSettingsProvider.select((s) => s.profiles),
       );
@@ -37,7 +37,7 @@ final sharedMatchesProvider = FutureProvider.autoDispose
       final byUid = <String, List<RankedMatch>>{
         for (final uid in uids) uid: await _gamesFor(store, uid, splitId),
       };
-      return findSharedMatches(byUid);
+      return findSquadGames(byUid);
     });
 
 /// [uid]'s games in [splitId], or in every split with ranked games for the

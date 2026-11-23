@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import '../../models/ranked_match.dart';
+import '../../utils/notifications.dart';
 import '../../utils/ranked/ranked_aggregates.dart' show rankedOnly;
 import '../../utils/ranked/ranked_period.dart';
 import '../../widgets/nav_entry_card.dart';
@@ -89,9 +90,7 @@ class RankedRecapEntry extends StatelessWidget {
       icon: Icons.auto_awesome_outlined,
       title: 'Recap',
       onTap: rankedOnly(matches).isEmpty
-          ? () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No ranked games to recap yet.')),
-            )
+          ? () => context.showMessage('No ranked games to recap yet.')
           : () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => RankedRecapScreen(

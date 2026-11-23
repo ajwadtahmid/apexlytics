@@ -13,6 +13,15 @@ String formatNumber(int number) => _rpFormat.format(number);
 /// instants, so the conversion lives here rather than at each call site.
 String formatShortDate(DateTime t) => _shortDate.format(t.toLocal());
 
+/// The local calendar date of [t], with no time.
+DateTime calendarDay(DateTime t) {
+  final local = t.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
+
+/// Whether [a] and [b] fall on the same date in the device's time zone.
+bool isSameLocalDay(DateTime a, DateTime b) => calendarDay(a) == calendarDay(b);
+
 /// [formatShortDate] with the time: `Mar 4, 9:30 PM`.
 String formatShortDateTime(DateTime t) => _shortDateTime.format(t.toLocal());
 
@@ -24,7 +33,7 @@ String formatClock(DateTime t) => _clock.format(t.toLocal());
 /// midnight each end carries its own date: `Oct 9 11:59 PM to Oct 10 3:03 AM`.
 String formatSessionSpan(DateTime start, DateTime end) {
   final s = start.toLocal(), e = end.toLocal();
-  if (s.year == e.year && s.month == e.month && s.day == e.day) {
+  if (isSameLocalDay(s, e)) {
     return '${_shortDate.format(s)} (${_clock.format(s)} – ${_clock.format(e)})';
   }
   return '${_shortDate.format(s)} ${_clock.format(s)} to '
@@ -129,6 +138,11 @@ String formatDuration(int seconds) {
   if (hours > 0) return '${hours}h ${mins}m';
   return '${mins}m';
 }
+
+/// A length of [seconds] as minutes and seconds, always with its units:
+/// `14m 5s`, or `45s` under a minute.
+String formatMinSec(int seconds) =>
+    seconds < 60 ? '${seconds}s' : '${seconds ~/ 60}m ${seconds % 60}s';
 
 /// Time left as `20d 11h`, `1h 7m` or `2m 40s`: always with its units, so a
 /// reading like `02:40` is never a question of minutes or hours.

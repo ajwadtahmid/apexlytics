@@ -67,7 +67,7 @@ class _UpdateAvailableBannerState extends State<UpdateAvailableBanner> {
             vertical: AppTheme.sm,
           ),
           decoration: BoxDecoration(
-            color: AppTheme.accent.withAlpha(25),
+            color: AppTheme.tintSoft(AppTheme.accent),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
           ),
           child: Row(

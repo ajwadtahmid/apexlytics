@@ -6,6 +6,7 @@ import '../../providers/sessions_shown_provider.dart';
 import '../../widgets/trend_arrow.dart';
 import '../../utils/formatting/format.dart'
     show
+        formatMinSec,
         formatNumber,
         formatPercent,
         formatShortDate,
@@ -361,8 +362,9 @@ class _SessionSparklines extends StatelessWidget {
             steadyBand: kGameLengthSteadyBand,
             valuesOf: (s) => s.totalLengthSecs,
             gamesOf: (s) => s.totalLengthSecs == 0 ? 0 : s.games,
-            formatValue: _length,
-            formatDelta: (v) => '${v >= 0 ? '+' : '-'}${_length(v.abs())}',
+            formatValue: (v) => formatMinSec(v.round()),
+            formatDelta: (v) =>
+                '${v >= 0 ? '+' : '-'}${formatMinSec(v.abs().round())}',
             sessions: sessions,
             shown: shown,
             compare: window.compare,
@@ -387,12 +389,6 @@ class _SessionSparklines extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A game length in seconds as minutes and seconds: `14m 05s`.
-String _length(double secs) {
-  final total = secs.round();
-  return '${total ~/ 60}m ${(total % 60).toString().padLeft(2, '0')}s';
 }
 
 /// What the two lines on the charts are: the orange one is each session, the
@@ -672,7 +668,7 @@ class _SparklineRow extends StatelessWidget {
                     dotData: FlDotData(show: plot.length <= _kDotsUpTo),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppTheme.accent.withAlpha(25),
+                      color: AppTheme.tintSoft(AppTheme.accent),
                     ),
                   ),
                   if (showSmooth)

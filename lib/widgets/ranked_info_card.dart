@@ -80,7 +80,7 @@ class RankedInfoCard extends ConsumerWidget {
                 width: AppTheme.rankIconSize,
                 height: AppTheme.rankIconSize,
                 decoration: BoxDecoration(
-                  color: currentColor.withAlpha(30),
+                  color: AppTheme.tint(currentColor),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: RankBadge(

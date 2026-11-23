@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:intl/intl.dart';
+
+import '../../../utils/formatting/format.dart' show formatShortDate;
 
 import '../../../utils/ranked/ranked_period.dart';
 import '../../../utils/ranked/split_groups.dart';
@@ -40,7 +41,6 @@ Future<void> showWeekSheet(
   DateTime? now,
 }) {
   final t = now ?? DateTime.now();
-  final day = DateFormat('MMM d');
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -65,9 +65,9 @@ Future<void> showWeekSheet(
               _Row(
                 title: 'Week ${i + 1}',
                 subtitle: view.weeks[i].start.isAfter(t)
-                    ? 'starts ${day.format(view.weeks[i].start)}'
-                    : '${day.format(view.weeks[i].start)} – '
-                          '${day.format(view.weeks[i].end.subtract(const Duration(days: 1)))}',
+                    ? 'starts ${formatShortDate(view.weeks[i].start)}'
+                    : '${formatShortDate(view.weeks[i].start)} – '
+                          '${formatShortDate(view.weeks[i].end.subtract(const Duration(days: 1)))}',
                 selected: view.weekIndex == i,
                 enabled: !view.weeks[i].start.isAfter(t),
                 onTap: () => choose(i),
@@ -480,7 +480,9 @@ class _LifetimeTile extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       child: Material(
-        color: selected ? AppTheme.accent.withAlpha(25) : AppTheme.surface2,
+        color: selected
+            ? AppTheme.tintSoft(AppTheme.accent)
+            : AppTheme.surface2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           side: selected

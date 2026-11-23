@@ -185,7 +185,7 @@ void main() {
     });
   });
 
-  group('Per-endpoint TTL', () {
+  group('Lifetime', () {
     Future<ApiCache> primedCacheWithAgedEntry(
       String key,
       int minutesAgo,
@@ -200,33 +200,13 @@ void main() {
       return cache;
     }
 
-    test('/servers entry expires after 5 minutes', () async {
-      final cache = await primedCacheWithAgedEntry('/servers', 6);
-      expect(cache.load('/servers'), isNull);
-    });
-
-    test('/servers entry is fresh within 5 minutes', () async {
-      final cache = await primedCacheWithAgedEntry('/servers', 4);
-      expect(cache.load('/servers'), isNotNull);
-    });
-
-    test('/predator entry expires after 60 minutes', () async {
-      final cache = await primedCacheWithAgedEntry('/predator', 61);
-      expect(cache.load('/predator'), isNull);
-    });
-
-    test('/predator entry is fresh within 60 minutes', () async {
-      final cache = await primedCacheWithAgedEntry('/predator', 59);
-      expect(cache.load('/predator'), isNotNull);
-    });
-
-    test('unknown endpoint falls back to 24h TTL', () async {
+    test('an entry is fresh within 24 hours', () async {
       // 23h 50m ago — should still be fresh under the 24h default.
       final cache = await primedCacheWithAgedEntry('/player', 23 * 60 + 50);
       expect(cache.load('/player'), isNotNull);
     });
 
-    test('unknown endpoint expires after 24h', () async {
+    test('an entry expires after 24 hours', () async {
       final cache = await primedCacheWithAgedEntry('/player', 24 * 60 + 1);
       expect(cache.load('/player'), isNull);
     });

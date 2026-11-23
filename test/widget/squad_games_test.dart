@@ -8,12 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/season_meta.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/providers/shared_matches_provider.dart';
+import 'package:apexlytics/providers/squad_games_provider.dart';
 import 'package:apexlytics/screens/ranked/squad_game_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/squad_games_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/squad_table.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart';
-import 'package:apexlytics/utils/ranked/shared_matches.dart';
+import 'package:apexlytics/utils/ranked/squad_games.dart';
 
 import '../helpers.dart';
 
@@ -74,7 +74,7 @@ void main() {
 
   Future<List<String>> pump(
     WidgetTester tester, {
-    required List<SharedMatch> shared,
+    required List<SquadGame> shared,
     List<String> saved = const ['1', '2', '3'],
     Widget Function(RankedView view)? home,
     String uid = '1',
@@ -94,7 +94,7 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          sharedMatchesProvider.overrideWith((ref, id) async {
+          squadGamesProvider.overrideWith((ref, id) async {
             asked.add(id);
             return shared;
           }),
@@ -156,7 +156,7 @@ void main() {
         tester,
         saved: const ['1', '2'],
         shared: [
-          SharedMatch({
+          SquadGame({
             '1': game('1', 0, legend: 'Wraith', rp: 25, kills: 3),
             '2': game('2', 10, legend: 'Octane', rp: -12, kills: 1),
           }),
@@ -178,11 +178,11 @@ void main() {
         tester,
         saved: const ['1', '2'],
         shared: [
-          SharedMatch({
+          SquadGame({
             '1': game('1', 0, rp: 30, kills: 4, damage: 1000),
             '2': game('2', 10, rp: -10, kills: 2, damage: 500),
           }),
-          SharedMatch({
+          SquadGame({
             '1': game('1', 5000, rp: 10, kills: 2, damage: 600),
             '2': game('2', 5010, rp: -20, kills: 0, damage: 300),
           }),
@@ -207,8 +207,8 @@ void main() {
         tester,
         saved: const ['1', '2', '3'],
         shared: [
-          SharedMatch({'1': game('1', 0), '3': game('3', 5)}),
-          SharedMatch({'1': game('1', 5000), '2': game('2', 5005)}),
+          SquadGame({'1': game('1', 0), '3': game('3', 5)}),
+          SquadGame({'1': game('1', 5000), '2': game('2', 5005)}),
         ],
       );
       // Alpha and Bravo: only the second game.
@@ -222,11 +222,7 @@ void main() {
         tester,
         saved: const ['1', '2', '3'],
         shared: [
-          SharedMatch({
-            '1': game('1', 0),
-            '2': game('2', 5),
-            '3': game('3', 8),
-          }),
+          SquadGame({'1': game('1', 0), '2': game('2', 5), '3': game('3', 8)}),
         ],
       );
       expect(find.text('+1 more'), findsOneWidget);
@@ -299,9 +295,9 @@ void main() {
         tester,
         saved: const ['1', '2', '3'],
         shared: [
-          SharedMatch({'1': game('1', 0), '2': game('2', 5)}),
-          SharedMatch({'1': game('1', 5000), '3': game('3', 5005)}),
-          SharedMatch({'1': game('1', 9000), '3': game('3', 9005)}),
+          SquadGame({'1': game('1', 0), '2': game('2', 5)}),
+          SquadGame({'1': game('1', 5000), '3': game('3', 5005)}),
+          SquadGame({'1': game('1', 9000), '3': game('3', 9005)}),
         ],
       );
       expect(find.text('GAMES · 1'), findsOneWidget);
@@ -315,8 +311,8 @@ void main() {
 
   group('the page with three profiles', () {
     final shared = [
-      SharedMatch({'1': game('1', 0), '2': game('2', 5), '3': game('3', 8)}),
-      SharedMatch({'1': game('1', 5000), '2': game('2', 5005)}),
+      SquadGame({'1': game('1', 0), '2': game('2', 5), '3': game('3', 8)}),
+      SquadGame({'1': game('1', 5000), '2': game('2', 5005)}),
     ];
 
     Future<void> three(WidgetTester tester) async {
@@ -374,7 +370,7 @@ void main() {
           tester,
           saved: const ['1', '2', '3'],
           shared: [
-            SharedMatch({'1': game('1', 0), '2': game('2', 5)}),
+            SquadGame({'1': game('1', 0), '2': game('2', 5)}),
           ],
         );
         await tester.tap(find.text('3 profiles'));
@@ -392,11 +388,8 @@ void main() {
         tester,
         saved: const ['1', '2', '3'],
         shared: [
-          SharedMatch({'1': game('1', 0, rp: 10), '2': game('2', 5, rp: 0)}),
-          SharedMatch({
-            '1': game('1', 5000, rp: 5),
-            '2': game('2', 5005, rp: 0),
-          }),
+          SquadGame({'1': game('1', 0, rp: 10), '2': game('2', 5, rp: 0)}),
+          SquadGame({'1': game('1', 5000, rp: 5), '2': game('2', 5005, rp: 0)}),
         ],
       );
       await tester.tap(find.text('3 profiles'));
@@ -452,7 +445,7 @@ void main() {
         tester,
         saved: const ['1', '2'],
         shared: [
-          SharedMatch({
+          SquadGame({
             '1': game('1', 0, legend: 'Wraith', rp: 30, kills: 5, damage: 1500),
             '2': game('2', 20, legend: 'Octane', rp: -8, kills: 1, damage: 200),
           }),
@@ -481,7 +474,7 @@ void main() {
         tester,
         saved: const ['1', '2'],
         shared: [
-          SharedMatch({'1': game('1', 0), '2': game('2', 20)}),
+          SquadGame({'1': game('1', 0), '2': game('2', 20)}),
         ],
       );
       await tester.tap(find.text('Olympus'));
@@ -496,7 +489,7 @@ void main() {
         tester,
         saved: const ['1', '2'],
         shared: [
-          SharedMatch({'1': game('1', 0), '2': game('2', 20)}),
+          SquadGame({'1': game('1', 0), '2': game('2', 20)}),
         ],
       );
       await tester.tap(find.text('Olympus'));
@@ -506,7 +499,7 @@ void main() {
     });
 
     testWidgets('names a saved profile that was in it too', (tester) async {
-      final match = SharedMatch({
+      final match = SquadGame({
         '1': game('1', 0),
         '2': game('2', 5),
         '3': game('3', 8),

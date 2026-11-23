@@ -187,12 +187,9 @@ void main() {
       await settle(tester);
       await tester.tap(find.textContaining('Game 1 ·').first);
       await settle(tester);
-      expect(
-        find.byWidgetPredicate(
-          (w) => w.runtimeType.toString() == '_MatchDetailSheet',
-        ),
-        findsOneWidget,
-      );
+      // The game's own sheet (its stat tiles) is on screen, over the games list.
+      expect(find.byType(BottomSheet), findsNWidgets(2));
+      expect(find.text('Damage'), findsOneWidget);
     });
   });
 

@@ -2,6 +2,7 @@ import '../../../constants/legend_constants.dart';
 import '../../../constants/map_constants.dart';
 import '../../../constants/rank_constants.dart' show RankDivision, kRankLadder;
 import '../../../models/ranked_match.dart';
+import '../../../utils/formatting/format.dart' show calendarDay;
 import '../../../utils/formatting/rank_utils.dart' show rankIndex;
 import '../../../utils/ranked/ranked_aggregates.dart'
     show kSessionGap, sessionNumbers;
@@ -210,11 +211,6 @@ List<RankedMatch> _extendToSessionBoundary(
   return matches.sublist(0, end);
 }
 
-DateTime _dayOf(DateTime t) {
-  final l = t.toLocal();
-  return DateTime(l.year, l.month, l.day);
-}
-
 /// Flattens matches (newest first) into session headers with their rows, a
 /// break row between sessions, and a day divider inside a session wherever it
 /// crosses midnight.
@@ -304,8 +300,8 @@ List<HistoryItem> buildSessionItems(
     for (var i = 0; i < bucket.length; i++) {
       if (i > 0) {
         // newest-first: bucket[i - 1] is later than bucket[i].
-        final later = _dayOf(bucket[i - 1].startTime);
-        final earlier = _dayOf(bucket[i].startTime);
+        final later = calendarDay(bucket[i - 1].startTime);
+        final earlier = calendarDay(bucket[i].startTime);
         if (later != earlier) {
           items.add(DayDividerItem(later: later, earlier: earlier));
         }

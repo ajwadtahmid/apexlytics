@@ -3,7 +3,7 @@ import '../../../constants/legend_constants.dart';
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/format.dart'
-    show formatShortDate, formatSignedInt;
+    show calendarDay, formatShortDate, formatSignedInt;
 import '../../../utils/theme.dart';
 
 enum GamesMode { all, ranked, casual }
@@ -96,9 +96,9 @@ class GamesFilter {
     if (mapKeys.isNotEmpty && !selectsMap(m.mapKey)) return false;
     final range = dates;
     if (range != null) {
-      final start = m.startTime.toLocal();
-      final day = DateTime(start.year, start.month, start.day);
-      if (day.isBefore(_dayOf(range.start)) || day.isAfter(_dayOf(range.end))) {
+      final day = calendarDay(m.startTime);
+      if (day.isBefore(calendarDay(range.start)) ||
+          day.isAfter(calendarDay(range.end))) {
         return false;
       }
     }
@@ -110,8 +110,6 @@ class GamesFilter {
     }
     return true;
   }
-
-  static DateTime _dayOf(DateTime t) => DateTime(t.year, t.month, t.day);
 
   /// Whether [legend] is chosen, compared by canonical name.
   bool selectsLegend(String legend) {

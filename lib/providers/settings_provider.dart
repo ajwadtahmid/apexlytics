@@ -639,7 +639,7 @@ class PlayerSettingsNotifier extends Notifier<PlayerSettings> {
   /// so the UI doesn't lock while the token stays active.
   ///
   /// Callers must also clear the ranked match database, the API cache, and any
-  /// provider holding derived state (see `CacheSettingsSection`).
+  /// provider holding derived state (see `DataSettingsSection`).
   Future<void> clearAll({bool keepOwnerUnlock = false}) async {
     final doomed = _prefs
         .getKeys()
