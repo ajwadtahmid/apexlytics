@@ -277,6 +277,8 @@ void main() {
       await settle(tester);
       expect(find.text('THIS MOVED YOU'), findsOneWidget);
       expect(find.textContaining('SINCE THE SPLIT BEGAN'), findsOneWidget);
+      // The whole heading is in capitals, the plural included.
+      expect(find.textContaining('GAMEs'), findsNothing);
     });
 
     testWidgets('say so when nothing has moved', (tester) async {

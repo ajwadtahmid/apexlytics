@@ -3,7 +3,15 @@ import 'dart:typed_data';
 
 import 'package:apexlytics/utils/formatting/season_utils.dart'
     show computeWeeks;
+import 'package:apexlytics/constants/rank_constants.dart';
+import 'package:apexlytics/models/predator.dart';
+import 'package:apexlytics/providers/predator_provider.dart';
+import 'package:apexlytics/screens/ranked/widgets/climb_chart.dart';
+import 'package:apexlytics/screens/ranked/widgets/climb_moves.dart';
+import 'package:apexlytics/services/api_service.dart';
 import 'package:apexlytics/utils/ranked/best_metric.dart';
+import 'package:apexlytics/widgets/ranked_info_card.dart';
+import 'package:apexlytics/utils/ranked/rank_climb.dart';
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/models/season_meta.dart';
 import 'package:apexlytics/models/server_status.dart';
@@ -80,6 +88,8 @@ void main() {
     WidgetTester tester,
     Widget child, {
     List<Override> overrides = const [],
+    // False for a whole page, which brings its own Scaffold and scrolling.
+    bool page = false,
   }) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
@@ -101,7 +111,9 @@ void main() {
             ).copyWith(textScaler: const TextScaler.linear(2.0)),
             child: app!,
           ),
-          home: Scaffold(body: SingleChildScrollView(child: child)),
+          home: page
+              ? child
+              : Scaffold(body: SingleChildScrollView(child: child)),
         ),
       ),
     );
@@ -661,6 +673,113 @@ void main() {
         ),
       ),
     );
+    expectNoOverflow();
+  });
+
+  testWidgets('the rank progress card on a search result', (tester) async {
+    await pump(
+      tester,
+      const RankedInfoCard(myRp: 10675, platform: 'PC'),
+      overrides: [
+        predatorProvider.overrideWith(
+          (ref) async => ApiResult(
+            PredatorResponse.fromJson({
+              'RP': {
+                'PC': {'val': 17500, 'totalMastersAndPreds': 900},
+              },
+            }),
+          ),
+        ),
+      ],
+    );
+    await tester.pump();
+    expect(find.textContaining('RP to '), findsOneWidget);
+    expectNoOverflow();
+  });
+
+  testWidgets('the games behind a Journey move', (tester) async {
+    final gold = kRankLadder.firstWhere((d) => d.label == 'Gold IV').rp;
+    var before = gold - 400;
+    final journey = <RankedMatch>[];
+    for (final (i, total) in [gold - 40, gold + 10, gold + 30].indexed) {
+      journey.add(
+        buildMatch(
+          start: 1782090000 + i * 1200,
+          rp: total - before,
+          cumulativeRp: total,
+          legend: 'Mad Maggie',
+          map: 'broken_moon_rotation',
+          kills: 3,
+          damage: 500,
+        ),
+      );
+      before = total;
+    }
+    final climb = RankClimb.of(journey);
+    await pump(
+      tester,
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () =>
+              showClimbGamesSheet(context, climb, climb.moves.last),
+          child: const Text('open'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('THIS MOVED YOU'), findsOneWidget);
+    expectNoOverflow();
+  });
+
+  /// A climb through Platinum, a division at a time.
+  RankClimb platinumClimb() {
+    int rp(String label) => kRankLadder.firstWhere((d) => d.label == label).rp;
+    var before = rp('Platinum IV') - 100;
+    final games = <RankedMatch>[];
+    for (final (i, total) in [
+      rp('Platinum IV') + 20,
+      rp('Platinum III') + 20,
+      rp('Platinum II') + 20,
+      rp('Platinum I') + 20,
+    ].indexed) {
+      games.add(
+        buildMatch(
+          start: 1782090000 + i * 1200,
+          rp: total - before,
+          cumulativeRp: total,
+        ),
+      );
+      before = total;
+    }
+    return RankClimb.of(games);
+  }
+
+  testWidgets('the Journey chart keeps the numeral on each division name', (
+    tester,
+  ) async {
+    await pump(tester, ClimbChart(climb: platinumClimb()));
+
+    for (final name in ['Platinum IV', 'Platinum III', 'Platinum II']) {
+      final label = find.text(name);
+      expect(label, findsOneWidget, reason: name);
+      // The name fits its column whole, rather than being cut to "Platinum".
+      final column = find.ancestor(of: label, matching: find.byType(FittedBox));
+      expect(
+        tester.getSize(column.first).width,
+        greaterThanOrEqualTo(tester.getSize(label).width),
+        reason: name,
+      );
+    }
+    expectNoOverflow();
+  });
+
+  testWidgets('the Journey ups and downs and timeline header', (tester) async {
+    await pump(tester, ClimbMoves(climb: platinumClimb()));
+
+    expect(find.text('THE TIMELINE'), findsOneWidget);
+    expect(find.text('promotions'), findsOneWidget);
     expectNoOverflow();
   });
 }

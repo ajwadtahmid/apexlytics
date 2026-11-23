@@ -276,4 +276,17 @@ void main() {
       expect(container.read(rankedPeriodProvider).splitId, kLifetimeSplitId);
     });
   });
+
+  group('the short split name', () {
+    test('turns "Season 31 (Split 1)" into "S31 Split 1"', () {
+      expect(shortSplitName('Season 31 (Split 1)'), 'S31 Split 1');
+      expect(shortSplitName('Season 9 (Split 2)'), 'S9 Split 2');
+    });
+
+    test('leaves any other name as it is', () {
+      expect(shortSplitName('S30 Split 2'), 'S30 Split 2');
+      expect(shortSplitName('Lifetime'), 'Lifetime');
+      expect(shortSplitName('Unknown'), 'Unknown');
+    });
+  });
 }

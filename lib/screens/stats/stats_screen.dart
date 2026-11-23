@@ -346,7 +346,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
         bottom: shell != null
             ? _AppBarBottom(
                 shell: shell,
-                rowHeight: AppTheme.scaledWithText(context, 40),
+                rowHeight: _pickerRowHeight(context),
               )
             : null,
       ),
@@ -388,6 +388,15 @@ class _StatsViewState extends ConsumerState<_StatsView> {
       ),
     );
   }
+}
+
+/// The height of the split and week row. The pills grow with the text, but a
+/// line of text and its padding is all they need, so the row follows that and
+/// not twice the text size, which would leave a gap under them: the header is
+/// always on screen, and at a large text size every row of it is data lost.
+double _pickerRowHeight(BuildContext context) {
+  final pill = 13 * 1.3 * MediaQuery.textScalerOf(context).scale(1) + 14;
+  return pill > 40 ? pill : 40;
 }
 
 /// Split and week dropdowns on one row, in the AppBar's bottom

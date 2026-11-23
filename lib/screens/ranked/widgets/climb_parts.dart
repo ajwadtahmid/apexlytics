@@ -75,11 +75,14 @@ class ClimbFigure extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.captionSmall,
+          // Shrunk to fit its column, never cut short: at a larger text size two
+          // neighbouring captions would otherwise touch or lose their ends.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.xs),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, style: AppTheme.captionSmall),
+            ),
           ),
         ],
       ),

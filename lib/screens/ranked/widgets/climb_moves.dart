@@ -115,16 +115,21 @@ class _ClimbMovesState extends State<ClimbMoves> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              // The title and the filter share a line while they fit, and at a
+              // larger text size the filter drops below instead of squeezing
+              // the title into a narrow column.
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: AppTheme.sm,
                 children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('THE TIMELINE', style: AppTheme.cardTitle),
-                        Text('Newest first', style: AppTheme.captionSmall),
-                      ],
-                    ),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('THE TIMELINE', style: AppTheme.cardTitle),
+                      Text('Newest first', style: AppTheme.captionSmall),
+                    ],
                   ),
                   // On is solid orange with dark text and a tick, off a quiet
                   // outline, as on the Recap share page.
@@ -573,7 +578,7 @@ void showClimbGamesSheet(
                 games.length > shown.length
                     ? 'THE LAST ${shown.length} OF ${games.length} GAMES '
                           '$since'
-                    : '${plural(shown.length, 'GAME')} $since',
+                    : '${plural(shown.length, 'GAME', 'GAMES')} $since',
                 style: AppTheme.cardTitle,
               ),
               const SizedBox(height: AppTheme.xs),
@@ -673,9 +678,11 @@ class _GameLine extends StatelessWidget {
                             children: [
                               LegendIcon(legendName: game.legend, size: 14),
                               const SizedBox(width: 4),
-                              Text(
-                                '${game.legend} · ${battleRoyaleMapName(game.mapKey)}',
-                                style: const TextStyle(fontSize: 13),
+                              Flexible(
+                                child: Text(
+                                  '${game.legend} · ${battleRoyaleMapName(game.mapKey)}',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               ),
                             ],
                           ),

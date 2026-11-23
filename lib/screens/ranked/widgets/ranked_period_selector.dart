@@ -96,6 +96,13 @@ class RankedPeriodButton extends StatelessWidget {
   );
 }
 
+/// "Season 31 (Split 1)" as "S31 Split 1", the short form older splits already
+/// use. Any other name is returned as it is.
+String shortSplitName(String name) {
+  final m = RegExp(r'^Season (\d+) \(Split (\d+)\)$').firstMatch(name);
+  return m == null ? name : 'S${m[1]} Split ${m[2]}';
+}
+
 /// Split selector: a compact pill that opens the list of available splits.
 /// Drives [rankedPeriodProvider].
 class RankedSplitDropdown extends ConsumerWidget {
@@ -111,8 +118,11 @@ class RankedSplitDropdown extends ConsumerWidget {
       orElse: () => view.splits.first,
     );
 
+    // The full name does not fit beside the week pill at a larger text size,
+    // and the end of it is the part that tells the splits apart.
+    final large = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     final pill = _HeaderPill(
-      label: selected.displayName,
+      label: large ? shortSplitName(selected.displayName) : selected.displayName,
       dropdown: view.splits.length > 1,
     );
     if (view.splits.length <= 1) return pill;

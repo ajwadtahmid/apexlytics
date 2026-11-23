@@ -36,6 +36,13 @@ class ClimbChart extends StatelessWidget {
     final minY = math.max(0, low - pad).toDouble();
     final maxY = (high + pad).toDouble();
     final pxPerRp = _height / (maxY - minY);
+    // The names grow with the text, up to their cap, so each keeps its room.
+    final labelWidth =
+        _labelWidth *
+        math.min(
+          math.max(MediaQuery.textScalerOf(context).scale(1), 1.0),
+          _labelTextScale,
+        );
 
     // The divisions inside the chart; a name only where there is room for it.
     final lines = <HorizontalLine>[];
@@ -63,10 +70,16 @@ class ClimbChart extends StatelessWidget {
             top: (maxY - d.rp) / (maxY - minY) * _height - 7,
             left: 6,
             right: 0,
-            child: Text(
-              d.label,
-              maxLines: 1,
-              style: TextStyle(color: color, fontSize: 11),
+            // Shrunk to fit if need be: cut to one line, "Platinum III" would
+            // lose its numeral and three of them would read the same.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                d.label,
+                softWrap: false,
+                style: TextStyle(color: color, fontSize: 11),
+              ),
             ),
           ),
         );
@@ -158,7 +171,7 @@ class ClimbChart extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    width: _labelWidth,
+                    width: labelWidth,
                     child: ExcludeSemantics(
                       child: MediaQuery.withClampedTextScaling(
                         maxScaleFactor: _labelTextScale,
@@ -182,7 +195,7 @@ class ClimbChart extends StatelessWidget {
                 formatShortDate(games.last.endTime),
                 style: AppTheme.captionSmall,
               ),
-              const SizedBox(width: _labelWidth),
+              SizedBox(width: labelWidth),
             ],
           ),
         ],

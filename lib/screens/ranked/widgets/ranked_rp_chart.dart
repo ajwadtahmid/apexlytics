@@ -125,18 +125,15 @@ class _RankedRpChartState extends State<RankedRpChart> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // The title and the picker share a line while they fit; at a larger
+          // text size the picker drops below instead of the title being cut.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: AppTheme.xs,
             children: [
-              const Flexible(
-                child: Text(
-                  'Ranked Point History',
-                  style: AppTheme.cardTitle,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Flexible(
-                child: Row(
+              const Text('Ranked Point History', style: AppTheme.cardTitle),
+              Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (widget.onShowBackup != null)
@@ -192,7 +189,6 @@ class _RankedRpChartState extends State<RankedRpChart> {
                       ),
                   ],
                 ),
-              ),
             ],
           ),
           const SizedBox(height: AppTheme.md),

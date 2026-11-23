@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../constants/api_constants.dart';
 import '../constants/rank_constants.dart';
 import '../models/season_meta.dart';
@@ -119,24 +120,54 @@ class RankedInfoCard extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${formatNumber(curRp)} RP', style: AppTheme.captionSmall),
-                Text(
-                  '${formatNumber(gap)} RP to $nextLabel',
-                  style: TextStyle(
-                    color: currentColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            // At a larger text size the three figures no longer fit on one line
+            // and run into each other, so the gap goes on its own line and the
+            // two ends of the bar share the one below.
+            if (MediaQuery.textScalerOf(context).scale(1) > 1.2) ...[
+              Text(
+                '${formatNumber(gap)} RP to $nextLabel',
+                style: TextStyle(
+                  color: currentColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${formatNumber(curRp)} RP',
+                    style: AppTheme.captionSmall,
                   ),
-                ),
-                Text(
-                  '${formatNumber(nextRp)} RP',
-                  style: AppTheme.captionSmall,
-                ),
-              ],
-            ),
+                  Text(
+                    '${formatNumber(nextRp)} RP',
+                    style: AppTheme.captionSmall,
+                  ),
+                ],
+              ),
+            ] else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${formatNumber(curRp)} RP',
+                    style: AppTheme.captionSmall,
+                  ),
+                  Text(
+                    '${formatNumber(gap)} RP to $nextLabel',
+                    style: TextStyle(
+                      color: currentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${formatNumber(nextRp)} RP',
+                    style: AppTheme.captionSmall,
+                  ),
+                ],
+              ),
           ] else if (isPred)
             Padding(
               padding: const EdgeInsets.only(top: AppTheme.sm),
