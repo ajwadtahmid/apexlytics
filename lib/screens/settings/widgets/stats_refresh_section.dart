@@ -220,7 +220,9 @@ class StatsRefreshSection extends ConsumerWidget {
       title: 'Stats update frequency',
       description:
           'How often your stats refresh. Apexlytics needs to stay open for '
-          'this to work.',
+          'this to work. Manual stops the automatic stats refresh; recording '
+          'your ranked games still checks about every 10 minutes while the '
+          'app is open.',
       labels: kStatsRefreshOptions.map(_refreshLabel).toList(),
       currentIndex: currentIndex < 0 ? 0 : currentIndex,
       onSelect: (i) async {
