@@ -222,11 +222,12 @@ jobs:
           choco install nsis.portable --version=3.13.0 -y --no-progress --force
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $tools = Join-Path $env:ChocolateyInstall 'lib\nsis.portable\tools'
-          $compilers = @(Get-ChildItem -LiteralPath $tools -Filter makensis.exe -File -Recurse -ErrorAction Stop)
-          if ($compilers.Count -ne 1) {
-            throw "Expected one NSIS compiler under $tools; found $($compilers.Count)."
+          # The package ships makensis.exe twice (nsis-3.13 and nsis-3.13\Bin);
+          # the one in the root of the NSIS folder is the one to run.
+          $makensis = Join-Path $tools 'nsis-3.13\makensis.exe'
+          if (-not (Test-Path -LiteralPath $makensis -PathType Leaf)) {
+            throw "NSIS compiler not found at $makensis"
           }
-          $makensis = $compilers[0].FullName
           Write-Host "Using NSIS compiler: $makensis"
           & $makensis /VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
