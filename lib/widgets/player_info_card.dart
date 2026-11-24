@@ -62,7 +62,7 @@ class PlayerInfoCard extends StatelessWidget {
         TextSpan(
           style: AppTheme.captionLarge,
           children: [
-            TextSpan(text: 'Level ${stats.level}'),
+            TextSpan(text: 'Level ${formatNumber(stats.level)}'),
             separatorDot,
           ],
         ),

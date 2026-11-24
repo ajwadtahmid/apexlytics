@@ -18,6 +18,24 @@ void main() {
       },
     };
 
+    test('counts every prestige as 500 levels', () {
+      PlayerStats withPrestige(Object? prestige) => PlayerStats.fromJson({
+        ...validJson,
+        'global': {
+          ...(validJson['global'] as Map<String, dynamic>),
+          'level': 401,
+          'levelPrestige': prestige,
+        },
+      });
+      expect(withPrestige(2).level, 1401);
+      expect(withPrestige(0).level, 401);
+      expect(withPrestige('3').level, 1901);
+      // Absent, or not a number: the plain level.
+      expect(withPrestige(null).level, 401);
+      expect(withPrestige('x').level, 401);
+      expect(withPrestige(-1).level, 401);
+    });
+
     test('a block that is not an object reads as absent, not an error', () {
       // A PHP-backed API sends an empty object as `[]`.
       for (final drifted in <Map<String, dynamic>>[
@@ -25,7 +43,10 @@ void main() {
         {...validJson, 'legends': []},
         {
           ...validJson,
-          'legends': {'selected': {'LegendName': 7, 'data': {}}, 'all': []},
+          'legends': {
+            'selected': {'LegendName': 7, 'data': {}},
+            'all': [],
+          },
         },
         {
           ...validJson,

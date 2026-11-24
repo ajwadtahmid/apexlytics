@@ -4,9 +4,16 @@ import '../utils/app_logger.dart';
 import '../utils/formatting/json_utils.dart';
 import 'season_meta.dart';
 
+/// How many levels each prestige is worth. The profile gives the level within
+/// the current prestige and the prestige count apart.
+const int kLevelsPerPrestige = 500;
+
 class PlayerStats {
   final String name;
   final String uid;
+
+  /// The account level with every prestige counted in (level 401 at prestige 2
+  /// is 1,401).
   final int level;
   final String rank;
   final int rankScore;
@@ -58,7 +65,9 @@ class PlayerStats {
     return PlayerStats(
       name: asString(global['name']) ?? 'Unknown',
       uid: global['uid']?.toString() ?? '',
-      level: _parseInt(global['level']),
+      level:
+          _parseInt(global['level']) +
+          kLevelsPerPrestige * _parseInt(global['levelPrestige']).clamp(0, 999),
       rank: asString(rankMap?['rankName']) ?? 'Unranked',
       rankScore: _parseInt(rankMap?['rankScore']),
       platform: asString(global['platform']) ?? 'Unknown',
@@ -67,9 +76,7 @@ class PlayerStats {
       isOnline: _parseBool(realtime['isOnline']),
       isInGame: _parseBool(realtime['isInGame']),
       trackers: _parseTrackers(asList(selected['data']) ?? []),
-      legendStats: _parseLegendStats(
-        asObject(legendsBlock['all']) ?? {},
-      ),
+      legendStats: _parseLegendStats(asObject(legendsBlock['all']) ?? {}),
       rankedSeason: _parseRankedSeason(rankMap),
     );
   }
