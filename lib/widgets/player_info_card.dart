@@ -24,20 +24,35 @@ class PlayerInfoCard extends StatelessWidget {
     // At a larger text size the level, rank and score line and the UID and
     // platform line no longer fit side by side, so they wrap onto a second line.
     final large = MediaQuery.textScalerOf(context).scale(1) > 1.2;
+    // The UID and its icon are one tap target, so the touch area is the whole
+    // line and the row keeps its height.
     final copyUid = Semantics(
       button: true,
       child: Tooltip(
         message: 'Copy UID',
-        child: GestureDetector(
-          onTap: () async {
-            await Clipboard.setData(ClipboardData(text: stats.uid));
-            if (context.mounted) {
-              context.showMessage('UID copied', duration: AppTheme.toastShort);
-            }
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(AppTheme.xs),
-            child: Icon(Icons.copy, size: 12, color: AppTheme.muted),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            onTap: () async {
+              await Clipboard.setData(ClipboardData(text: stats.uid));
+              if (context.mounted) {
+                context.showMessage(
+                  'UID copied',
+                  duration: AppTheme.toastShort,
+                );
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('UID: ${stats.uid}', style: AppTheme.caption),
+                const Padding(
+                  padding: EdgeInsets.all(AppTheme.xs),
+                  child: Icon(Icons.copy, size: 12, color: AppTheme.muted),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -111,14 +126,7 @@ class PlayerInfoCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: AppTheme.sm,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('UID: ${stats.uid}', style: AppTheme.caption),
-                      const SizedBox(width: 2),
-                      copyUid,
-                    ],
-                  ),
+                  copyUid,
                   _PlatformBadge(platform: stats.platform),
                 ],
               )
@@ -126,12 +134,9 @@ class PlayerInfoCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Row(
-                      children: [
-                        Text('UID: ${stats.uid}', style: AppTheme.caption),
-                        const SizedBox(width: 2),
-                        copyUid,
-                      ],
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: copyUid,
                     ),
                   ),
                   const SizedBox(width: AppTheme.sm),
