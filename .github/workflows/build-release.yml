@@ -219,8 +219,15 @@ jobs:
         run: |
           # Use the concrete portable package so the compiler location does
           # not depend on an installer, registry state, or a refreshed PATH.
-          choco install nsis.portable --version=3.13.0 -y --no-progress --force
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # The Chocolatey feed answers 503 now and then, so try a few times.
+          $installed = $false
+          foreach ($attempt in 1..5) {
+            choco install nsis.portable --version=3.13.0 -y --no-progress --force
+            if ($LASTEXITCODE -eq 0) { $installed = $true; break }
+            Write-Host "Attempt $attempt failed (exit code $LASTEXITCODE)."
+            if ($attempt -lt 5) { Start-Sleep -Seconds (15 * $attempt) }
+          }
+          if (-not $installed) { throw 'Could not install nsis.portable from Chocolatey.' }
           $tools = Join-Path $env:ChocolateyInstall 'lib\nsis.portable\tools'
           # The package ships makensis.exe twice (nsis-3.13 and nsis-3.13\Bin);
           # the one in the root of the NSIS folder is the one to run.
