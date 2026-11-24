@@ -191,7 +191,7 @@ The note in Settings stays.
 |------|---------|
 | Flutter SDK | 3.x (stable channel) |
 | Dart SDK | bundled with Flutter |
-| Android: Java | 17 |
+| Android: Java | 17 or newer (CI builds with 21) |
 | iOS: Xcode | 15+ |
 | Linux: GTK | `libgtk-3-dev` |
 
@@ -243,14 +243,14 @@ dart run build_runner build --delete-conflicting-outputs
 
 Your proxy server must implement these endpoints:
 
-- **`GET /maprotation`**: Returns current and next map rotations for Ranked, Pubs, Mixtape, and Wildcards
+- **`GET /maprotation`**: Returns current and next map rotations for Ranked, Pubs, Mixtape, and Wildcards (the app sends `version=2`)
 - **`GET /maps`**: Returns the Ranked and Pubs map pool for the season (an empty list is accepted)
 - **`GET /player?player=<name>&platform=<platform>`**: Returns player stats (rank, RP, legend data, trackers) by in-game name
 - **`GET /player/uid?uid=<uid>&platform=<platform>`**: The same by numeric UID, which the app prefers for saved profiles
 - **`GET /predator`**: Returns current Apex Predator RP cutoff per platform
 - **`GET /servers`**: Returns server status (login, EA accounts, crossplay health)
 - **`GET /news`**: Returns the news feed. An empty list is fine: the app always shows a pinned link to the official news page
-- **`GET /games`**: Returns ranked match history for a UID (used by Stats). Budgeted upstream; returns `202` with a `status`/`retryAfterSeconds` body when the request is queued or the player isn't being tracked yet, instead of `200` with match data
+- **`GET /games?uid=<uid>&limit=<n>`**: Returns ranked match history for a UID (used by Stats). Budgeted upstream; returns `202` with a `status`/`retryAfterSeconds` body when the request is queued or the player isn't being tracked yet, instead of `200` with match data
 - **`GET /games/eligibility`**: Returns whether match history is currently accruing for a UID, without spending a `/games` request
 - **`GET /games/capacity`**: Returns the hourly `/games` budget (`maxPerHour`, `used`, `free`, `windowResetsAt`, `waitlistDepth`, `locked`). Optional: the app falls back to generic wording without it
 - **`GET /healthz`**: Public liveness check, answered without a token. The Server Status page calls it on the primary and backup servers directly
@@ -267,6 +267,7 @@ All requests except `/healthz` must include the `x-client-token` header with you
 - **Short-lived server records.** To ration match-history tracking, the server keeps a few temporary records, all of which expire on their own:
   - which player IDs were recently looked up, to tell whether a player is being tracked (up to 1 hour);
   - the match history it fetched for a player, so repeat syncs don't cost more requests to the data provider (up to 3 hours);
+  - recent stats lookups, so a repeated lookup of the same player doesn't cost a new request (about a minute);
   - which player IDs each device has synced (1 hour) and how many distinct devices asked for a player (up to about an hour). Devices are identified only by a keyed hash, never stored as IP addresses.
 
   The hosting services also keep request logs, which can include the IP address, an approximate location worked out from it, the requested address (so a looked-up player name or ID) and the user agent. Their plans set how long: currently about 3 days on the primary server and up to 7 days on the backup, and never more than 30 days. The primary server's storage can also be restored to any point in the last 30 days, by the developer only.
