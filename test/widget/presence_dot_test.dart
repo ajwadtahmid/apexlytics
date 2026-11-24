@@ -51,9 +51,9 @@ void main() {
   // and a ring is 8 px thick at the edge.
   testWidgets('in game is a solid orange dot', (tester) async {
     final data = await render(tester, Presence.inGame);
-    expect(pixel(data, 30, 30), AppTheme.orange);
-    expect(pixel(data, 12, 30), AppTheme.orange);
-    expect(pixel(data, 48, 30), AppTheme.orange);
+    expect(pixel(data, 30, 30), AppTheme.accent2);
+    expect(pixel(data, 12, 30), AppTheme.accent2);
+    expect(pixel(data, 48, 30), AppTheme.accent2);
   });
 
   testWidgets('online is a solid green dot', (tester) async {

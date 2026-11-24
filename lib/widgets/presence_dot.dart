@@ -76,7 +76,7 @@ class _PresencePainter extends CustomPainter {
 
     switch (presence) {
       case Presence.inGame:
-        canvas.drawCircle(center, radius, fill(AppTheme.orange));
+        canvas.drawCircle(center, radius, fill(AppTheme.accent2));
       case Presence.online:
         canvas.drawCircle(center, radius, fill(AppTheme.green));
       case Presence.offline:
