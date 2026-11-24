@@ -265,7 +265,7 @@ class _StatsViewState extends ConsumerState<_StatsView> {
         weeks: weeks,
         weekIndex: effWeek,
         filtered: const [],
-        history: const [],
+        gamesInPeriod: const [],
       );
     }
 

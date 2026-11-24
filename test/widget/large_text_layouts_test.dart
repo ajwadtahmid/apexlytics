@@ -34,7 +34,7 @@ import 'package:apexlytics/screens/ranked/widgets/ranked_share_cards.dart';
 import 'package:apexlytics/utils/ranked/split_recap.dart';
 import 'package:apexlytics/widgets/share_card.dart';
 import 'package:apexlytics/screens/ranked/widgets/games_filter.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_entity_compare.dart';
 import 'package:apexlytics/screens/ranked/widgets/ranked_best_legend_per_map.dart';
 import 'package:apexlytics/screens/ranked/squad_game_detail_screen.dart';
@@ -311,7 +311,7 @@ void main() {
       tester,
       SizedBox(
         height: 700,
-        child: MatchHistoryList(
+        child: GamesList(
           matches: games,
           onRefresh: () async {},
           selectable: true,

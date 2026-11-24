@@ -1,7 +1,7 @@
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/ranked_provider.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list.dart';
 import 'package:apexlytics/utils/ranked/ranked_period.dart'
     show RankedSplitBucket;
 import 'package:apexlytics/utils/storage/ranked_history_store.dart';
@@ -42,7 +42,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: MatchHistoryList(
+            body: GamesList(
               matches: games,
               onRefresh: () async {},
               header: const Text('HEADER'),
@@ -146,7 +146,7 @@ void main() {
         container: container,
         child: MaterialApp(
           home: Scaffold(
-            body: MatchHistoryList(
+            body: GamesList(
               matches: games,
               onRefresh: () async {},
               selectable: true,

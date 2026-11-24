@@ -211,7 +211,7 @@ class RankedMatch {
   /// [editedFields]/[kEditableMatchFields] — this isn't a value correction
   /// sync could ever contest, so it's a separate flag with its own store
   /// method rather than routed through `editMatch`. Still shows in the match
-  /// History list (greyed out) so it can be found and un-excluded.
+  /// Games list (greyed out) so it can be found and un-excluded.
   final bool excluded;
 
   /// A fresh match as upstream served it: no season yet, no hand edits, not

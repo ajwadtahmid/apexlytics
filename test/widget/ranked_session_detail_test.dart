@@ -1,7 +1,7 @@
 import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 import 'package:apexlytics/utils/theme.dart';
 import 'package:apexlytics/widgets/rp_pill.dart';
@@ -77,7 +77,7 @@ void main() {
     );
 
     void correct(WidgetTester tester, RankedMatch updated) => tester
-        .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+        .widget<GamesList>(find.byType(GamesList))
         .onMatchUpdated!(updated);
 
     testWidgets('leaves the games, RP, kills and damage of the session', (

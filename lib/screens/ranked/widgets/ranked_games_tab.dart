@@ -1,29 +1,30 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../models/ranked_match.dart';
 import '../../../utils/theme.dart';
 import 'games_filter.dart';
-import 'match_history_items.dart';
-import 'match_history_list.dart';
+import 'games_list_items.dart';
+import 'games_list.dart';
 import '../../../widgets/control_pill.dart';
 
 /// Games tab: every match in the selected period (ranked + casual), grouped by
 /// play session with day dividers. A mode filter scopes the list; tap a row for the
 /// full match detail.
-class RankedMatchList extends StatefulWidget {
+class RankedGamesTab extends StatefulWidget {
   final List<RankedMatch> matches; // all-in-period, newest first
   final Future<void> Function() onRefresh;
 
-  const RankedMatchList({
+  const RankedGamesTab({
     super.key,
     required this.matches,
     required this.onRefresh,
   });
 
   @override
-  State<RankedMatchList> createState() => _RankedMatchListState();
+  State<RankedGamesTab> createState() => _RankedMatchListState();
 }
 
-class _RankedMatchListState extends State<RankedMatchList> {
+class _RankedMatchListState extends State<RankedGamesTab> {
   // Defaults to Ranked — it's the headline view; the rest is in the sheet.
   GamesFilter _filter = const GamesFilter();
   _GamesSort _sort = _GamesSort.date;
@@ -38,7 +39,7 @@ class _RankedMatchListState extends State<RankedMatchList> {
 
   @override
   Widget build(BuildContext context) {
-    return MatchHistoryList(
+    return GamesList(
       matches: _visible,
       onRefresh: widget.onRefresh,
       emptyLabel: 'No games in this filter',

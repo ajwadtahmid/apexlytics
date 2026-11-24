@@ -2,7 +2,7 @@ import 'package:apexlytics/models/ranked_match.dart';
 import 'package:apexlytics/providers/settings_provider.dart';
 import 'package:apexlytics/screens/ranked/ranked_session_detail_screen.dart';
 import 'package:apexlytics/screens/ranked/ranked_sessions_list_screen.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list.dart';
 import 'package:apexlytics/screens/ranked/widgets/session_card.dart';
 import 'package:apexlytics/utils/formatting/format.dart' show formatShortDate;
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
@@ -77,7 +77,7 @@ void main() {
       await tester.pumpAndSettle();
       final twenty = three.last.matches.firstWhere((m) => m.rpChange == 20);
       tester
-          .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+          .widget<GamesList>(find.byType(GamesList))
           .onMatchUpdated!(twenty.withExcluded(true));
       await tester.pump();
       await tester.pageBack();
@@ -97,7 +97,7 @@ void main() {
       await tester.pumpAndSettle();
       final only = three.first.matches.single;
       tester
-          .widget<MatchHistoryList>(find.byType(MatchHistoryList))
+          .widget<GamesList>(find.byType(GamesList))
           .onMatchUpdated!(only.withExcluded(true));
       await tester.pump();
       await tester.pageBack();

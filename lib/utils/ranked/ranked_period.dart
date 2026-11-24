@@ -190,7 +190,7 @@ class RankedView {
   final List<WeekRange> weeks;
   final int weekIndex; // -1 = All weeks
   final List<RankedMatch> filtered; // ranked only — drives the aggregates
-  final List<RankedMatch> history; // all matches in the period — Games tab
+  final List<RankedMatch> gamesInPeriod; // all matches in the period — Games tab
 
   const RankedView({
     required this.splits,
@@ -198,7 +198,7 @@ class RankedView {
     required this.weeks,
     required this.weekIndex,
     required this.filtered,
-    required this.history,
+    required this.gamesInPeriod,
   });
 
   bool get isEmpty => splits.isEmpty;
@@ -221,7 +221,7 @@ class RankedView {
     weeks: [],
     weekIndex: -1,
     filtered: [],
-    history: [],
+    gamesInPeriod: [],
   );
 }
 
@@ -326,6 +326,6 @@ RankedView resolveRankedView({
     weeks: weeks,
     weekIndex: effWeek,
     filtered: filtered,
-    history: history,
+    gamesInPeriod: history,
   );
 }

@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import '../../models/ranked_match.dart';
 import '../../utils/theme.dart';
-import 'widgets/match_history_items.dart';
-import 'widgets/match_history_list.dart';
+import 'widgets/games_list_items.dart';
+import 'widgets/games_list.dart';
 import '../../widgets/control_pill.dart';
 
 /// Full-screen ranked games for a single legend or map, reached by tapping a
@@ -92,7 +92,7 @@ class _RankedEntityGamesScreenState extends State<RankedEntityGamesScreen> {
         ),
       ),
       body: SafeArea(
-        child: MatchHistoryList(
+        child: GamesList(
           matches: _matches,
           onRefresh: widget.onRefresh,
           emptyLabel: 'No ranked games here',

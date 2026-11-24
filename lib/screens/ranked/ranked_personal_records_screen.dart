@@ -168,7 +168,7 @@ class _RankedPersonalRecordsScreenState
           title: 'Best Win Streak',
           subtitle:
               '${plural(games.length, 'game')} · ${formatSignedInt(rp)} RP',
-          // Newest first, as the history list expects.
+          // Newest first, as the games list expects.
           matches: games.reversed.toList(),
           onRefresh: widget.onRefresh,
           onMatchUpdated: _onMatchUpdated,

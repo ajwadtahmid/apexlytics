@@ -15,7 +15,7 @@ import '../../utils/ranked/session_overview.dart';
 import '../../utils/theme.dart';
 import '../../widgets/legend_icon.dart';
 import '../../widgets/surface_card.dart';
-import 'widgets/match_history_list.dart';
+import 'widgets/games_list.dart';
 
 /// One session in full: what it netted and how, its RP through the games with
 /// the worst stretch marked, how each legend did, and then its games.
@@ -98,7 +98,7 @@ class _RankedSessionDetailScreenState extends State<RankedSessionDetailScreen> {
         ),
       ),
       body: SafeArea(
-        child: MatchHistoryList(
+        child: GamesList(
           matches: _matches,
           onRefresh: widget.onRefresh,
           emptyLabel: 'No ranked games here',

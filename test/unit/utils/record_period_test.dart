@@ -19,7 +19,7 @@ void main() {
     ],
     weekIndex: weekIndex,
     filtered: const [],
-    history: const [],
+    gamesInPeriod: const [],
   );
 
   group('what a record is the best of', () {
@@ -44,7 +44,7 @@ void main() {
         weeks: view(weekIndex).weeks,
         weekIndex: weekIndex,
         filtered: const [],
-        history: const [],
+        gamesInPeriod: const [],
       );
 
   group('the title over the Stats figures', () {

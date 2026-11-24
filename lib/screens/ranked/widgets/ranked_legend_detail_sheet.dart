@@ -26,7 +26,7 @@ import '../../../widgets/trend_lines.dart';
 import '../../../widgets/trend_window_picker.dart';
 import '../../../widgets/win_loss_stat.dart';
 import '../ranked_entity_games_screen.dart';
-import 'match_history_items.dart' show MatchGrouping;
+import 'games_list_items.dart' show MatchGrouping;
 
 /// Opens the shared legend detail sheet — used by both the Overview
 /// Best/Worst Legend cards and the Legends tab rows, so the two surfaces stay

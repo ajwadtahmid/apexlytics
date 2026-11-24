@@ -32,12 +32,12 @@ class MatchGrouping {
 
 // ── Item model ──────────────────────────────────────────────────────────────
 
-sealed class HistoryItem {}
+sealed class GamesListItem {}
 
 /// One play session: games separated from the next session by more than
 /// [kSessionGap]. A session may cross midnight; its header shows the day it
 /// started.
-class SessionHeaderItem extends HistoryItem {
+class SessionHeaderItem extends GamesListItem {
   /// Names this session in the collapsed set; stable as newer games arrive.
   final String key;
 
@@ -87,7 +87,7 @@ class SessionHeaderItem extends HistoryItem {
 /// Marks where the calendar day changes inside a session that runs past
 /// midnight. The list is newest first, so [later] is the day of the rows above
 /// the divider and [earlier] the day of the rows below it.
-class DayDividerItem extends HistoryItem {
+class DayDividerItem extends GamesListItem {
   final DateTime later;
   final DateTime earlier;
   DayDividerItem({required this.later, required this.earlier});
@@ -97,13 +97,13 @@ class DayDividerItem extends HistoryItem {
 /// the ladder (or back out of one): [to] is the division reached. The list is
 /// newest first, so it sits just above the game that did it, which reads as
 /// "after this game".
-class RankChangeItem extends HistoryItem {
+class RankChangeItem extends GamesListItem {
   final RankDivision to;
   final bool promoted;
   RankChangeItem({required this.to, required this.promoted});
 }
 
-class GroupHeaderItem extends HistoryItem {
+class GroupHeaderItem extends GamesListItem {
   final String name;
   final int games;
   final int netRp;
@@ -120,21 +120,21 @@ class GroupHeaderItem extends HistoryItem {
   });
 }
 
-class SessionBreakItem extends HistoryItem {
+class SessionBreakItem extends GamesListItem {
   final int gapSecs;
   SessionBreakItem(this.gapSecs);
 }
 
-class MatchItem extends HistoryItem {
+class MatchItem extends GamesListItem {
   final RankedMatch match;
   MatchItem(this.match);
 }
 
 /// Default (and incremental) number of matches shown in session-grouped
-/// history before scrolling near the bottom loads the next page. Chosen so a
+/// games before scrolling near the bottom loads the next page. Chosen so a
 /// typical week's worth of games renders up front, while a multi-thousand-
 /// match history stays cheap to flatten and lay out.
-const int kHistoryPageSize = 50;
+const int kGamesPageSize = 50;
 
 /// Which session each match belongs to, found over [pool] (newest first).
 ///
@@ -222,7 +222,7 @@ List<RankedMatch> _extendToSessionBoundary(
 ///
 /// [includeBreaks] false hides break rows, for when [sessionPool] isn't the
 /// whole history.
-List<HistoryItem> buildSessionItems(
+List<GamesListItem> buildSessionItems(
   List<RankedMatch> matches, {
   int? limit,
   List<RankedMatch>? sessionPool,
@@ -261,7 +261,7 @@ List<HistoryItem> buildSessionItems(
     previous = m;
   }
 
-  final items = <HistoryItem>[];
+  final items = <GamesListItem>[];
   for (var b = 0; b < buckets.length; b++) {
     final bucket = buckets[b]; // newest first
     final start = bucket.last.startTime;
@@ -326,7 +326,7 @@ List<HistoryItem> buildSessionItems(
 
 /// Sections matches by [g], ordered by net (effective) RP descending, with
 /// matches newest-first inside each section. No session breaks in this mode.
-List<HistoryItem> buildGroupedItems(
+List<GamesListItem> buildGroupedItems(
   List<RankedMatch> matches,
   MatchGrouping g,
 ) {
@@ -349,7 +349,7 @@ List<HistoryItem> buildGroupedItems(
     );
   }).toList()..sort((a, b) => b.netRp.compareTo(a.netRp));
 
-  final items = <HistoryItem>[];
+  final items = <GamesListItem>[];
   for (final grp in groups) {
     items.add(
       GroupHeaderItem(

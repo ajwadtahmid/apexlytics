@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
-import '../../../providers/history_collapse_provider.dart';
+import '../../../providers/games_collapse_provider.dart';
 import '../../../providers/ranked_provider.dart';
 import '../../../utils/notifications.dart';
 import '../../../utils/formatting/format.dart'
@@ -23,7 +23,7 @@ import '../../../widgets/rank_badge.dart';
 import '../../../widgets/rp_pill.dart';
 import '../../../widgets/legend_asset_image.dart';
 import 'match_detail_sheet.dart';
-import 'match_history_items.dart';
+import 'games_list_items.dart';
 import 'match_tags.dart';
 
 /// Session-grouped match list with tap-through detail sheets.
@@ -40,12 +40,12 @@ import 'match_tags.dart';
 /// (e.g. map within a legend), each section headed by its games/net-RP/avg-RP
 /// summary and ordered by net RP descending. Session grouping is the default.
 ///
-/// Session-grouped mode paginates in increments of [kHistoryPageSize], loading
+/// Session-grouped mode paginates in increments of [kGamesPageSize], loading
 /// the next page automatically as the user scrolls near the bottom, extended
 /// to a session boundary (see [buildSessionItems]) — grouped mode shows
 /// everything, since it's already a filtered, RP-sorted subset rather than a
 /// long chronological feed.
-class MatchHistoryList extends ConsumerStatefulWidget {
+class GamesList extends ConsumerStatefulWidget {
   final List<RankedMatch> matches; // newest first
   final Future<void> Function() onRefresh;
 
@@ -91,7 +91,7 @@ class MatchHistoryList extends ConsumerStatefulWidget {
   /// already says what the session is. Only for session grouping.
   final bool hideSessionHeaders;
 
-  const MatchHistoryList({
+  const GamesList({
     super.key,
     required this.matches,
     required this.onRefresh,
@@ -109,13 +109,13 @@ class MatchHistoryList extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<MatchHistoryList> createState() => _MatchHistoryListState();
+  ConsumerState<GamesList> createState() => _GamesListState();
 }
 
 /// Whether [after] is [before] with newer games added at the front, which is
 /// what a sync does (newest first), as opposed to a different set of matches.
 @visibleForTesting
-bool historyGrewAtFront(List<RankedMatch> before, List<RankedMatch> after) {
+bool gamesGrewAtFront(List<RankedMatch> before, List<RankedMatch> after) {
   if (before.isEmpty || after.length < before.length) return false;
   final added = after.length - before.length;
   return after[added].id == before.first.id && after.last.id == before.last.id;
@@ -127,14 +127,14 @@ const double _kLoadMoreThreshold = 400;
 
 /// A pinned header and the rows beneath it, after any break row that leads it.
 class _Section {
-  final List<HistoryItem> lead;
-  final HistoryItem header;
-  final List<HistoryItem> body = [];
+  final List<GamesListItem> lead;
+  final GamesListItem header;
+  final List<GamesListItem> body = [];
   _Section(this.lead, this.header);
 }
 
-class _MatchHistoryListState extends ConsumerState<MatchHistoryList> {
-  int _pageLimit = kHistoryPageSize;
+class _GamesListState extends ConsumerState<GamesList> {
+  int _pageLimit = kGamesPageSize;
   final _scrollController = ScrollController();
 
   /// Ids picked for a bulk action. Empty means no selection is under way.
@@ -157,7 +157,7 @@ class _MatchHistoryListState extends ConsumerState<MatchHistoryList> {
   }
 
   @override
-  void didUpdateWidget(MatchHistoryList old) {
+  void didUpdateWidget(GamesList old) {
     super.didUpdateWidget(old);
     // A different match set (filter or grouping change) starts back at page one.
     // Newly synced games at the front, or an edit in place, keep the scroll depth.
@@ -165,8 +165,8 @@ class _MatchHistoryListState extends ConsumerState<MatchHistoryList> {
         _headKey(widget.matches) != _headKey(old.matches) ||
         widget.matches.length != old.matches.length;
     if (widget.grouping != old.grouping ||
-        (changed && !historyGrewAtFront(old.matches, widget.matches))) {
-      _pageLimit = kHistoryPageSize;
+        (changed && !gamesGrewAtFront(old.matches, widget.matches))) {
+      _pageLimit = kGamesPageSize;
     }
     if (_selected.isNotEmpty) {
       final present = {for (final m in widget.matches) m.id};
@@ -194,15 +194,15 @@ class _MatchHistoryListState extends ConsumerState<MatchHistoryList> {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
     if (pos.pixels >= pos.maxScrollExtent - _kLoadMoreThreshold) {
-      setState(() => _pageLimit += kHistoryPageSize);
+      setState(() => _pageLimit += kGamesPageSize);
     }
   }
 
   /// Splits the flat item list into header-led sections. A break row sits
   /// between sections, so it leads the header that follows.
-  List<_Section> _sectionsOf(List<HistoryItem> items) {
+  List<_Section> _sectionsOf(List<GamesListItem> items) {
     final sections = <_Section>[];
-    var lead = <HistoryItem>[];
+    var lead = <GamesListItem>[];
     for (final item in items) {
       if (item is SessionHeaderItem || item is GroupHeaderItem) {
         sections.add(_Section(lead, item));
@@ -400,13 +400,13 @@ class _SectionSliver extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final header = section.header;
     final sessionKey = header is SessionHeaderItem
-        ? historySessionKey(collapseScope, header.key)
+        ? gameSessionKey(collapseScope, header.key)
         : null;
     final isCollapsed =
         !hideSessionHeader &&
         sessionKey != null &&
         ref.watch(
-          collapsedHistorySessionsProvider.select(
+          collapsedGameSessionsProvider.select(
             (sessions) => sessions.contains(sessionKey),
           ),
         );
@@ -416,7 +416,7 @@ class _SectionSliver extends ConsumerWidget {
         item: h,
         collapsed: isCollapsed,
         onToggle: () => ref
-            .read(collapsedHistorySessionsProvider.notifier)
+            .read(collapsedGameSessionsProvider.notifier)
             .toggle(sessionKey!),
       ),
       final GroupHeaderItem h => _GroupHeader(item: h),

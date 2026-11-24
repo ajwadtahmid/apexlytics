@@ -28,7 +28,7 @@ void main() {
     ],
     weekIndex: weekIndex,
     filtered: const [],
-    history: const [],
+    gamesInPeriod: const [],
   );
 
   Future<ProviderContainer> pump(WidgetTester tester, Widget child) async {
@@ -108,7 +108,7 @@ void main() {
             weeks: [],
             weekIndex: -1,
             filtered: [],
-            history: [],
+            gamesInPeriod: [],
           ),
         ),
       );
@@ -149,7 +149,7 @@ void main() {
                     weeks: [],
                     weekIndex: -1,
                     filtered: [],
-                    history: [],
+                    gamesInPeriod: [],
                   ),
                 ),
               ),
@@ -190,7 +190,7 @@ void main() {
       weeks: const [],
       weekIndex: -1,
       filtered: const [],
-      history: const [],
+      gamesInPeriod: const [],
     );
 
     testWidgets('lists Lifetime, then a row per season with its splits', (

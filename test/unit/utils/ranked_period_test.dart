@@ -256,7 +256,7 @@ void main() {
         selectedSplitId: 'br_ranked_s29_s1',
       );
       expect(view.filtered.length, 1); // ranked only
-      expect(view.history.length, 2); // pub kept in history
+      expect(view.gamesInPeriod.length, 2); // pub kept in history
     });
 
     test('an invalid split id falls back to the current split', () {

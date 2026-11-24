@@ -63,7 +63,7 @@ void main() {
     weeks: const [],
     weekIndex: -1,
     filtered: const [],
-    history: const [],
+    gamesInPeriod: const [],
   );
 
   Future<List<String>> pump(

@@ -1100,7 +1100,7 @@ void main() {
         weeks: const [],
         weekIndex: week,
         filtered: const [],
-        history: const [],
+        gamesInPeriod: const [],
       );
 
       expect(recapPeriodPhrase(view(-1)), 'this split');
@@ -1115,7 +1115,7 @@ void main() {
         weeks: const [],
         weekIndex: week,
         filtered: const [],
-        history: const [],
+        gamesInPeriod: const [],
       );
 
       expect(recapScopeLabel(view(3)), 'Ranked Week 4');

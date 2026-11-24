@@ -84,7 +84,7 @@ class _RankedClimbScreenState extends ConsumerState<RankedClimbScreen> {
     weeks: const [],
     weekIndex: -1,
     filtered: const [],
-    history: const [],
+    gamesInPeriod: const [],
   );
 
   /// Whether the shown split is over: a newer one exists, so there is nothing

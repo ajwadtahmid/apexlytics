@@ -8,8 +8,9 @@ import 'package:apexlytics/utils/ranked/ranked_aggregates.dart'
 import 'package:apexlytics/screens/ranked/ranked_entity_games_screen.dart';
 import 'package:apexlytics/screens/ranked/widgets/games_filter.dart';
 import 'package:apexlytics/screens/ranked/widgets/match_tags.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_items.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_list.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list_items.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list.dart';
+
 import '../helpers.dart';
 
 void main() {
@@ -411,7 +412,7 @@ void main() {
     List<RankedMatch> newestFirst(Iterable<RankedMatch> ms) =>
         ms.toList()..sort((a, b) => b.endTime.compareTo(a.endTime));
 
-    List<SessionHeaderItem> headers(List<HistoryItem> items) =>
+    List<SessionHeaderItem> headers(List<GamesListItem> items) =>
         items.whereType<SessionHeaderItem>().toList();
 
     test(
@@ -561,12 +562,10 @@ void main() {
       final mid = at(DateTime(2025, 3, 10, 10, 20));
       final newer = at(DateTime(2025, 3, 10, 10, 40));
 
-      final before = headers(
-        buildSessionItems(newestFirst([older, mid])),
-      ).single;
-      final after = headers(
-        buildSessionItems(newestFirst([older, mid, newer])),
-      ).single;
+      final before = headers(buildSessionItems(newestFirst([older, mid])))
+          .single;
+      final after = headers(buildSessionItems(newestFirst([older, mid, newer])))
+          .single;
       expect(after.key, before.key);
     });
 
@@ -581,27 +580,27 @@ void main() {
     });
   });
 
-  group('historyGrewAtFront', () {
+  group('gamesGrewAtFront', () {
     final older = [for (var i = 1; i <= 4; i++) game(dayOffset: 0, slot: i)];
     final newer = game(dayOffset: 0, slot: 9);
 
     test('new games added at the front are the same list grown', () {
-      expect(historyGrewAtFront(older, [newer, ...older]), isTrue);
+      expect(gamesGrewAtFront(older, [newer, ...older]), isTrue);
     });
 
     test('an unchanged list is not a different one', () {
-      expect(historyGrewAtFront(older, [...older]), isTrue);
+      expect(gamesGrewAtFront(older, [...older]), isTrue);
     });
 
     test('a narrowed or reordered set is a different one', () {
-      expect(historyGrewAtFront(older, older.sublist(1)), isFalse);
-      expect(historyGrewAtFront(older, older.reversed.toList()), isFalse);
-      expect(historyGrewAtFront(older, [newer, ...older.sublist(1)]), isFalse);
+      expect(gamesGrewAtFront(older, older.sublist(1)), isFalse);
+      expect(gamesGrewAtFront(older, older.reversed.toList()), isFalse);
+      expect(gamesGrewAtFront(older, [newer, ...older.sublist(1)]), isFalse);
     });
 
     test('from or to nothing is a different set', () {
-      expect(historyGrewAtFront(const [], older), isFalse);
-      expect(historyGrewAtFront(older, const []), isFalse);
+      expect(gamesGrewAtFront(const [], older), isFalse);
+      expect(gamesGrewAtFront(older, const []), isFalse);
     });
   });
 
@@ -633,7 +632,7 @@ void main() {
     });
   });
 
-  group('MatchHistoryList', () {
+  group('GamesList', () {
     // The pinned title shows the span, e.g. "Oct 9 12:10 PM – 12:50 PM".
     final firstSessionTitle = find
         .textContaining(' – ', findRichText: true)
@@ -653,7 +652,7 @@ void main() {
           container: container,
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(
+              body: GamesList(
                 matches: matches,
                 onRefresh: () async {},
                 averagePool: matches,
@@ -736,7 +735,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: reset, onRefresh: () async {}),
+              body: GamesList(matches: reset, onRefresh: () async {}),
             ),
           ),
         ),
@@ -754,7 +753,7 @@ void main() {
           ProviderScope(
             child: MaterialApp(
               home: Scaffold(
-                body: MatchHistoryList(matches: reset, onRefresh: () async {}),
+                body: GamesList(matches: reset, onRefresh: () async {}),
               ),
             ),
           ),
@@ -773,7 +772,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: reset, onRefresh: () async {}),
+              body: GamesList(matches: reset, onRefresh: () async {}),
             ),
           ),
         ),
@@ -800,7 +799,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: long, onRefresh: () async {}),
+              body: GamesList(matches: long, onRefresh: () async {}),
             ),
           ),
         ),
@@ -822,7 +821,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: games, onRefresh: () async {}),
+              body: GamesList(matches: games, onRefresh: () async {}),
             ),
           ),
         ),
@@ -874,7 +873,7 @@ void main() {
           ProviderScope(
             child: MaterialApp(
               home: Scaffold(
-                body: MatchHistoryList(matches: games, onRefresh: () async {}),
+                body: GamesList(matches: games, onRefresh: () async {}),
               ),
             ),
           ),
@@ -923,7 +922,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: games, onRefresh: () async {}),
+              body: GamesList(matches: games, onRefresh: () async {}),
             ),
           ),
         ),
@@ -991,7 +990,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(matches: axle, onRefresh: () async {}),
+              body: GamesList(matches: axle, onRefresh: () async {}),
             ),
           ),
         ),
@@ -1020,7 +1019,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(
+              body: GamesList(
                 matches: games,
                 onRefresh: () async {},
                 leading: leading,
@@ -1050,7 +1049,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: MatchHistoryList(
+              body: GamesList(
                 matches: games,
                 onRefresh: () async {},
                 leading: const SizedBox(height: 400, child: Text('Summary')),

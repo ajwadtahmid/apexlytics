@@ -39,7 +39,7 @@ import 'widgets/unknown_season_note.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
 import 'widgets/ranked_highlight_cards.dart';
 import 'widgets/ranked_info_sheet.dart';
-import 'widgets/ranked_match_list.dart';
+import 'widgets/ranked_games_tab.dart';
 import 'widgets/ranked_rp_chart.dart';
 import 'widgets/ranked_stats_card.dart';
 import 'widgets/ranked_summary_header.dart';
@@ -506,16 +506,16 @@ class _RankedStatsBodyState extends ConsumerState<RankedStatsBody> {
           rows: legends,
           matchesFor: legendMatches,
           onRefresh: _refresh,
-          sessionPool: view.history,
+          sessionPool: view.gamesInPeriod,
         ),
         RankedMapsTab(
           rows: maps,
           matchesFor: mapMatches,
           onRefresh: _refresh,
-          sessionPool: view.history,
+          sessionPool: view.gamesInPeriod,
         ),
         // History keeps everything (pubs included), not just the ranked matches.
-        RankedMatchList(matches: view.history, onRefresh: _refresh),
+        RankedGamesTab(matches: view.gamesInPeriod, onRefresh: _refresh),
       ],
     );
   }
@@ -731,7 +731,7 @@ class _OverviewTab extends ConsumerWidget {
             mapMatchesFor: mapMatchesFor,
             onRefresh: onRefresh,
             // The split's full history, for sessions on the drill-down pages.
-            sessionPool: data.view.history,
+            sessionPool: data.view.gamesInPeriod,
           ),
           const SizedBox(height: AppTheme.lg),
           const SectionLabel(label: 'Dig deeper', icon: Icons.explore_outlined),
@@ -750,7 +750,7 @@ class _OverviewTab extends ConsumerWidget {
                   child: RankedLegendMapMatrixEntry(
                     matches: matches,
                     onRefresh: onRefresh,
-                    sessionPool: data.view.history,
+                    sessionPool: data.view.gamesInPeriod,
                     periodLabel: data.view.periodLabel,
                   ),
                 ),
@@ -768,7 +768,7 @@ class _OverviewTab extends ConsumerWidget {
                     legends: legends,
                     matchesFor: legendMatchesFor,
                     onRefresh: onRefresh,
-                    sessionPool: data.view.history,
+                    sessionPool: data.view.gamesInPeriod,
                     periodLabel: data.view.periodLabel,
                   ),
                 ),

@@ -129,7 +129,7 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
       weeks: weeks,
       weekIndex: _week < weeks.length ? _week : -1,
       filtered: const [],
-      history: const [],
+      gamesInPeriod: const [],
     );
   }
 

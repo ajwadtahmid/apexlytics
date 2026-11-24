@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:apexlytics/constants/legend_constants.dart';
 import 'package:apexlytics/constants/map_constants.dart';
 import 'package:apexlytics/models/ranked_match.dart';
-import 'package:apexlytics/screens/ranked/widgets/match_history_items.dart';
+import 'package:apexlytics/screens/ranked/widgets/games_list_items.dart';
 import 'package:apexlytics/utils/ranked/ranked_aggregates.dart';
 
 import '../../helpers.dart';

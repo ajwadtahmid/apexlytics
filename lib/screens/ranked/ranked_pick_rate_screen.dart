@@ -286,7 +286,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     );
   }
 
-  Future<void> _openHistory(LegendBreakdown legend) async {
+  Future<void> _openGames(LegendBreakdown legend) async {
     final games = [...await widget.matchesFor!(legend.legend)]
       ..sort((a, b) => b.endTime.compareTo(a.endTime));
     if (!mounted) return;
@@ -349,7 +349,7 @@ class _RankedPickRateScreenState extends ConsumerState<RankedPickRateScreen> {
     metric: ref.watch(bestMetricProvider),
     pickRate: pickRate,
     maps: _selected == null ? null : _mapCells[_selected!.legend],
-    onOpen: widget.matchesFor == null ? null : _openHistory,
+    onOpen: widget.matchesFor == null ? null : _openGames,
   );
 
   Widget _buildBody(List<LegendBreakdown> pool, int total) {
