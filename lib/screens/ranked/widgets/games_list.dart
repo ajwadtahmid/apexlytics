@@ -226,16 +226,29 @@ class _GamesListState extends ConsumerState<GamesList> {
     // Taken now: the list can be left while the database works, and a ref
     // cannot be used after that, but the change still has to reach the screens.
     final container = ProviderScope.containerOf(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final store = ref.read(rankedHistoryStoreProvider);
+    // Only the games this changes, so an Undo does not flip one that was
+    // already as asked.
+    final changed = {
+      for (final m in widget.matches)
+        if (_selected.contains(m.id) && m.excluded != excluded) m.id,
+    };
     try {
-      final count = await ref
-          .read(rankedHistoryStoreProvider)
-          .setExcludedFor(_selected, excluded);
+      final count = await store.setExcludedFor(_selected, excluded);
       invalidateMatchDerivedProvidersIn(container);
       if (!mounted) return;
       setState(_selected.clear);
-      context.showMessage(
-        '${excluded ? 'Excluded' : 'Included'} ${plural(count, 'game')}',
-      );
+      final text =
+          '${excluded ? 'Excluded' : 'Included'} ${plural(count, 'game')}';
+      if (changed.isEmpty) {
+        messenger.showMessage(text);
+      } else {
+        messenger.showUndoMessage(text, () async {
+          await store.setExcludedFor(changed, !excluded);
+          invalidateMatchDerivedProvidersIn(container);
+        });
+      }
     } catch (_) {
       if (mounted) context.showMessage("Couldn't update those games.");
     } finally {
@@ -251,6 +264,9 @@ class _GamesListState extends ConsumerState<GamesList> {
       matches: ordered,
       index: i,
       baselinePool: widget.averagePool,
+      onUndone: (before) {
+        if (mounted) widget.onMatchUpdated?.call(before);
+      },
     );
     if (updated != null) widget.onMatchUpdated?.call(updated);
   }

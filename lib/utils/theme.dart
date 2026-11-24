@@ -114,6 +114,11 @@ class AppTheme {
   static const Duration toastShort = Duration(seconds: 2);
   static const Duration toastDefault = Duration(seconds: 4);
 
+  /// A message with an Undo: long enough to reach for it, and longer for a
+  /// correction, which cannot be redone from memory.
+  static const Duration toastUndo = Duration(seconds: 8);
+  static const Duration toastUndoEdit = Duration(seconds: 12);
+
   static const Duration shortAnimation = Duration(milliseconds: 200);
 
   /// Duration for a selection pill / chip changing state.

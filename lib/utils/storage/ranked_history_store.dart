@@ -732,6 +732,31 @@ class RankedHistoryStore {
     });
   }
 
+  /// Puts back what a hand correction or exclusion changed on the match
+  /// [before] describes: its editable columns, its edited flags and whether it
+  /// is excluded, in one statement. For an Undo, so nothing is range-checked:
+  /// these are values the row held before.
+  ///
+  /// Returns `false` when no row matches; nothing is written.
+  Future<bool> restoreMatch(RankedMatch before) async {
+    final stored = before.toStoredMap();
+    final db = await _open();
+    final rows = await db.update(
+      table,
+      {
+        for (final column in [
+          ...kEditableMatchFields,
+          'edited_fields',
+          'excluded',
+        ])
+          column: stored[column],
+      },
+      where: 'id = ?',
+      whereArgs: [before.id],
+    );
+    return rows > 0;
+  }
+
   /// Throws when [values] carries [key] with a value outside `[min, max]`.
   /// A null is always allowed - for kills/damage it is the legitimate "not
   /// reported" value, and the caller validates required-ness separately.

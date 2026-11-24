@@ -144,6 +144,9 @@ class _RankedPersonalRecordsScreenState
       matches: [game],
       index: 0,
       baselinePool: _matches,
+      onUndone: (before) {
+        if (mounted) _onMatchUpdated(before);
+      },
     );
     if (updated != null) _onMatchUpdated(updated);
   }

@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../constants/map_constants.dart';
 import '../../../models/ranked_match.dart';
 import '../../../utils/formatting/rank_utils.dart'
@@ -11,6 +13,8 @@ import '../../../utils/formatting/format.dart'
         formatNumberOrNone,
         formatSignedInt,
         kNoReading;
+import '../../../providers/ranked_provider.dart';
+import '../../../utils/notifications.dart';
 import '../../../utils/ranked/legend_baseline.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/legend_asset_image.dart';
@@ -24,14 +28,21 @@ import '../../../widgets/rank_badge.dart';
 /// walk the same sequence. [baselinePool], when given, is what the legend
 /// average comes from; null hides the comparison.
 ///
-/// Resolves to the corrected match when the user saves an edit, else null.
+/// Resolves to the corrected match when the user saves an edit, else null. A
+/// saved edit or exclusion comes with an Undo; [onUndone] is given the match as
+/// it was, for a caller that holds its own copy to put back.
 Future<RankedMatch?> showMatchDetailSheet(
   BuildContext context, {
   required List<RankedMatch> matches,
   required int index,
   Iterable<RankedMatch>? baselinePool,
-}) {
-  return showModalBottomSheet<RankedMatch>(
+  ValueChanged<RankedMatch>? onUndone,
+}) async {
+  // Taken now: the screen can be left while the sheet is open, and neither
+  // the messenger nor the container goes with it.
+  final messenger = ScaffoldMessenger.of(context);
+  final container = ProviderScope.containerOf(context, listen: false);
+  final updated = await showModalBottomSheet<RankedMatch>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
@@ -41,6 +52,47 @@ Future<RankedMatch?> showMatchDetailSheet(
       baselinePool: baselinePool,
     ),
   );
+  final before = updated == null
+      ? null
+      : matches.where((m) => m.id == updated.id).firstOrNull;
+  if (updated != null && before != null) {
+    messenger.showUndoMessage(
+      _savedMessage(before, updated),
+      () async {
+        final restored = await container
+            .read(rankedHistoryStoreProvider)
+            .restoreMatch(before);
+        if (!restored) {
+          messenger.showError('That match is no longer in your history.');
+          return;
+        }
+        invalidateMatchDerivedProvidersIn(container);
+        onUndone?.call(before);
+      },
+      duration: _valuesChanged(before, updated)
+          ? AppTheme.toastUndoEdit
+          : AppTheme.toastUndo,
+    );
+  }
+  return updated;
+}
+
+/// Whether a correction changed any value of [after], rather than only
+/// whether it counts.
+bool _valuesChanged(RankedMatch before, RankedMatch after) =>
+    before.legend != after.legend ||
+    before.mapKey != after.mapKey ||
+    before.rpChange != after.rpChange ||
+    before.kills != after.kills ||
+    before.damage != after.damage;
+
+/// What the Undo message says happened to [after], which was [before].
+String _savedMessage(RankedMatch before, RankedMatch after) {
+  if (before.excluded == after.excluded) return 'Correction saved';
+  final what = after.excluded ? 'excluded' : 'included';
+  return after.editedFields.length == before.editedFields.length
+      ? 'Game $what'
+      : 'Correction saved, game $what';
 }
 
 class _MatchDetailSheet extends StatefulWidget {

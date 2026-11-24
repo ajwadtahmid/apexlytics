@@ -1836,6 +1836,68 @@ void main() {
       final store = await storeWithMatch(m);
       expect(await store.editMatch(m.dedupKey, {'kills': 9}), true);
     });
+
+    test('restoreMatch puts back the values, flags and exclusion', () async {
+      final m = match('1', 100); // 3 kills, 1000 damage, not edited
+      final store = await storeWithMatch(m);
+      final before = (await store.getAll('1')).single;
+
+      await store.editMatch(
+        m.dedupKey,
+        {'kills': 9, 'legend': 'Wraith', 'rp_change': 42},
+        excluded: true,
+      );
+      expect(await store.restoreMatch(before), isTrue);
+
+      final after = (await store.getAll('1')).single;
+      expect(after.kills, 3);
+      expect(after.legend, before.legend);
+      expect(after.rpChange, before.rpChange);
+      expect(after.excluded, isFalse);
+      expect(after.editedFields, isEmpty);
+    });
+
+    test('restoreMatch keeps an earlier correction when undoing a later '
+        'one', () async {
+      final m = match('1', 100);
+      final store = await storeWithMatch(m);
+      await store.editMatch(m.dedupKey, {'kills': 5});
+      final before = (await store.getAll('1')).single;
+
+      await store.editMatch(m.dedupKey, {'damage': 1});
+      await store.restoreMatch(before);
+
+      final after = (await store.getAll('1')).single;
+      expect(after.kills, 5);
+      expect(after.damage, 1000);
+      expect(after.editedFields, {'kills'});
+    });
+
+    test('restoreMatch leaves every other column and row alone', () async {
+      final a = match('1', 100);
+      final b = match('1', 200);
+      final store = RankedHistoryStore(overridePath: inMemoryDatabasePath);
+      addTearDown(store.close);
+      await store.upsertAll('1', [a, b]);
+      final before = (await store.getAll('1')).firstWhere(
+        (x) => x.dedupKey == a.dedupKey,
+      );
+
+      await store.editMatch(a.dedupKey, {'kills': 9});
+      await store.editMatch(b.dedupKey, {'kills': 8});
+      await store.restoreMatch(before);
+
+      final rows = {for (final r in await store.getAll('1')) r.dedupKey: r};
+      expect(rows[a.dedupKey]!.kills, 3);
+      expect(rows[a.dedupKey]!.cumulativeRp, a.cumulativeRp);
+      expect(rows[b.dedupKey]!.kills, 8, reason: 'another match is untouched');
+    });
+
+    test('restoreMatch of an unknown match reports failure', () async {
+      final store = await storeWithMatch(match('1', 100));
+      expect(await store.restoreMatch(match('1', 999)), isFalse);
+      expect(await store.count('1'), 1);
+    });
   });
 
   group('excluded matches', () {
