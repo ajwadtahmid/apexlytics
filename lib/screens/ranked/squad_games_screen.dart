@@ -27,6 +27,7 @@ import '../../widgets/map_asset_image.dart';
 import '../../widgets/nav_entry_card.dart';
 import '../../widgets/segmented_capsule.dart';
 import '../../widgets/surface_card.dart';
+import '../../widgets/warning_note.dart';
 import 'squad_game_detail_screen.dart';
 import 'widgets/ranked_period_selector.dart';
 import 'widgets/ranked_period_sheets.dart';
@@ -197,6 +198,20 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
     final weeks = _weeks;
 
     final top = <Widget>[
+      WarningNote(
+        icon: Icons.warning_amber_rounded,
+        centerIcon: true,
+        trailing: const Icon(
+          Icons.chevron_right,
+          size: 16,
+          color: AppTheme.accent2,
+        ),
+        onTap: () => _showInfoSheet(context),
+        text:
+            'Estimated: games are paired by time, so some may be wrong. '
+            'Tap a game for how close the match was.',
+      ),
+      const SizedBox(height: AppTheme.md),
       if (saved.length >= 3) ...[
         Center(
           child: SegmentedCapsule(
@@ -345,14 +360,6 @@ class _SquadGamesScreenState extends ConsumerState<SquadGamesScreen> {
             ),
           );
         }
-        body.add(const SizedBox(height: AppTheme.md));
-        body.add(
-          const Text(
-            'Games are matched by their start and end times, as no match ID '
-            'is shared between players. A rare game may be paired by chance.',
-            style: AppTheme.captionSmall,
-          ),
-        );
       }
     }
 
@@ -868,7 +875,8 @@ void _showInfoSheet(BuildContext context) => showInfoSheet(
         'a profile was added here, or while the app was not recording it, '
         'cannot appear.',
     'Each game\'s page says how close the match was. "Looser match" means it '
-        'was counted because the games before and after also line up.',
+        'was counted because the games before and after also line up. A rare '
+        'game may still be paired by chance.',
     'The first profile is always the player on screen. Pick the others from '
         'the boxes at the top, and the season and week from the pills. In the '
         'three-profile view, games two of the three played are listed too, '

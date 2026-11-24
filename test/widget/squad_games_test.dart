@@ -147,6 +147,10 @@ void main() {
       await tester.tap(find.text('Squad Games'));
       await settle(tester);
       expect(find.text('No games together'), findsOneWidget);
+      expect(
+        find.textContaining('Estimated: games are paired'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -242,6 +246,14 @@ void main() {
   });
 
   group('the info button', () {
+    testWidgets('the note at the top opens the same sheet', (tester) async {
+      await pump(tester, saved: const ['1', '2'], shared: const []);
+      await tester.tap(find.textContaining('Estimated: games are paired'));
+      await settle(tester);
+
+      expect(find.textContaining('may not be fully accurate'), findsOneWidget);
+    });
+
     testWidgets('opens a sheet with a warning that it may not be accurate', (
       tester,
     ) async {
@@ -249,7 +261,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.info_outline));
       await settle(tester);
 
-      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      // One in the page's own note, one in the sheet.
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(2));
       expect(find.textContaining('may not be fully accurate'), findsOneWidget);
       expect(find.textContaining('start and end times'), findsOneWidget);
     });

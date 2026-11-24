@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/low_power_provider.dart';
 import '../utils/theme.dart';
+import 'warning_note.dart';
 
 /// Warns that "Keep screen on" can't work in iOS Low Power Mode. [dismissible]
 /// makes it a closable banner (Home, Stats), shown only while the Settings
@@ -32,35 +33,11 @@ class LowPowerWarning extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.only(top: AppTheme.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.md,
-          vertical: AppTheme.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppTheme.tintSoft(AppTheme.accent2),
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 1),
-              child: Icon(
-                Icons.battery_alert_outlined,
-                size: 16,
-                color: AppTheme.accent2,
-              ),
-            ),
-            const SizedBox(width: AppTheme.sm),
-            Expanded(
-              child: Text(
-                dismissible ? _message : _short,
-                style: const TextStyle(color: AppTheme.accent2, fontSize: 12),
-              ),
-            ),
-            if (dismissible)
-              InkWell(
+      child: WarningNote(
+        icon: Icons.battery_alert_outlined,
+        text: dismissible ? _message : _short,
+        trailing: dismissible
+            ? InkWell(
                 borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                 onTap: ref
                     .read(lowPowerBannerDismissedProvider.notifier)
@@ -69,9 +46,8 @@ class LowPowerWarning extends ConsumerWidget {
                   padding: EdgeInsets.all(2),
                   child: Icon(Icons.close, size: 14, color: AppTheme.accent2),
                 ),
-              ),
-          ],
-        ),
+              )
+            : null,
       ),
     );
   }
