@@ -64,7 +64,8 @@ class ShareCardSplit {
 /// mark at the bottom right, on a dark gradient.
 ///
 /// With a [name] it leads, in white and large, and [label] sits under it small
-/// and muted. Without one (the player hid it) [label] leads instead. [child]
+/// and muted. Without one (the player hid it) [label] leads instead. An empty
+/// [label] is left out. [child]
 /// fills the space between that header and the mark.
 class ShareCardFrame extends StatelessWidget {
   final String label;
@@ -142,10 +143,15 @@ class ShareCardFrame extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 2),
-          // A soft shadow keeps it readable where the portrait runs behind it.
-          Text(label, style: AppTheme.caption.copyWith(shadows: _titleShadow)),
-        ] else
+          if (label.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            // A soft shadow keeps it readable where the portrait runs behind it.
+            Text(
+              label,
+              style: AppTheme.caption.copyWith(shadows: _titleShadow),
+            ),
+          ],
+        ] else if (label.isNotEmpty)
           Text(
             label,
             style: const TextStyle(
@@ -689,6 +695,14 @@ class ShareCardPanel extends StatefulWidget {
   /// Offered when the card can carry the player's name.
   final bool offerNameToggle;
 
+  /// What the name switch says; "Show my name" unless the card is of someone
+  /// else.
+  final String nameToggleTitle;
+
+  /// What sits under the name switch. By default a promise that no player ID
+  /// is on the card; a card that may carry one says something else.
+  final String nameToggleSubtitle;
+
   /// Offered when the card has a legend portrait to dress two ways.
   final bool offerStyle;
 
@@ -703,6 +717,10 @@ class ShareCardPanel extends StatefulWidget {
   /// choice of what goes on the card.
   final Widget? controls;
 
+  /// Anything to put under the name switch, such as a second switch that
+  /// belongs with it.
+  final Widget? belowName;
+
   /// Keeps the Share button at the bottom of the screen and scrolls the rest
   /// above it. The panel then fills the height it is given, so it goes where
   /// that height is bounded (a screen body), not in a list.
@@ -712,10 +730,13 @@ class ShareCardPanel extends StatefulWidget {
     super.key,
     required this.cardBuilder,
     this.offerNameToggle = true,
+    this.nameToggleTitle = 'Show my name',
+    this.nameToggleSubtitle = 'Your player ID is never included.',
     this.offerStyle = true,
     this.onShare,
     this.onSave,
     this.controls,
+    this.belowName,
     this.pinShare = false,
   });
 
@@ -831,14 +852,12 @@ class _ShareCardPanelState extends State<ShareCardPanel> {
         if (widget.offerNameToggle)
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Show my name'),
-            subtitle: const Text(
-              'Your player ID is never included.',
-              style: AppTheme.caption,
-            ),
+            title: Text(widget.nameToggleTitle),
+            subtitle: Text(widget.nameToggleSubtitle, style: AppTheme.caption),
             value: _showName,
             onChanged: (v) => setState(() => _showName = v),
           ),
+        ?widget.belowName,
         if (!widget.pinShare) shareButton,
       ],
     );

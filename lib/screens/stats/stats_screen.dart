@@ -10,6 +10,7 @@ import '../../providers/refresh_all_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_messages.dart';
+import '../../utils/share_image.dart' show canShareFiles;
 import '../../utils/ranked/ranked_period.dart';
 import '../../utils/tracking/snapshot_state_mixin.dart';
 import '../../utils/storage/legend_stack_storage.dart';
@@ -22,6 +23,7 @@ import '../ranked/ranked_stats_body.dart';
 import '../ranked/widgets/ranked_info_sheet.dart';
 import '../ranked/widgets/ranked_period_selector.dart'
     show RankedSplitDropdown, RankedWeekDropdown;
+import '../search/profile_card_screen.dart';
 import 'refresh_all_sheet.dart';
 import '../../utils/navigation_utils.dart';
 
@@ -304,6 +306,19 @@ class _StatsViewState extends ConsumerState<_StatsView> {
           ),
         ),
         actions: [
+          if (statsAsync.value?.data case final mine?)
+            IconButton(
+              icon: Icon(canShareFiles ? Icons.ios_share : Icons.save_alt),
+              tooltip: canShareFiles
+                  ? 'Share profile card'
+                  : 'Save profile card',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ProfileCardScreen(stats: mine, mine: true),
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.public),
             tooltip: 'Open on ALS',

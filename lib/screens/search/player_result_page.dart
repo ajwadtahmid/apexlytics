@@ -13,12 +13,14 @@ import '../../providers/ranked_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/error_messages.dart';
+import '../../utils/share_image.dart' show canShareFiles;
 import '../../utils/formatting/search_utils.dart';
 import '../../utils/tracking/snapshot_state_mixin.dart';
 import '../../utils/notifications.dart';
 import '../../utils/theme.dart';
 import '../../widgets/widgets.dart';
 import 'player_compare_screen.dart';
+import 'profile_card_screen.dart';
 import '../../utils/navigation_utils.dart';
 
 class PlayerResultPage extends ConsumerStatefulWidget {
@@ -178,6 +180,18 @@ class _PlayerResultPageState extends ConsumerState<PlayerResultPage> {
               ),
             ),
           if (stats != null) ...[
+            IconButton(
+              icon: Icon(canShareFiles ? Icons.ios_share : Icons.save_alt),
+              tooltip: canShareFiles
+                  ? 'Share profile card'
+                  : 'Save profile card',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ProfileCardScreen(stats: stats),
+                ),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.public),
               tooltip: 'Open on ALS',
