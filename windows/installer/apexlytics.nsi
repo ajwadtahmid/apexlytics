@@ -57,6 +57,12 @@ Section "Install"
   ; otherwise they land in whichever profile the UAC prompt elevated as.
   SetShellVarContext all
   SetRegView 64
+
+  ; Clear the previous version first: copying over it would leave behind any
+  ; file the new build no longer ships (a renamed DLL, removed assets). The
+  ; folder is fixed (see .onInit) and holds no user data, which lives in
+  ; %APPDATA%.
+  RMDir /r "$INSTDIR"
   SetOutPath "$INSTDIR"
 
   ; Copy all files from the Release folder
