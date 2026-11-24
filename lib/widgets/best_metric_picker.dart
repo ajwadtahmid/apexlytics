@@ -40,6 +40,7 @@ class BestMetricPill extends ConsumerWidget {
       prefix: 'Rank by:',
       icon: bestMetricIcon(metric),
       label: metric.label,
+      compact: true,
       onTap: () => showBestMetricSheet(context, ref),
     );
   }

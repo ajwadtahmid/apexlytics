@@ -7,6 +7,7 @@ import 'package:apexlytics/widgets/best_metric_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:apexlytics/widgets/control_pill.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -40,6 +41,17 @@ void main() {
 
     await pump(tester, saved: {PrefsKeys.bestMetric: 'totalDamage'});
     expect(find.text('Total Damage'), findsOneWidget);
+  });
+
+  testWidgets('the pill is a compact one, so its heading does not grow', (
+    tester,
+  ) async {
+    await pump(tester);
+    final area = find.ancestor(
+      of: find.text('Total RP'),
+      matching: find.byType(GestureDetector),
+    );
+    expect(tester.getSize(area.first).height, ControlPill.compactHitHeight);
   });
 
   testWidgets('tapping it lists every measure in order, with an icon each', (

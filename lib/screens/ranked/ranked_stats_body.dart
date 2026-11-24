@@ -18,6 +18,7 @@ import '../../utils/error_messages.dart';
 import '../../utils/formatting/format.dart' show kNoReading;
 import '../../utils/formatting/snapshot_types.dart';
 import '../../utils/ranked/ranked_period.dart';
+import '../../utils/ranked/split_coverage.dart';
 import '../../utils/notifications.dart';
 import '../../utils/theme.dart';
 import '../../widgets/best_metric_picker.dart';
@@ -34,6 +35,7 @@ import 'ranked_sessions_list_screen.dart';
 import 'ranked_performance_trends_screen.dart';
 import 'ranked_climb_screen.dart';
 import 'squad_games_screen.dart';
+import 'widgets/coverage_pill.dart';
 import 'widgets/split_end_backup_nudge.dart';
 import 'widgets/unknown_season_note.dart';
 import 'widgets/ranked_legend_map_tabs.dart';
@@ -691,6 +693,14 @@ class _OverviewTab extends ConsumerWidget {
           SectionLabel(
             label: periodSectionLabel(data.view, currentSplit: isCurrentSplit),
             icon: Icons.leaderboard_outlined,
+            // Games of an unknown split may span several, so their RP does not
+            // join up; there is nothing honest to say about them.
+            trailing: data.view.effectiveSplitId == kUnknownSplitId
+                ? null
+                : CoveragePill(
+                    coverage: splitCoverage(matches),
+                    recorded: matches.length,
+                  ),
           ),
           RankedSummaryHeader(
             summary: summary,

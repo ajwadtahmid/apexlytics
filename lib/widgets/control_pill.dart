@@ -22,6 +22,11 @@ class ControlPill extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
 
+  /// A smaller tappable area, for a pill at the end of a section heading, where
+  /// the full height would add space above and below it. Still as wide as the
+  /// pill.
+  final bool compact;
+
   const ControlPill({
     super.key,
     this.prefix,
@@ -31,10 +36,14 @@ class ControlPill extends StatelessWidget {
     required this.label,
     this.trailing,
     required this.onTap,
+    this.compact = false,
   });
 
   /// The least height the tappable area has, so a thumb can hit the pill.
   static const double minHitHeight = 44;
+
+  /// The least height of a [compact] pill's tappable area.
+  static const double compactHitHeight = 32;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +89,9 @@ class ControlPill extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: minHitHeight),
+          constraints: BoxConstraints(
+            minHeight: compact ? compactHitHeight : minHitHeight,
+          ),
           child: Center(
             widthFactor: 1,
             heightFactor: 1,

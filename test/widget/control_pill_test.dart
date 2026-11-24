@@ -122,4 +122,27 @@ void main() {
     );
     expect(ControlPill.minHitHeight, greaterThanOrEqualTo(44));
   });
+
+  testWidgets('a compact pill has a 32 tall area, still as wide as the pill', (
+    tester,
+  ) async {
+    var taps = 0;
+    await pump(
+      tester,
+      ControlPill(
+        compact: true,
+        prefix: 'Rank by:',
+        icon: Icons.bolt,
+        label: 'Damage',
+        onTap: () => taps++,
+      ),
+    );
+
+    final area = tester.getSize(find.byType(GestureDetector).first);
+    expect(area.height, ControlPill.compactHitHeight);
+    expect(ControlPill.compactHitHeight, lessThan(ControlPill.minHitHeight));
+    expect(area.width, greaterThan(100));
+    await tester.tap(find.text('Rank by:'));
+    expect(taps, 1);
+  });
 }
