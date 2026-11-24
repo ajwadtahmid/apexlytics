@@ -218,10 +218,27 @@ jobs:
         run: choco install nsis -y
 
       - name: Build Windows Installer
+        shell: pwsh
+        env:
+          PRODUCT_VERSION: ${{ needs.extract-version.outputs.version }}
         run: |
-          $env:GITHUB_WORKSPACE = "${{ github.workspace }}"
-          $env:PRODUCT_VERSION = "${{ needs.extract-version.outputs.version }}"
-          & 'C:\Program Files (x86)\NSIS\makensis.exe' "${{ github.workspace }}\windows\installer\apexlytics.nsi"
+          # NSIS can be installed under either Program Files directory. A
+          # Chocolatey install may also expose it through a PATH shim.
+          $candidates = @(
+            "${env:ProgramFiles}\NSIS\makensis.exe"
+            "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          )
+          $makensis = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (-not $makensis) {
+            $command = Get-Command makensis.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($command) { $makensis = $command.Source }
+          }
+          if (-not $makensis) {
+            throw "NSIS compiler not found in Program Files or PATH. Check the Install NSIS step."
+          }
+          Write-Host "Using NSIS compiler: $makensis"
+          & $makensis (Join-Path $env:GITHUB_WORKSPACE 'windows\installer\apexlytics.nsi')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Rename Windows installer
         run: mv apexlytics-installer.exe "apexlytics-installer-v${{ needs.extract-version.outputs.version }}.exe"
